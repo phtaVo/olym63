@@ -767,8 +767,8 @@ function displayResults() {
   const screen = document.getElementById('result-screen');
   screen.innerHTML = `
     <div class="result-score-header">
-      <span class="result-score-num">${STATE.score}</span>
       <div class="result-stats-row">
+        <div class="result-stat result-stat-score"><span class="result-stat-num gold">${STATE.score}</span><span class="result-stat-label">Điểm số</span></div>
         <div class="result-stat"><span class="result-stat-num green">${correct}</span><span class="result-stat-label">Câu đúng</span></div>
         <div class="result-stat"><span class="result-stat-num red">${wrong}</span><span class="result-stat-label">Câu sai</span></div>
         <div class="result-stat"><span class="result-stat-num muted">${STATE.answers.length}</span><span class="result-stat-label">Tổng câu</span></div>
