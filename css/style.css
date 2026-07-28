@@ -317,6 +317,15 @@ body::before {
 .answer-input:disabled { opacity: 0.42; cursor: not-allowed; }
 .answer-input.flash-correct { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,120,40,0.12); transition: border-color 0.05s, box-shadow 0.05s; }
 .answer-input.flash-wrong   { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(10,46,107,0.1); transition: border-color 0.05s, box-shadow 0.05s; }
+.answer-input.flash-saved   { border-color: var(--gold-dark); box-shadow: 0 0 0 3px rgba(200,134,10,0.15); transition: border-color 0.05s, box-shadow 0.05s; }
+
+.saved-answer-indicator {
+  margin-top: 8px; padding: 8px 14px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; color: var(--gold-dark);
+  background: rgba(200,134,10,0.08); border: 1px solid rgba(200,134,10,0.18);
+  display: flex; align-items: center; gap: 6px;
+}
+.saved-answer-indicator.hidden { display: none; }
 .input-hint {
   position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
   font-size: 12px; color: rgba(0,0,0,0.28); font-weight: 600; letter-spacing: 1px; pointer-events: none;
