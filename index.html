@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đường Lên Đỉnh Olympia – Luyện Tập</title>
+
+<!-- Nếu bạn có file favicon riêng, đặt vào thư mục assets/ rồi sửa dòng dưới -->
+<link rel="icon" href="assets/favicon.png" type="image/png">
+
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="navy">
+
+<button id="theme-btn" onclick="cycleTheme()" title="Đổi màu chủ đề">🎨</button>
+
+<!-- ==================== HOME ==================== -->
+<div id="home-screen" class="screen">
+  <div class="home-content">
+  <div class="logo-area">
+    <!-- Thay ảnh logo của bạn vào assets/logo.png (128x128, hình tròn đẹp nhất) -->
+    <img class="logo-emblem" src="assets/logo.png" alt="Olympia" onerror="this.style.display='none'">
+    <div class="logo-badge">Sân chơi tri thức</div>
+    <div class="logo-title">Đường Lên<br><span>Đỉnh Olympia</span></div>
+    <div class="logo-sub">Chọn phần thi để bắt đầu</div>
+  </div>
+  <div class="home-right">
+  <div class="sections-grid">
+    <div class="section-card" onclick="startGame('khoi_dong')">
+      <div class="section-badge live">Đang mở</div>
+      <div class="section-icon">🚀</div>
+      <div class="section-num">Phần 01</div>
+      <div class="section-name">Khởi<br>Động</div>
+      <div class="section-desc">70 giây · 12 câu · +10đ/câu</div>
+    </div>
+    <div class="section-card" onclick="startGame('ve_dich')">
+      <div class="section-badge live">Đang mở</div>
+      <div class="section-icon">🏆</div>
+      <div class="section-num">Phần 04</div>
+      <div class="section-name">Về<br>Đích</div>
+      <div class="section-desc">6 câu · 10/20/30đ · Ngôi sao HV</div>
+    </div>
+    <div class="section-card locked" onclick="showComingSoon('Vượt Chướng Ngại Vật')">
+      <div class="section-badge">Sắp ra mắt</div>
+      <div class="section-icon">🧩</div>
+      <div class="section-num">Phần 02</div>
+      <div class="section-name">Vượt<br>Chướng Ngại Vật</div>
+      <div class="section-desc">60 giây · 1 từ hàng rào</div>
+    </div>
+    <div class="section-card locked" onclick="showComingSoon('Tăng Tốc')">
+      <div class="section-badge">Sắp ra mắt</div>
+      <div class="section-icon">⚡</div>
+      <div class="section-num">Phần 03</div>
+      <div class="section-name">Tăng<br>Tốc</div>
+      <div class="section-desc">Nhanh tay · Nhanh mắt</div>
+    </div>
+  </div>
+  <div class="intro-toggle-row">
+    <span class="intro-toggle-label">🎬 Hiệu ứng giới thiệu</span>
+    <button class="intro-toggle-switch on" id="intro-toggle-switch" onclick="toggleIntroSetting()" title="Bật/tắt màn giới thiệu trước khi vào phần thi"></button>
+  </div>
+  </div>
+  </div>
+</div>
+
+<!-- ==================== INTRO ==================== -->
+<div id="intro-screen" class="screen hidden">
+  <div class="intro-content">
+    <div class="intro-wreaths">
+      <svg class="intro-wreath-svg left" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="60" cy="60" rx="42" ry="42" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+        <ellipse cx="18" cy="60" rx="10" ry="5" fill="rgba(255,255,255,0.7)" transform="rotate(-30 18 60)"/>
+        <ellipse cx="22" cy="42" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(-55 22 42)"/>
+        <ellipse cx="33" cy="27" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(-75 33 27)"/>
+        <ellipse cx="48" cy="18" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(-90 48 18)"/>
+        <ellipse cx="22" cy="78" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(-10 22 78)"/>
+        <ellipse cx="33" cy="93" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(10 33 93)"/>
+        <ellipse cx="48" cy="103" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(25 48 103)"/>
+        <ellipse cx="102" cy="60" rx="10" ry="5" fill="rgba(255,255,255,0.7)" transform="rotate(30 102 60)"/>
+        <ellipse cx="98" cy="42" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(55 98 42)"/>
+        <ellipse cx="87" cy="27" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(75 87 27)"/>
+        <ellipse cx="72" cy="18" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(90 72 18)"/>
+        <ellipse cx="98" cy="78" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(10 98 78)"/>
+        <ellipse cx="87" cy="93" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(-10 87 93)"/>
+        <ellipse cx="72" cy="103" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(-25 72 103)"/>
+        <polygon points="60,34 63,44 74,44 65,51 68,61 60,55 52,61 55,51 46,44 57,44" fill="#FFE066" opacity="0.9"/>
+      </svg>
+
+      <div class="intro-center">
+        <div class="intro-eyebrow">Đường Lên Đỉnh Olympia</div>
+        <div class="intro-title" id="intro-title">Khởi Động</div>
+        <div class="intro-divider">
+          <div class="intro-divider-line"></div>
+          <div class="intro-divider-diamonds">
+            <div class="intro-diamond"></div>
+            <div class="intro-diamond gold"></div>
+            <div class="intro-diamond"></div>
+          </div>
+          <div class="intro-divider-line"></div>
+        </div>
+        <div class="intro-subtitle" id="intro-subtitle">Phần Thi Khởi Động</div>
+      </div>
+
+      <svg class="intro-wreath-svg right" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform:scaleX(-1);">
+        <ellipse cx="60" cy="60" rx="42" ry="42" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+        <ellipse cx="18" cy="60" rx="10" ry="5" fill="rgba(255,255,255,0.7)" transform="rotate(-30 18 60)"/>
+        <ellipse cx="22" cy="42" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(-55 22 42)"/>
+        <ellipse cx="33" cy="27" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(-75 33 27)"/>
+        <ellipse cx="48" cy="18" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(-90 48 18)"/>
+        <ellipse cx="22" cy="78" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(-10 22 78)"/>
+        <ellipse cx="33" cy="93" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(10 33 93)"/>
+        <ellipse cx="48" cy="103" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(25 48 103)"/>
+        <ellipse cx="102" cy="60" rx="10" ry="5" fill="rgba(255,255,255,0.7)" transform="rotate(30 102 60)"/>
+        <ellipse cx="98" cy="42" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(55 98 42)"/>
+        <ellipse cx="87" cy="27" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(75 87 27)"/>
+        <ellipse cx="72" cy="18" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(90 72 18)"/>
+        <ellipse cx="98" cy="78" rx="10" ry="5" fill="rgba(255,255,255,0.65)" transform="rotate(10 98 78)"/>
+        <ellipse cx="87" cy="93" rx="10" ry="5" fill="rgba(255,255,255,0.6)" transform="rotate(-10 87 93)"/>
+        <ellipse cx="72" cy="103" rx="10" ry="5" fill="rgba(255,255,255,0.55)" transform="rotate(-25 72 103)"/>
+        <polygon points="60,34 63,44 74,44 65,51 68,61 60,55 52,61 55,51 46,44 57,44" fill="#FFE066" opacity="0.9"/>
+      </svg>
+    </div>
+  </div>
+  <div class="intro-progress-wrap">
+    <div class="intro-progress-fill" id="intro-progress-fill" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- ==================== GAME SCREEN ==================== -->
+<div id="game-screen" class="screen hidden">
+  <div class="timeline-bar"><div class="timeline-fill" id="timeline-fill"></div></div>
+  <div class="game-header">
+    <div class="game-mode-label" id="mode-label">Khởi Động</div>
+    <div class="game-timer-display" id="timer-display">70</div>
+    <div class="game-q-counter" id="q-counter">Câu 1/12</div>
+  </div>
+  <div class="game-body">
+    <div class="score-panel">
+      <div class="score-label">Điểm</div>
+      <div class="score-number" id="score-display">0</div>
+      <div class="score-unit">điểm</div>
+      <button class="star-hope-btn" id="star-hope-btn" onclick="toggleStarHope()" style="display:none;">
+        <span class="star-hope-icon">⭐</span>Ngôi sao<br>hy vọng
+      </button>
+    </div>
+    <div class="question-area">
+      <div class="question-meta" id="question-meta"></div>
+      <div class="question-box">
+        <div class="question-text" id="question-text">Đang tải câu hỏi...</div>
+      </div>
+      <div class="input-wrapper">
+        <input type="text" class="answer-input" id="answer-input" placeholder="Nhập câu trả lời..." autocomplete="off" spellcheck="false"/>
+        <span class="input-hint">Enter ↵</span>
+      </div>
+      <div class="feedback-bar hidden" id="feedback-bar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== RESULT SCREEN ==================== -->
+<div id="result-screen" class="screen hidden"></div>
+
+<!-- ==================== LOADING ==================== -->
+<div id="loading-overlay" class="screen hidden">
+  <div class="loading-screen">
+    <div class="spinner"></div>
+    <div style="font-size:15px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;font-weight:600">Đang tải câu hỏi...</div>
+  </div>
+</div>
+
+<!-- ==================== MODAL ==================== -->
+<div class="modal-overlay" id="coming-soon-modal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-emoji">🚧</div>
+    <div class="modal-title" id="modal-section-name">Sắp Ra Mắt</div>
+    <div class="modal-sub">Phần thi này đang được phát triển.<br>Hãy quay lại sau nhé!</div>
+    <button class="btn btn-outline" onclick="closeModal()">Quay lại</button>
+  </div>
+</div>
+
+<!-- Modal hiển thị kết quả Gemini -->
+<div class="modal-overlay" id="gemini-modal" onclick="closeGeminiModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-emoji" id="gemini-modal-emoji">🤖</div>
+    <div class="modal-title" id="gemini-modal-title">Gemini đánh giá</div>
+    <div class="modal-sub" id="gemini-modal-verdict"></div>
+    <div class="modal-explanation" id="gemini-modal-explanation"></div>
+    <button class="btn btn-outline" onclick="closeGeminiModal()">Đóng</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ==================== AUDIO ==================== -->
+<audio id="audio-intro-kd"      preload="auto"></audio>
+<audio id="audio-intro-vd"      preload="auto"></audio>
+<audio id="audio-60s-kd"        preload="auto" loop></audio>
+<audio id="audio-correct"       preload="auto"></audio>
+<audio id="audio-fail"          preload="auto"></audio>
+<audio id="audio-cauhoi-vd"     preload="auto"></audio>
+<audio id="audio-cauhoi-15s-vd" preload="auto"></audio>
+<audio id="audio-star-hope"     preload="auto"></audio>
+
+<!-- Thư viện đọc CSV từ Google Sheet -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<!-- Cấu hình: API key, Spreadsheet ID, audio -->
+<script src="js/config.js"></script>
+<!-- Toàn bộ logic game -->
+<script src="js/app.js"></script>
+</body>
+</html>
