@@ -100,7 +100,7 @@ const STATE = {
   mode: null, questions: [], currentIndex: 0, score: 0,
   timerInterval: null, phaseTimer: null, answers: [], timeLeft: 70,
   starHope: false, starHopeUsed: false,
-  vedich: { phase: 'reading', phaseTimeLeft: 0, readTime: 0, answerTime: 0 }
+  vedich: { phase: 'reading', phaseTimeLeft: 0, readTime: 0, answerTime: 0, savedAnswer: null }
 };
 
 // ============================================================
@@ -445,8 +445,25 @@ function submitVeDichAnswerNow() {
   if (STATE.vedich.phase !== 'answering') return;
   const input = document.getElementById('answer-input');
   if (input.disabled) return;
-  clearPhaseTimer();
-  gradeVeDichCurrent();
+
+  // Ghi nhận đáp án hiện tại nhưng KHÔNG khoá nhập liệu và KHÔNG chấm điểm ngay.
+  // Người dùng vẫn có thể tiếp tục sửa và bấm Enter lại để ghi nhận đáp án khác.
+  // Chỉ khi hết thời gian trả lời (timer về 0) hệ thống mới khoá nhập và chấm điểm.
+  const val = input.value.trim();
+  STATE.vedich.savedAnswer = val;
+
+  const savedEl = document.getElementById('saved-answer-indicator');
+  if (savedEl) {
+    savedEl.className = 'saved-answer-indicator';
+    savedEl.textContent = val === ''
+      ? '📝 Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
+      : `📝 Đã ghi nhận đáp án: "${val}" — vẫn có thể nhập lại`;
+  }
+
+  input.classList.remove('flash-saved');
+  void input.offsetWidth;
+  input.classList.add('flash-saved');
+  setTimeout(() => input.classList.remove('flash-saved'), 300);
 }
 
 function handleKhoiDongAnswer() {
@@ -505,10 +522,13 @@ function showVeDichQuestion() {
   const times = getVeDichTimes(q.points);
   STATE.vedich.phase = 'reading'; STATE.vedich.readTime = times.read;
   STATE.vedich.answerTime = times.answer; STATE.vedich.phaseTimeLeft = times.read;
+  STATE.vedich.savedAnswer = null;
 
   const input = document.getElementById('answer-input');
   input.disabled = true; input.value = ''; input.placeholder = 'Chờ hết thời gian đọc...';
   document.getElementById('feedback-bar').className = 'feedback-bar hidden';
+  const savedEl = document.getElementById('saved-answer-indicator');
+  if (savedEl) { savedEl.className = 'saved-answer-indicator hidden'; savedEl.textContent = ''; }
   updateQCounter(STATE.currentIndex + 1, STATE.questions.length);
 
   if (STATE.starHopeUsed) { showQuestionContent(q, times); return; }
@@ -556,12 +576,15 @@ function startVeDichAnswerPhase() {
   const q = STATE.questions[STATE.currentIndex];
   const times = getVeDichTimes(q.points);
   STATE.vedich.phase = 'answering'; STATE.vedich.phaseTimeLeft = times.answer;
+  STATE.vedich.savedAnswer = null;
 
   const badge = document.getElementById('phase-badge');
   if (badge) { badge.className = 'phase-badge answering'; badge.textContent = 'Trả lời'; }
 
   const input = document.getElementById('answer-input');
-  input.disabled = false; input.placeholder = 'Nhập câu trả lời...'; input.focus();
+  input.disabled = false; input.placeholder = 'Nhập câu trả lời rồi bấm Enter để ghi nhận...'; input.focus();
+  const savedEl = document.getElementById('saved-answer-indicator');
+  if (savedEl) { savedEl.className = 'saved-answer-indicator hidden'; savedEl.textContent = ''; }
   updateTimerUI(times.answer, times.answer);
 
   if (q.points === 10) AUDIO.playCauHoi15s(); else AUDIO.playCauHoiVD();
@@ -575,9 +598,14 @@ function startVeDichAnswerPhase() {
 function gradeVeDichCurrent() {
   const q = STATE.questions[STATE.currentIndex];
   const input = document.getElementById('answer-input');
-  const userAnswer = input.value.trim();
+  // Ưu tiên đáp án đã được ghi nhận (bấm Enter) gần nhất; nếu người dùng chưa
+  // bấm Enter lần nào thì lấy nội dung đang gõ dở trong ô nhập tại thời điểm hết giờ.
+  const userAnswer = (STATE.vedich.savedAnswer !== null) ? STATE.vedich.savedAnswer : input.value.trim();
   const usedStar = STATE.starHope;
-  input.disabled = true; showFeedback('info', 'Đang chấm điểm...');
+  input.disabled = true; // hết thời gian -> khoá nhập, không cho sửa nữa
+  const savedEl = document.getElementById('saved-answer-indicator');
+  if (savedEl) { savedEl.className = 'saved-answer-indicator hidden'; savedEl.textContent = ''; }
+  showFeedback('info', 'Đang chấm điểm...');
 
   const entry = { question: q.question, userAnswer, correctAnswer: q.answer, correct: null, points: q.points, usedStar };
 
@@ -591,7 +619,8 @@ function gradeVeDichCurrent() {
       showFeedback('correct', `✅ Đúng! +${pts} điểm${usedStar ? ' ⭐×2' : ''}`);
     } else {
       let penalty = 0;
-      if (usedStar) { penalty = q.points; STATE.score = Math.max(0, STATE.score - penalty); updateScoreUI(false); }
+      // Điểm số có thể âm: không giới hạn ở 0 khi bị trừ điểm do dùng ngôi sao hy vọng mà trả lời sai.
+      if (usedStar) { penalty = q.points; STATE.score -= penalty; updateScoreUI(false); }
       showFeedback('wrong', `Đáp án: ${q.answer}${usedStar ? ` (−${penalty}đ)` : ''}`);
     }
 
@@ -676,10 +705,11 @@ function flashQuickFeedback(isCorrect, userAnswer) {
 // ============================================================
 function toggleStarHope() {
   if (STATE.starHopeUsed) { showToast('⚠️ Ngôi sao hy vọng chỉ dùng được 1 lần mỗi trận!'); return; }
+  // Ngôi sao hy vọng chỉ được BẬT, một khi đã bật thì không thể tắt lại.
+  if (STATE.starHope) { showToast('⭐ Ngôi sao hy vọng đã bật rồi, không thể tắt!'); return; }
   if (STATE.vedich.phase !== 'star_intro') { showToast('⚠️ Chỉ bật được trong lúc hiện thông báo ngôi sao!'); return; }
-  STATE.starHope = !STATE.starHope;
-  if (STATE.starHope) { AUDIO.playStarHope(); showToast('⭐ Ngôi sao hy vọng đã bật!'); }
-  else { AUDIO.stopStarHope(); showToast('Đã tắt ngôi sao hy vọng'); }
+  STATE.starHope = true;
+  AUDIO.playStarHope(); showToast('⭐ Ngôi sao hy vọng đã bật! Không thể tắt lại.');
   updateStarBtn();
 }
 
@@ -753,6 +783,9 @@ function showResults() {
       if (a.correct) {
         if (STATE.mode === 'khoi_dong') { newScore += 10; }
         else { let pts = a.points || 10; if (a.usedStar) pts *= 2; newScore += pts; }
+      } else if (STATE.mode === 've_dich' && a.usedStar) {
+        // Dùng ngôi sao hy vọng mà trả lời sai -> bị trừ điểm; điểm cuối có thể âm.
+        newScore -= (a.points || 10);
       }
     }
     STATE.score = newScore;
