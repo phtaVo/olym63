@@ -247,8 +247,15 @@ function normalizeStr(s) {
 
 function simpleCompare(u, c) {
   const nu = normalizeStr(u), nc = normalizeStr(c);
+  // Nếu sau khi chuẩn hóa (bỏ ký tự đặc biệt/emoji) mà rỗng -> không có nội dung
+  // để so sánh, luôn coi là SAI. Đây là lỗi gốc khiến gõ bậy (vd "=))", "!!!", "...")
+  // bị chấm đúng, vì "abc".includes("") luôn trả về true trong JavaScript.
+  if (!nu || !nc) return false;
   if (nu === nc) return true;
-  if (nu.includes(nc) || nc.includes(nu)) return true;
+  // Chỉ áp dụng kiểu so khớp "chứa nhau" khi cả hai chuỗi đủ dài (>= 3 ký tự),
+  // tránh trường hợp đáp án ngắn (vd "1", "có") bị khớp bậy chỉ vì tình cờ
+  // xuất hiện đâu đó trong một câu trả lời dài không liên quan.
+  if (nu.length >= 3 && nc.length >= 3 && (nu.includes(nc) || nc.includes(nu))) return true;
   const words = nc.split(' ').filter(w => w.length > 2);
   return words.length > 0 && words.filter(w => nu.includes(w)).length / words.length >= 0.7;
 }
