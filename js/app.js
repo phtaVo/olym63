@@ -997,7 +997,7 @@ async function fetchResearch() {
   renderResearchLoading();
   try {
     const prompt = buildResearchPrompt(STATE.mode, STATE.answers);
-    let text = await callGemini(prompt, 4096, 0.3);
+    let text = await callGemini(prompt, 8192, 0.3);
     text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     let data;
     try { data = JSON.parse(text); }
