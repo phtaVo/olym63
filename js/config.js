@@ -18,8 +18,8 @@ const CONFIG = {
   // => Xem hướng dẫn deploy Worker tại: worker/README.md
   //
   // Sau khi deploy Worker xong, dán URL của nó vào GEMINI_PROXY_URL bên dưới.
-  GEMINI_MODEL: 'gemini-1.5-flash',
-  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.<tên-bạn>.workers.dev',
+  GEMINI_MODEL: 'gemini-3.6-flash',
+  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.voducphat-learncode-tk01.workers.dev',
 
   get GEMINI_API_URL() {
     return `${this.GEMINI_PROXY_URL}?model=${encodeURIComponent(this.GEMINI_MODEL)}`;
