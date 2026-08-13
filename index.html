@@ -162,6 +162,9 @@
 <!-- ==================== RESULT SCREEN ==================== -->
 <div id="result-screen" class="screen hidden"></div>
 
+<!-- ==================== RESEARCH SCREEN (🔎 Nghiên cứu) ==================== -->
+<div id="research-screen" class="screen hidden"></div>
+
 <!-- ==================== LOADING ==================== -->
 <div id="loading-overlay" class="screen hidden">
   <div class="loading-screen">
@@ -188,6 +191,15 @@
     <div class="modal-sub" id="gemini-modal-verdict"></div>
     <div class="modal-explanation" id="gemini-modal-explanation"></div>
     <button class="btn btn-outline" onclick="closeGeminiModal()">Đóng</button>
+  </div>
+</div>
+
+<!-- Modal "🔬 Nghiên cứu sâu" một từ khóa -->
+<div class="modal-overlay" id="research-deep-modal" onclick="closeDeepModal()">
+  <div class="modal-box modal-box-wide" onclick="event.stopPropagation()">
+    <div class="modal-title" id="rdm-title">🔬 Nghiên cứu sâu</div>
+    <div class="rdm-body" id="rdm-body"></div>
+    <button class="btn btn-outline" onclick="closeDeepModal()">Đóng</button>
   </div>
 </div>
 
