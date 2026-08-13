@@ -823,6 +823,7 @@ function displayResults() {
     <div class="result-actions">
       <button class="btn btn-primary" onclick="restartGame()">Chơi lại</button>
       <button class="btn btn-outline" onclick="goHome()">Trang chủ</button>
+      <button class="btn btn-research" onclick="openResearch()">🔎 Nghiên cứu</button>
     </div>
   `;
 
@@ -885,5 +886,376 @@ function escapeHTML(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ============================================================
+// 🔎 NGHIÊN CỨU (biến bộ câu hỏi vừa làm thành kho kiến thức)
+// ============================================================
+const RESEARCH = { data: null, hash: null, learned: {}, bookmarks: {} };
+
+function hashQuizContent(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  return 'q' + Math.abs(h).toString(36);
+}
+function getResearchCacheKey() {
+  const content = STATE.mode + '|' + STATE.answers.map(a => (a.question || '') + '::' + (a.correctAnswer || '')).join('||');
+  return 'olympia_research_' + hashQuizContent(content);
+}
+function loadResearchLocalState(key) {
+  try { RESEARCH.learned = JSON.parse(localStorage.getItem(key + '_learned') || '{}'); } catch (e) { RESEARCH.learned = {}; }
+  try { RESEARCH.bookmarks = JSON.parse(localStorage.getItem(key + '_bookmarks') || '{}'); } catch (e) { RESEARCH.bookmarks = {}; }
+}
+
+function openResearch() {
+  if (!STATE.answers || STATE.answers.length === 0) { showToast('Chưa có dữ liệu để nghiên cứu'); return; }
+  showScreen('research-screen');
+  const key = getResearchCacheKey();
+  RESEARCH.hash = key;
+  loadResearchLocalState(key);
+  let cached = null;
+  try { const raw = localStorage.getItem(key); if (raw) cached = JSON.parse(raw); } catch (e) {}
+  if (cached) { RESEARCH.data = normalizeResearchData(cached); renderResearch(); }
+  else fetchResearch();
+}
+
+function renderResearchLoading() {
+  document.getElementById('research-screen').innerHTML = `
+    <div class="research-loading">
+      <div class="spinner"></div>
+      <div class="research-loading-text">Gemini đang phân tích bộ câu hỏi và xây dựng kho kiến thức...</div>
+      <button class="btn btn-outline" onclick="showScreen('result-screen')">Hủy</button>
+    </div>`;
+}
+function renderResearchError(msg) {
+  document.getElementById('research-screen').innerHTML = `
+    <div class="research-loading">
+      <div style="font-size:40px;">⚠️</div>
+      <div class="research-loading-text">Không thể tạo bản nghiên cứu.<br><span style="font-size:12px;color:var(--text-muted)">${escapeHTML(msg || '')}</span></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="fetchResearch()">Thử lại</button>
+        <button class="btn btn-outline" onclick="showScreen('result-screen')">Quay lại kết quả</button>
+      </div>
+    </div>`;
+}
+
+function buildResearchPrompt(mode, answers) {
+  const qaList = answers.map((a, i) =>
+    `${i + 1}. Câu hỏi: ${a.question}\nĐáp án đúng: ${a.correctAnswer}\nThí sinh trả lời: ${a.userAnswer || '(bỏ qua)'}\nKết quả: ${a.correct ? 'Đúng' : 'Sai'}`
+  ).join('\n\n');
+
+  return `Bạn là một chuyên gia xây dựng kho kiến thức cho thí sinh Đường Lên Đỉnh Olympia.
+
+Nhiệm vụ: phân tích TOÀN BỘ bộ câu hỏi + đáp án dưới đây và rút ra một hệ thống kiến thức ngắn gọn, cô đọng để người học ghi nhớ. KHÔNG chỉ giải thích từng câu một cách rời rạc — hãy tìm những kiến thức có giá trị học tập cao nhất, xây dựng mối liên hệ giữa chúng.
+
+Ưu tiên theo thứ tự: từ khóa, mốc thời gian, nhân vật, địa danh, sự kiện, quốc gia, tổ chức, tác phẩm, tác giả, khái niệm, thuật ngữ, số liệu quan trọng, câu thơ/câu văn đáng nhớ, thành ngữ/tục ngữ, kiến thức liên ngành.
+
+QUY TẮC BẮT BUỘC:
+- Chỉ dùng kiến thức có độ tin cậy cao, có trong câu hỏi hoặc suy ra trực tiếp từ câu hỏi. KHÔNG được bịa thông tin.
+- Nếu không chắc chắn về một chi tiết (ngày tháng, số liệu, tên riêng, câu thơ...), hãy thêm "⚠️ Chưa xác minh" vào cuối bullet đó thay vì khẳng định chắc chắn.
+- Trình bày cực kỳ cô đọng bằng bullet point / từ khóa, KHÔNG viết đoạn văn dài.
+- Mỗi mục kiến thức tối đa 3-7 bullet.
+- Chỉ đưa các mục thực sự xuất hiện hoặc liên quan trực tiếp đến nội dung bộ câu hỏi — nếu một phần không có dữ liệu liên quan, trả về mảng rỗng [] cho phần đó.
+- Đánh giá độ quan trọng ("importance") của mỗi mục kiến thức dựa trên: có xuất hiện trực tiếp trong câu hỏi, là đáp án đúng, liên quan đến nhiều câu, có tính nền tảng, có khả năng xuất hiện lại trong các cuộc thi kiến thức.
+
+BỘ CÂU HỎI (${answers.length} câu, chế độ ${mode === 'khoi_dong' ? 'Khởi Động' : 'Về Đích'}):
+
+${qaList}
+
+CHỈ TRẢ VỀ JSON THUẦN theo đúng schema sau, không markdown, không giải thích thêm, không thêm field khác:
+
+{
+  "topics": ["<chủ đề chính, vd: Lịch sử Việt Nam>"],
+  "keywordsBySubject": [{"subject":"<môn/chủ đề>","keywords":["<từ khóa>"]}],
+  "knowledge": [{"title":"<tên kiến thức>","importance":"high|medium|low","bullets":["<bullet ngắn>"]}],
+  "timeline": [{"year":"<năm hoặc ngày>","event":"<sự kiện>"}],
+  "people": [{"name":"<tên nhân vật>","bullets":["<bullet ngắn>"]}],
+  "places": [{"name":"<tên địa danh>","bullets":["<bullet ngắn>"]}],
+  "literature": [{"title":"<tác phẩm>","bullets":["<bullet ngắn, vd: Tác giả:..., Thể loại:...>"]}],
+  "events": [{"name":"<sự kiện>","bullets":["<bullet ngắn>"]}],
+  "connections": [{"chain":["<mắt xích 1>","<mắt xích 2>","..."]}],
+  "potentialQuestions": ["<câu hỏi có khả năng gặp lại trong các cuộc thi kiến thức, 5-15 câu>"]
+}`;
+}
+
+function normalizeResearchData(d) {
+  d = d || {};
+  return {
+    topics: Array.isArray(d.topics) ? d.topics : [],
+    keywordsBySubject: Array.isArray(d.keywordsBySubject) ? d.keywordsBySubject : [],
+    knowledge: Array.isArray(d.knowledge) ? d.knowledge : [],
+    timeline: Array.isArray(d.timeline) ? d.timeline : [],
+    people: Array.isArray(d.people) ? d.people : [],
+    places: Array.isArray(d.places) ? d.places : [],
+    literature: Array.isArray(d.literature) ? d.literature : [],
+    events: Array.isArray(d.events) ? d.events : [],
+    connections: Array.isArray(d.connections) ? d.connections : [],
+    potentialQuestions: Array.isArray(d.potentialQuestions) ? d.potentialQuestions : []
+  };
+}
+
+async function fetchResearch() {
+  renderResearchLoading();
+  try {
+    const prompt = buildResearchPrompt(STATE.mode, STATE.answers);
+    let text = await callGemini(prompt, 4096, 0.3);
+    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) {
+      const m = text.match(/\{[\s\S]*\}/);
+      if (m) data = JSON.parse(m[0]);
+      else throw new Error('Không đọc được kết quả JSON từ Gemini');
+    }
+    data = normalizeResearchData(data);
+    RESEARCH.data = data;
+    try { localStorage.setItem(RESEARCH.hash, JSON.stringify(data)); } catch (e) {}
+    renderResearch();
+  } catch (e) {
+    renderResearchError(String((e && e.message) || e));
+  }
+}
+
+function importanceRank(imp) { return imp === 'high' ? 0 : imp === 'medium' ? 1 : 2; }
+function importanceBadge(imp) {
+  if (imp === 'high') return '<span class="imp-badge imp-high">🔥 Rất quan trọng</span>';
+  if (imp === 'medium') return '<span class="imp-badge imp-medium">⭐ Quan trọng</span>';
+  return '<span class="imp-badge imp-low">• Bổ sung</span>';
+}
+
+function renderResearch() {
+  const d = RESEARCH.data;
+  const screen = document.getElementById('research-screen');
+  const totalKeywords = d.keywordsBySubject.reduce((s, g) => s + ((g.keywords && g.keywords.length) || 0), 0);
+  const sortedKnowledge = d.knowledge.slice().sort((a, b) => importanceRank(a.importance) - importanceRank(b.importance));
+
+  const navItems = [
+    ['rs-keywords', '🔑 Từ khóa', d.keywordsBySubject.length],
+    ['rs-knowledge', '🧠 Kiến thức', d.knowledge.length],
+    ['rs-timeline', '⏳ Mốc thời gian', d.timeline.length],
+    ['rs-people', '👤 Nhân vật', d.people.length],
+    ['rs-places', '🌏 Địa danh', d.places.length],
+    ['rs-literature', '📖 Văn học', d.literature.length],
+    ['rs-events', '⚡ Sự kiện', d.events.length],
+    ['rs-connections', '🔗 Liên kết', d.connections.length],
+    ['rs-questions', '🎯 Có thể gặp lại', d.potentialQuestions.length]
+  ].filter(x => x[2] > 0);
+
+  const cardHead = (title, section, i, extra) => `
+    <div class="research-card-head">
+      <div class="research-card-title">${escapeHTML(title || '')}</div>
+      ${extra || ''}
+      <button class="icon-btn bookmark-btn ${RESEARCH.bookmarks[section + ':' + i] ? 'active' : ''}" onclick="toggleBookmark(this,'${section}',${i})" title="Đánh dấu">🔖</button>
+    </div>`;
+  const simpleCards = (items, section, nameField) => items.map((it, i) => `
+    <div class="research-card" data-search="${escapeHTML(((it[nameField] || '') + ' ' + (it.bullets || []).join(' ')).toLowerCase())}">
+      ${cardHead(it[nameField], section, i)}
+      <ul class="research-bullets">${(it.bullets || []).map(b => `<li>${escapeHTML(b)}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  screen.innerHTML = `
+    <div class="research-topbar">
+      <div class="research-topbar-left">
+        <button class="btn btn-outline btn-sm" onclick="showScreen('result-screen')">← Kết quả</button>
+        <div class="research-title">🔎 NGHIÊN CỨU BỘ CÂU HỎI</div>
+      </div>
+      <input type="text" id="research-search" class="research-search" placeholder="Tìm kiếm trong bản nghiên cứu..." oninput="filterResearch()">
+    </div>
+    <div class="research-body">
+      <div class="research-sidebar">
+        ${navItems.map(([id, label, count]) => `<a href="#${id}" class="research-nav-link">${label}<span class="research-nav-count">${count}</span></a>`).join('')}
+      </div>
+      <div class="research-main" id="research-main">
+        <div class="research-summary-row">
+          <div class="research-summary-box"><div class="research-summary-num">${STATE.answers.length}</div><div class="research-summary-label">Câu đã phân tích</div></div>
+          <div class="research-summary-box"><div class="research-summary-num">${totalKeywords}</div><div class="research-summary-label">Từ khóa</div></div>
+          <div class="research-summary-box"><div class="research-summary-num">${d.knowledge.length}</div><div class="research-summary-label">Kiến thức quan trọng</div></div>
+        </div>
+        ${d.topics.length ? `<div class="research-topics">📚 Chủ đề chính: ${d.topics.map(t => `<span class="topic-chip">${escapeHTML(t)}</span>`).join('')}</div>` : ''}
+
+        ${d.keywordsBySubject.length ? `
+        <section class="research-section" id="rs-keywords">
+          <div class="research-section-head"><h3>🔑 Từ khóa quan trọng</h3><button class="icon-btn" onclick="copyResearchSection('rs-keywords','Từ khóa')">⧉ Copy</button></div>
+          <div class="subject-chips">${d.keywordsBySubject.map(g => `<span class="subject-chip" data-subject="${escapeHTML(g.subject)}" onclick="filterBySubject(this)">${escapeHTML(g.subject)}</span>`).join('')}</div>
+          ${d.keywordsBySubject.map(g => `
+            <div class="subject-block" data-subject="${escapeHTML(g.subject)}">
+              <div class="subject-block-title">${escapeHTML(g.subject)}</div>
+              <div class="keyword-list">${(g.keywords || []).map(k => `<span class="keyword-chip" data-search="${escapeHTML(String(k).toLowerCase())}" data-keyword="${escapeHTML(k)}" onclick="researchDeepDive(this.dataset.keyword)" title="Bấm để nghiên cứu sâu">${escapeHTML(k)}</span>`).join('')}</div>
+            </div>`).join('')}
+        </section>` : ''}
+
+        ${d.knowledge.length ? `
+        <section class="research-section" id="rs-knowledge">
+          <div class="research-section-head">
+            <h3>🧠 Kiến thức cần nhớ</h3>
+            <div class="imp-filters">
+              <button class="imp-filter-btn active" onclick="filterByImportance('all', this)">Tất cả</button>
+              <button class="imp-filter-btn" onclick="filterByImportance('high', this)">🔥</button>
+              <button class="imp-filter-btn" onclick="filterByImportance('medium', this)">⭐</button>
+              <button class="imp-filter-btn" onclick="filterByImportance('low', this)">•</button>
+            </div>
+            <button class="icon-btn" onclick="copyResearchSection('rs-knowledge','Kiến thức')">⧉ Copy</button>
+          </div>
+          ${sortedKnowledge.map((k, i) => `
+            <div class="research-card ${RESEARCH.learned['knowledge:' + i] ? 'learned' : ''}" data-importance="${k.importance || 'low'}" data-search="${escapeHTML(((k.title || '') + ' ' + (k.bullets || []).join(' ')).toLowerCase())}">
+              ${cardHead(k.title, 'knowledge', i, importanceBadge(k.importance))}
+              <ul class="research-bullets">${(k.bullets || []).map(b => `<li>${escapeHTML(b)}</li>`).join('')}</ul>
+              <label class="learned-toggle"><input type="checkbox" ${RESEARCH.learned['knowledge:' + i] ? 'checked' : ''} onchange="toggleLearned(this,${i})"> Đã học</label>
+            </div>`).join('')}
+        </section>` : ''}
+
+        ${d.timeline.length ? `
+        <section class="research-section" id="rs-timeline">
+          <div class="research-section-head"><h3>⏳ Mốc thời gian</h3><button class="icon-btn" onclick="copyResearchSection('rs-timeline','Mốc thời gian')">⧉ Copy</button></div>
+          <div class="timeline-list">${d.timeline.map(t => `<div class="timeline-item" data-search="${escapeHTML(((t.year || '') + ' ' + (t.event || '')).toLowerCase())}"><span class="timeline-year">${escapeHTML(t.year || '')}</span><span class="timeline-event">${escapeHTML(t.event || '')}</span></div>`).join('')}</div>
+        </section>` : ''}
+
+        ${d.people.length ? `
+        <section class="research-section" id="rs-people">
+          <div class="research-section-head"><h3>👤 Nhân vật</h3><button class="icon-btn" onclick="copyResearchSection('rs-people','Nhân vật')">⧉ Copy</button></div>
+          ${simpleCards(d.people, 'people', 'name')}
+        </section>` : ''}
+
+        ${d.places.length ? `
+        <section class="research-section" id="rs-places">
+          <div class="research-section-head"><h3>🌏 Địa danh</h3><button class="icon-btn" onclick="copyResearchSection('rs-places','Địa danh')">⧉ Copy</button></div>
+          ${simpleCards(d.places, 'places', 'name')}
+        </section>` : ''}
+
+        ${d.literature.length ? `
+        <section class="research-section" id="rs-literature">
+          <div class="research-section-head"><h3>📖 Văn học</h3><button class="icon-btn" onclick="copyResearchSection('rs-literature','Văn học')">⧉ Copy</button></div>
+          ${simpleCards(d.literature, 'literature', 'title')}
+        </section>` : ''}
+
+        ${d.events.length ? `
+        <section class="research-section" id="rs-events">
+          <div class="research-section-head"><h3>⚡ Sự kiện</h3><button class="icon-btn" onclick="copyResearchSection('rs-events','Sự kiện')">⧉ Copy</button></div>
+          ${simpleCards(d.events, 'events', 'name')}
+        </section>` : ''}
+
+        ${d.connections.length ? `
+        <section class="research-section" id="rs-connections">
+          <div class="research-section-head"><h3>🔗 Kiến thức liên kết</h3><button class="icon-btn" onclick="copyResearchSection('rs-connections','Liên kết')">⧉ Copy</button></div>
+          ${d.connections.map(c => `<div class="connection-chain">${(c.chain || []).map(x => escapeHTML(x)).join(' <span class="chain-arrow">→</span> ')}</div>`).join('')}
+        </section>` : ''}
+
+        ${d.potentialQuestions.length ? `
+        <section class="research-section" id="rs-questions">
+          <div class="research-section-head"><h3>🎯 Olympia có thể hỏi gì?</h3><button class="icon-btn" onclick="copyResearchSection('rs-questions','Câu hỏi tiềm năng')">⧉ Copy</button></div>
+          <ol class="potential-q-list">${d.potentialQuestions.map(q => `<li data-search="${escapeHTML(String(q).toLowerCase())}">${escapeHTML(q)}</li>`).join('')}</ol>
+        </section>` : ''}
+
+        <div class="research-footer-note">⚠️ Nội dung do AI tạo ra dựa trên bộ câu hỏi vừa làm — nên đối chiếu lại với nguồn chính thức trước khi ghi nhớ tuyệt đối.</div>
+      </div>
+    </div>`;
+}
+
+function bmSave() { try { localStorage.setItem(RESEARCH.hash + '_bookmarks', JSON.stringify(RESEARCH.bookmarks)); } catch (e) {} }
+function toggleBookmark(btn, section, idx) {
+  const key = section + ':' + idx;
+  if (RESEARCH.bookmarks[key]) delete RESEARCH.bookmarks[key]; else RESEARCH.bookmarks[key] = true;
+  bmSave();
+  btn.classList.toggle('active');
+}
+function toggleLearned(checkbox, idx) {
+  const key = 'knowledge:' + idx;
+  if (checkbox.checked) RESEARCH.learned[key] = true; else delete RESEARCH.learned[key];
+  try { localStorage.setItem(RESEARCH.hash + '_learned', JSON.stringify(RESEARCH.learned)); } catch (e) {}
+  const card = checkbox.closest('.research-card');
+  if (card) card.classList.toggle('learned', checkbox.checked);
+}
+
+function filterResearch() {
+  const q = (document.getElementById('research-search').value || '').trim().toLowerCase();
+  document.querySelectorAll('#research-main [data-search]').forEach(el => {
+    const text = el.getAttribute('data-search') || '';
+    el.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+  });
+}
+function filterByImportance(level, btn) {
+  document.querySelectorAll('.imp-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#rs-knowledge .research-card').forEach(el => {
+    el.style.display = (level === 'all' || el.dataset.importance === level) ? '' : 'none';
+  });
+}
+function filterBySubject(btn) {
+  btn.classList.toggle('active');
+  const activeSubjects = Array.from(document.querySelectorAll('.subject-chip.active')).map(b => b.dataset.subject);
+  document.querySelectorAll('.subject-block').forEach(el => {
+    el.style.display = (activeSubjects.length === 0 || activeSubjects.indexOf(el.dataset.subject) !== -1) ? '' : 'none';
+  });
+}
+
+function copyResearchSection(id, label) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.innerText;
+  const done = () => showToast((label || 'Nội dung') + ' đã được sao chép');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopyText(text, done));
+  } else fallbackCopyText(text, done);
+}
+function fallbackCopyText(text, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+  if (cb) cb();
+}
+
+// -------------------- 🔬 Nghiên cứu sâu một từ khóa --------------------
+function markdownLiteToHtml(text) {
+  const lines = String(text).split('\n');
+  let html = '', inList = false;
+  lines.forEach(line => {
+    const t = line.trim();
+    if (!t) return;
+    if (t.startsWith('### ') || t.startsWith('## ') || t.startsWith('# ')) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<div class="rdm-heading">${escapeHTML(t.replace(/^#{1,3}\s*/, ''))}</div>`;
+    } else if (t.startsWith('- ') || t.startsWith('* ')) {
+      if (!inList) { html += '<ul class="rdm-list">'; inList = true; }
+      html += `<li>${escapeHTML(t.slice(2))}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<div class="rdm-para">${escapeHTML(t)}</div>`;
+    }
+  });
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function researchDeepDive(keyword) {
+  const modal = document.getElementById('research-deep-modal');
+  document.getElementById('rdm-title').textContent = '🔬 ' + keyword;
+  const body = document.getElementById('rdm-body');
+  modal.classList.add('show');
+
+  const cacheKey = RESEARCH.hash + '_deep_' + keyword;
+  let cached = null;
+  try { cached = localStorage.getItem(cacheKey); } catch (e) {}
+  if (cached) { body.innerHTML = cached; return; }
+
+  body.innerHTML = '<div class="spinner" style="margin:20px auto;"></div>';
+  const context = STATE.answers.map(a => (a.question || '') + ' -> ' + (a.correctAnswer || '')).join('; ');
+  const prompt = `Bạn là chuyên gia kiến thức Olympia. Hãy mở rộng kiến thức về từ khóa sau, liên hệ với bối cảnh bộ câu hỏi đã cho.
+Trình bày dạng bullet cô đọng, chia theo các khía cạnh liên quan (vd: Lịch sử, Địa lý, Nhân vật, Thời gian, Bối cảnh...). Mỗi khía cạnh 2-5 bullet.
+KHÔNG bịa thông tin, nếu không chắc chắn thêm "⚠️ Chưa xác minh". Trả lời bằng heading nhỏ "### " cho mỗi khía cạnh và bullet "- " bên dưới, không thêm lời dẫn hay kết luận.
+
+Từ khóa: ${keyword}
+
+Bối cảnh bộ câu hỏi: ${context}`;
+
+  callGemini(prompt, 800, 0.3).then(text => {
+    const html = markdownLiteToHtml(text) || '<div class="rdm-para">Không có thêm dữ liệu.</div>';
+    body.innerHTML = html;
+    try { localStorage.setItem(cacheKey, html); } catch (e) {}
+  }).catch(err => {
+    body.innerHTML = `<div class="rdm-para" style="color:var(--text-muted)">Không thể tải: ${escapeHTML(String(err))}</div>`;
+  });
+}
+function closeDeepModal() { document.getElementById('research-deep-modal').classList.remove('show'); }
 
 updateIntroToggleUI();
