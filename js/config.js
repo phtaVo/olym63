@@ -11,20 +11,18 @@ const CONFIG = {
     ve_dich: 'VeDich'
   },
 
-  // ⚠️ CẢNH BÁO BẢO MẬT:
-  // Vì đây là web tĩnh (GitHub Pages), API key này sẽ lộ ra cho BẤT KỲ AI
-  // xem mã nguồn trang web (view-source). Bất kỳ ai cũng có thể lấy và dùng
-  // key này để gọi Gemini API và tốn tiền/quota của bạn.
-  // => Bắt buộc phải giới hạn (restrict) key này trong Google Cloud Console:
-  //    APIs & Services > Credentials > chọn key > "Application restrictions"
-  //    > "HTTP referrers" > chỉ cho phép domain GitHub Pages của bạn
-  //    (vd: yourusername.github.io/*)
-  GEMINI_API_KEY: 'AIzaSyBD28mlnviNw-r5NTzPilkZx2tqQ3jMO6U',
-
+  // ==================== GEMINI (qua Worker proxy) ====================
+  // API key KHÔNG còn nằm trong file này nữa — key được giấu trong một
+  // Cloudflare Worker đứng giữa trình duyệt và Gemini, nên "View Page
+  // Source" trên trang web sẽ không thấy key ở đâu cả.
+  // => Xem hướng dẫn deploy Worker tại: worker/README.md
+  //
+  // Sau khi deploy Worker xong, dán URL của nó vào GEMINI_PROXY_URL bên dưới.
   GEMINI_MODEL: 'gemini-1.5-flash',
+  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.<tên-bạn>.workers.dev',
 
   get GEMINI_API_URL() {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${this.GEMINI_MODEL}:generateContent?key=${this.GEMINI_API_KEY}`;
+    return `${this.GEMINI_PROXY_URL}?model=${encodeURIComponent(this.GEMINI_MODEL)}`;
   },
 
   // Nhạc nền / hiệu ứng âm thanh (đã để sẵn, có thể thay bằng link của bạn)
