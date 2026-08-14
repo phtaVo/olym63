@@ -593,6 +593,9 @@ body::before {
   padding: 0; overflow: hidden; justify-content: flex-start; align-items: stretch;
   width: 100%; height: 100vh; height: 100dvh;
   background: var(--bg);
+  /* Cô lập vùng này khỏi layout/scroll bên ngoài — chặn mọi khả năng "tràn ra ngoài, đứng hình" */
+  contain: layout size style;
+  isolation: isolate;
 }
 
 /* Trạng thái đang tải */
@@ -648,7 +651,7 @@ body::before {
 .research-quicknav {
   flex-shrink: 0; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap;
   padding: 14px 16px; background: var(--bg2); border-bottom: 1.5px solid var(--border);
-  -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch; touch-action: pan-x; scroll-snap-type: x proximity;
 }
 .research-quicknav::-webkit-scrollbar { display: none; }
 .research-nav-pill {
@@ -661,15 +664,17 @@ body::before {
 }
 .research-nav-pill:hover, .research-nav-pill:active { border-color: var(--gold); color: var(--gold-dark); background: rgba(200,150,12,0.08); }
 
-/* ---- Vùng nội dung cuộn được (đây là vùng cuộn chính) ---- */
+/* ---- Vùng nội dung cuộn được (đây là vùng cuộn chính, DUY NHẤT) ---- */
 .research-main {
-  flex: 1 1 auto; min-height: 0;
-  overflow-y: auto; overflow-x: hidden;
+  flex: 1 1 auto; min-height: 0; min-width: 0;
+  overflow-y: scroll; overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
   padding: 28px 20px calc(64px + env(safe-area-inset-bottom, 0px));
   max-width: 740px; margin: 0 auto; width: 100%; box-sizing: border-box;
+  -webkit-user-select: text; user-select: text;
 }
 .research-main::-webkit-scrollbar { width: 8px; }
 .research-main::-webkit-scrollbar-thumb { background: rgba(10,46,107,0.18); border-radius: 4px; }
