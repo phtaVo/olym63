@@ -260,25 +260,42 @@ function simpleCompare(u, c) {
   return words.length > 0 && words.filter(w => nu.includes(w)).length / words.length >= 0.7;
 }
 
-async function callGemini(prompt, maxTokens, temperature) {
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+async function callGemini(prompt, maxTokens, temperature, model) {
+  const url = CONFIG.buildGeminiUrl(model);
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature: temperature ?? 0, maxOutputTokens: maxTokens ?? 150 }
   };
-  const response = await fetch(CONFIG.GEMINI_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json();
-  if (data.error) throw new Error(data.error.message || 'Gemini error');
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const maxRetries = 3;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (data.error) {
+      const msg = data.error.message || 'Gemini error';
+      const isQuota = response.status === 429 || /quota|rate.?limit/i.test(msg);
+      if (isQuota && attempt < maxRetries) {
+        // Google thường trả kèm gợi ý "Please retry in X.Xs" -> đọc đúng số giây đó
+        const waitMatch = msg.match(/retry in ([\d.]+)\s*s/i);
+        const waitSec = waitMatch ? parseFloat(waitMatch[1]) : (attempt + 1) * 4;
+        await sleep(Math.min(waitSec, 20) * 1000 + 500);
+        continue;
+      }
+      throw new Error(msg);
+    }
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
 }
 
 async function checkWithGeminiAdvanced(questionText, userAnswer, correctAnswer) {
   try {
     const prompt = 'Bạn là giám khảo Olympia. Chấm câu trả lời theo 3 mức: "Đúng", "Chưa hoàn toàn chính xác", "Sai".\n\nCHỈ TRẢ VỀ ĐÚNG ĐỊNH DẠNG SAU:\n\nKết luận: [Đúng/Chưa hoàn toàn chính xác/Sai]\nGiải thích: [một câu ngắn gọn]\n\nCâu hỏi: ' + questionText + '\nĐáp án đúng: ' + correctAnswer + '\nCâu trả lời của thí sinh: ' + userAnswer;
-    const text = await callGemini(prompt, 150, 0);
+    const text = await callGemini(prompt, 150, 0, CONFIG.GEMINI_GRADING_MODEL);
     let verdict = 'Sai', explanation = 'Không xác định';
     const vm = text.match(/Kết luận:\s*(Đúng|Chưa hoàn toàn chính xác|Sai)/);
     if (vm) verdict = vm[1];
@@ -314,6 +331,9 @@ async function regradeAnswers(answers, questions) {
     if (!a.userAnswer || a.userAnswer.trim() === '') { out.push(Object.assign({}, a, { verdict: 'Sai', explanation: 'Không có câu trả lời', correct: false })); continue; }
     if (exactMatch(a.userAnswer, a.correctAnswer)) { out.push(Object.assign({}, a, { verdict: 'Đúng', explanation: 'Câu trả lời chính xác tuyệt đối.', correct: true })); continue; }
     if (simpleCompare(a.userAnswer, a.correctAnswer)) { out.push(Object.assign({}, a, { verdict: 'Đúng', explanation: 'Câu trả lời đúng về mặt nội dung.', correct: true })); continue; }
+    // Chỉ những câu chưa khớp cục bộ mới thực sự gọi Gemini -> giãn cách nhẹ
+    // giữa các lần gọi để tránh dồn dập nhiều request trong cùng 1 giây.
+    if (out.length > 0) await sleep(350);
     try {
       const r = await checkWithGeminiAdvanced(questions[i].question, a.userAnswer, a.correctAnswer);
       out.push(Object.assign({}, a, { verdict: r.verdict, explanation: r.explanation, correct: r.correct }));
@@ -342,7 +362,7 @@ CHỈ TRẢ VỀ JSON thuần, không markdown, không giải thích thêm:
   "verdict": "Đúng / Sai / Chưa hoàn toàn chính xác",
   "explanation": "lý do ngắn gọn, tối đa 2 câu"
 }`;
-    let text = await callGemini(prompt, 200, 0);
+    let text = await callGemini(prompt, 200, 0, CONFIG.GEMINI_GRADING_MODEL);
     text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     let result;
     try { result = JSON.parse(text); }
