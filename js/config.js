@@ -27,7 +27,7 @@ const CONFIG = {
   //   và tính riêng, không cộng dồn vào hạn mức của model "xịn".
   GEMINI_MODEL: 'gemini-3.6-flash',
   GEMINI_GRADING_MODEL: 'gemini-3.5-flash-lite',
-  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.<tên-bạn>.workers.dev',
+  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.voducphat-learncode-tk01.workers.dev/',
 
   buildGeminiUrl(model) {
     return `${this.GEMINI_PROXY_URL}?model=${encodeURIComponent(model || this.GEMINI_MODEL)}`;
