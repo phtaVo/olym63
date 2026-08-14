@@ -283,7 +283,7 @@ async function callGemini(prompt, maxTokens, temperature, model) {
         // Google thường trả kèm gợi ý "Please retry in X.Xs" -> đọc đúng số giây đó
         const waitMatch = msg.match(/retry in ([\d.]+)\s*s/i);
         const waitSec = waitMatch ? parseFloat(waitMatch[1]) : (attempt + 1) * 4;
-        await sleep(Math.min(waitSec, 20) * 1000 + 500);
+        await sleep(Math.min(waitSec, 25) * 1000 + 1500);
         continue;
       }
       throw new Error(msg);
