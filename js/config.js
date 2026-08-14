@@ -19,13 +19,13 @@ const CONFIG = {
   //
   // Sau khi deploy Worker xong, dán URL của nó vào GEMINI_PROXY_URL bên dưới.
   //
-  // Dùng 2 model khác nhau để tránh dồn hết request vào chung 1 hạn mức:
-  // - GEMINI_MODEL: model "xịn" hơn, dùng cho tính năng Nghiên cứu (ít gọi,
-  //   cần chất lượng cao).
-  // - GEMINI_GRADING_MODEL: model nhẹ hơn, dùng để chấm điểm (gọi nhiều lần
-  //   hơn trong lúc chơi) — model nhẹ thường có hạn mức miễn phí rộng hơn
-  //   và tính riêng, không cộng dồn vào hạn mức của model "xịn".
-  GEMINI_MODEL: 'gemini-3.6-flash',
+  // Dùng 2 model khác nhau để tránh dồn hết request vào chung 1 hạn mức.
+  // Lưu ý: model "xịn" đời mới (vd gemini-3.6-flash) thường có hạn mức MIỄN
+  // PHÍ rất thấp vì còn là bản preview. Mình dùng flash-lite cho cả 2 việc
+  // để có hạn mức rộng rãi và ổn định hơn — nếu muốn chất lượng "Nghiên cứu"
+  // cao hơn và chấp nhận dễ bị giới hạn hơn, có thể đổi GEMINI_MODEL sang
+  // 'gemini-3.6-flash' hoặc model mới hơn khi cần.
+  GEMINI_MODEL: 'gemini-3.5-flash-lite',
   GEMINI_GRADING_MODEL: 'gemini-3.5-flash-lite',
   GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.voducphat-learncode-tk01.workers.dev/',
 
