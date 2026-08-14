@@ -1217,6 +1217,7 @@ function renderResearch() {
   const screen = document.getElementById('research-screen');
   screen.innerHTML = `
     <div class="research-topbar">
+      ${navItems.length ? `<button class="icon-btn research-nav-toggle" onclick="toggleResearchNav()" title="Danh mục">☰</button>` : ''}
       <button class="btn btn-outline btn-sm" onclick="showScreen('result-screen')">← Kết quả</button>
       <div class="research-title">🔎 Nghiên cứu</div>
       <button class="icon-btn research-search-toggle" onclick="toggleResearchSearch()" title="Tìm kiếm">🔍</button>
@@ -1224,11 +1225,32 @@ function renderResearch() {
     <div class="research-search-bar hidden" id="research-search-bar">
       <input type="text" id="research-search" class="research-search" placeholder="Tìm từ khóa, nhân vật, mốc thời gian..." oninput="filterResearch()">
     </div>
-    ${navItems.length ? `<div class="research-quicknav">${navItems.map(n => `<a href="#${n.id}" class="research-nav-pill">${escapeHTML(n.label)}</a>`).join('')}</div>` : ''}
-    <div class="research-main" id="research-main">
-      ${html || '<p class="rs-para">Không có dữ liệu để hiển thị.</p>'}
-      <div class="research-footer-note">⚠️ Nội dung do AI tạo ra dựa trên bộ câu hỏi vừa làm — nên đối chiếu lại với nguồn chính thức trước khi ghi nhớ tuyệt đối.</div>
+    <div class="research-body">
+      ${navItems.length ? `
+      <div class="research-sidebar-backdrop" id="research-sidebar-backdrop" onclick="toggleResearchNav(false)"></div>
+      <aside class="research-sidebar" id="research-sidebar">
+        <nav class="research-sidebar-nav">
+          ${navItems.map(n => `<a href="#${n.id}" class="research-nav-pill" onclick="onResearchNavClick()">${escapeHTML(n.label)}</a>`).join('')}
+        </nav>
+      </aside>` : ''}
+      <div class="research-main" id="research-main">
+        ${html || '<p class="rs-para">Không có dữ liệu để hiển thị.</p>'}
+        <div class="research-footer-note">⚠️ Nội dung do AI tạo ra dựa trên bộ câu hỏi vừa làm — nên đối chiếu lại với nguồn chính thức trước khi ghi nhớ tuyệt đối.</div>
+      </div>
     </div>`;
+  // Trên điện thoại, mặc định ẩn sidebar để nhường chỗ đọc nội dung; trên máy tính mặc định hiện.
+  screen.classList.toggle('research-sidebar-hidden', navItems.length > 0 && window.innerWidth <= 780);
+}
+
+function toggleResearchNav(force) {
+  const screen = document.getElementById('research-screen');
+  if (typeof force === 'boolean') screen.classList.toggle('research-sidebar-hidden', !force);
+  else screen.classList.toggle('research-sidebar-hidden');
+}
+
+function onResearchNavClick() {
+  // Trên điện thoại, tự đóng sidebar sau khi chọn mục để xem ngay nội dung
+  if (window.innerWidth <= 780) toggleResearchNav(false);
 }
 
 function toggleResearchSearch() {
@@ -1244,6 +1266,7 @@ function filterResearch() {
     el.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
   });
 }
+
 
 function copyResearchSection(id, label) {
   const el = document.getElementById(id);
