@@ -18,11 +18,19 @@ const CONFIG = {
   // => Xem hướng dẫn deploy Worker tại: worker/README.md
   //
   // Sau khi deploy Worker xong, dán URL của nó vào GEMINI_PROXY_URL bên dưới.
+  //
+  // Dùng 2 model khác nhau để tránh dồn hết request vào chung 1 hạn mức:
+  // - GEMINI_MODEL: model "xịn" hơn, dùng cho tính năng Nghiên cứu (ít gọi,
+  //   cần chất lượng cao).
+  // - GEMINI_GRADING_MODEL: model nhẹ hơn, dùng để chấm điểm (gọi nhiều lần
+  //   hơn trong lúc chơi) — model nhẹ thường có hạn mức miễn phí rộng hơn
+  //   và tính riêng, không cộng dồn vào hạn mức của model "xịn".
   GEMINI_MODEL: 'gemini-3.6-flash',
-  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.voducphat-learncode-tk01.workers.dev',
+  GEMINI_GRADING_MODEL: 'gemini-3.5-flash-lite',
+  GEMINI_PROXY_URL: 'https://olympia-gemini-proxy.<tên-bạn>.workers.dev',
 
-  get GEMINI_API_URL() {
-    return `${this.GEMINI_PROXY_URL}?model=${encodeURIComponent(this.GEMINI_MODEL)}`;
+  buildGeminiUrl(model) {
+    return `${this.GEMINI_PROXY_URL}?model=${encodeURIComponent(model || this.GEMINI_MODEL)}`;
   },
 
   // Nhạc nền / hiệu ứng âm thanh (đã để sẵn, có thể thay bằng link của bạn)
