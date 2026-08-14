@@ -647,22 +647,44 @@ body::before {
   box-shadow: 0 0 0 4px rgba(200,150,12,0.15);
 }
 
-/* ---- Thanh điều hướng nhanh (cố định, không cuộn) ---- */
-.research-quicknav {
-  flex-shrink: 0; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap;
-  padding: 14px 16px; background: var(--bg2); border-bottom: 1.5px solid var(--border);
-  -webkit-overflow-scrolling: touch; touch-action: pan-x; scroll-snap-type: x proximity;
+/* ---- Nút hamburger (ẩn/hiện sidebar mục lục) ---- */
+.research-nav-toggle { font-size: 20px; }
+
+/* ---- Khung thân: sidebar (trái) + vùng nội dung (phải) ---- */
+.research-body {
+  flex: 1 1 auto; min-height: 0; min-width: 0;
+  display: flex; align-items: stretch;
+  position: relative; overflow: hidden;
 }
-.research-quicknav::-webkit-scrollbar { display: none; }
+
+/* ---- Sidebar mục lục bên trái ---- */
+.research-sidebar {
+  flex: 0 0 260px; width: 260px; box-sizing: border-box;
+  background: var(--bg2); border-right: 1.5px solid var(--border);
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 18px 14px; z-index: 26;
+  transition: width 0.22s ease, padding 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+}
+.research-sidebar-nav { display: flex; flex-direction: column; gap: 6px; }
 .research-nav-pill {
-  flex: none; scroll-snap-align: start;
-  display: inline-flex; align-items: center;
-  padding: 10px 18px; min-height: 40px; border-radius: 22px;
-  background: white; border: 1.5px solid var(--border);
-  color: var(--text); text-decoration: none; font-size: 15px; font-weight: 700;
+  display: flex; align-items: center;
+  padding: 13px 14px; border-radius: 12px;
+  background: transparent; border: 1.5px solid transparent;
+  color: var(--text); text-decoration: none; font-size: 15.5px; font-weight: 700;
+  line-height: 1.35; white-space: normal;
   transition: all 0.15s ease;
 }
-.research-nav-pill:hover, .research-nav-pill:active { border-color: var(--gold); color: var(--gold-dark); background: rgba(200,150,12,0.08); }
+.research-nav-pill:hover, .research-nav-pill:active {
+  background: var(--bg3); border-color: var(--border); color: var(--accent);
+}
+
+/* Trạng thái ẩn sidebar trên MÁY TÍNH: thu hẹp về 0, không chiếm chỗ */
+#research-screen.research-sidebar-hidden .research-sidebar {
+  width: 0; padding-left: 0; padding-right: 0; border-right-color: transparent; overflow: hidden;
+}
+
+/* Lớp phủ mờ phía sau sidebar (chỉ dùng trên điện thoại) */
+.research-sidebar-backdrop { display: none; }
 
 /* ---- Vùng nội dung cuộn được (đây là vùng cuộn chính, DUY NHẤT) ---- */
 .research-main {
@@ -672,12 +694,13 @@ body::before {
   touch-action: pan-y;
   overscroll-behavior-y: contain;
   scroll-behavior: smooth;
-  padding: 28px 20px calc(64px + env(safe-area-inset-bottom, 0px));
-  max-width: 740px; margin: 0 auto; width: 100%; box-sizing: border-box;
+  padding: 28px 24px calc(64px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
   -webkit-user-select: text; user-select: text;
 }
 .research-main::-webkit-scrollbar { width: 8px; }
 .research-main::-webkit-scrollbar-thumb { background: rgba(10,46,107,0.18); border-radius: 4px; }
+.research-main > * { max-width: 740px; margin-left: auto; margin-right: auto; }
 
 .research-section { margin-bottom: 36px; scroll-margin-top: calc(var(--rs-topbar-h) + 60px); }
 .research-section:last-child { margin-bottom: 0; }
@@ -763,6 +786,25 @@ body::before {
   .logo-sub::before { display: none; }
   .home-right { align-items: stretch; }
   .intro-toggle-row { margin-left: auto; margin-right: auto; }
+
+  /* Sidebar mục lục trở thành khay trượt (drawer) đè lên nội dung, có lớp phủ mờ phía sau */
+  .research-sidebar {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    width: 82vw; max-width: 320px;
+    box-shadow: 6px 0 28px rgba(0,0,0,0.22);
+    transform: translateX(0);
+  }
+  #research-screen.research-sidebar-hidden .research-sidebar {
+    width: 82vw; max-width: 320px; padding: 18px 14px; border-right-color: var(--border);
+    transform: translateX(-100%);
+  }
+  .research-sidebar-backdrop {
+    display: block; position: absolute; inset: 0; background: rgba(10,14,26,0.5);
+    z-index: 25; opacity: 1; transition: opacity 0.2s ease;
+  }
+  #research-screen.research-sidebar-hidden .research-sidebar-backdrop {
+    opacity: 0; pointer-events: none;
+  }
 }
 @media (max-width: 600px) {
   .sections-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -780,11 +822,11 @@ body::before {
   .intro-title { font-size: clamp(48px, 14vw, 80px); }
   .intro-wreath-svg { width: 70px; height: 70px; }
   #research-screen { --rs-topbar-h: 56px; }
-  .research-topbar { padding: 0 12px; }
-  .research-title { font-size: 17px; }
+  .research-topbar { padding: 0 10px; gap: 8px; }
+  .research-title { font-size: 16.5px; }
   .research-search-bar { padding: 10px 14px; }
-  .research-quicknav { padding: 12px 14px; gap: 8px; }
-  .research-nav-pill { padding: 9px 15px; font-size: 14px; }
+  .research-sidebar { padding: 16px 12px; }
+  .research-nav-pill { padding: 12px 13px; font-size: 15px; }
   .research-main { padding: 20px 16px calc(56px + env(safe-area-inset-bottom, 0px)); }
   .research-section { margin-bottom: 28px; }
   .research-section-head h2 { font-size: 21px; }
