@@ -9,60 +9,49 @@
 <link rel="icon" href="assets/favicon.png" type="image/png">
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body data-theme="navy">
 
 <button id="theme-btn" onclick="cycleTheme()" title="Đổi màu chủ đề">🎨</button>
 
-<!-- ==================== HOME ==================== -->
-<div id="home-screen" class="screen">
-  <div class="home-content">
-  <div class="logo-area">
-    <!-- Thay ảnh logo của bạn vào assets/logo.png (128x128, hình tròn đẹp nhất) -->
-    <img class="logo-emblem" src="assets/logo.png" alt="Olympia" onerror="this.style.display='none'">
-    <div class="logo-badge">Sân chơi tri thức</div>
-    <div class="logo-title">Đường Lên<br><span>Đỉnh Olympia</span></div>
-    <div class="logo-sub">Chọn phần thi để bắt đầu</div>
-  </div>
-  <div class="home-right">
-  <div class="sections-grid">
-    <div class="section-card" onclick="startGame('khoi_dong')">
-      <div class="section-badge live">Đang mở</div>
-      <div class="section-icon">🚀</div>
-      <div class="section-num">Phần 01</div>
-      <div class="section-name">Khởi<br>Động</div>
-      <div class="section-desc">70 giây · 12 câu · +10đ/câu</div>
-    </div>
-    <div class="section-card" onclick="startGame('ve_dich')">
-      <div class="section-badge live">Đang mở</div>
-      <div class="section-icon">🏆</div>
-      <div class="section-num">Phần 04</div>
-      <div class="section-name">Về<br>Đích</div>
-      <div class="section-desc">6 câu · 10/20/30đ · Ngôi sao HV</div>
-    </div>
-    <div class="section-card locked" onclick="showComingSoon('Vượt Chướng Ngại Vật')">
-      <div class="section-badge">Sắp ra mắt</div>
-      <div class="section-icon">🧩</div>
-      <div class="section-num">Phần 02</div>
-      <div class="section-name">Vượt<br>Chướng Ngại Vật</div>
-      <div class="section-desc">60 giây · 1 từ hàng rào</div>
-    </div>
-    <div class="section-card locked" onclick="showComingSoon('Tăng Tốc')">
-      <div class="section-badge">Sắp ra mắt</div>
-      <div class="section-icon">⚡</div>
-      <div class="section-num">Phần 03</div>
-      <div class="section-name">Tăng<br>Tốc</div>
-      <div class="section-desc">Nhanh tay · Nhanh mắt</div>
-    </div>
-  </div>
-  <div class="intro-toggle-row">
-    <span class="intro-toggle-label">🎬 Hiệu ứng giới thiệu</span>
-    <button class="intro-toggle-switch on" id="intro-toggle-switch" onclick="toggleIntroSetting()" title="Bật/tắt màn giới thiệu trước khi vào phần thi"></button>
-  </div>
-  </div>
+<!-- ==================== LOGIN ==================== -->
+<div id="login-screen" class="screen hidden">
+  <div class="login-card">
+    <img class="login-logo" src="assets/logo.png" alt="Olympia" onerror="this.style.display='none'">
+    <div class="login-title">Đường Lên<br>Đỉnh Olympia</div>
+    <div class="login-sub">Đăng nhập để bắt đầu luyện tập</div>
+
+    <label class="login-label" for="login-username">Tên đăng nhập</label>
+    <input type="text" id="login-username" class="login-input" placeholder="Tên đăng nhập" autocomplete="username" onkeydown="AUTH.loginKeydown(event)">
+
+    <label class="login-label" for="login-password">Mật khẩu</label>
+    <input type="password" id="login-password" class="login-input" placeholder="Mật khẩu" autocomplete="current-password" onkeydown="AUTH.loginKeydown(event)">
+
+    <div class="login-error hidden" id="login-error"></div>
+    <button class="btn btn-primary login-submit" id="login-submit-btn" onclick="AUTH.login()">Đăng nhập</button>
+    <div class="login-hint">Chưa có tài khoản? Liên hệ quản trị viên (giáo viên) để được cấp.</div>
   </div>
 </div>
+
+<!-- ==================== TAB BAR (Trang chủ / Xếp hạng / Hồ sơ / Quản trị) ==================== -->
+<nav id="main-tabbar" class="hidden">
+  <button class="tabbar-btn" data-screen="home-screen" onclick="AUTH.gotoHome()">
+    <span class="tabbar-icon">🏠</span><span class="tabbar-label">Trang chủ</span>
+  </button>
+  <button class="tabbar-btn" data-screen="leaderboard-screen" onclick="AUTH.openLeaderboard()">
+    <span class="tabbar-icon">🏆</span><span class="tabbar-label">Xếp hạng</span>
+  </button>
+  <button class="tabbar-btn" data-screen="profile-screen" onclick="AUTH.openProfile()">
+    <span class="tabbar-icon">👤</span><span class="tabbar-label">Hồ sơ</span>
+  </button>
+  <button class="tabbar-btn hidden" id="tab-admin-btn" data-screen="admin-screen" onclick="AUTH.openAdmin()">
+    <span class="tabbar-icon">⚙️</span><span class="tabbar-label">Quản trị</span>
+  </button>
+</nav>
+
+<!-- ==================== HOME ==================== -->
+<div id="home-screen" class="screen hidden"></div>
 
 <!-- ==================== INTRO ==================== -->
 <div id="intro-screen" class="screen hidden">
@@ -165,6 +154,15 @@
 <!-- ==================== RESEARCH SCREEN (🔎 Nghiên cứu) ==================== -->
 <div id="research-screen" class="screen hidden"></div>
 
+<!-- ==================== BẢNG XẾP HẠNG ==================== -->
+<div id="leaderboard-screen" class="screen hidden"></div>
+
+<!-- ==================== HỒ SƠ ==================== -->
+<div id="profile-screen" class="screen hidden"></div>
+
+<!-- ==================== QUẢN TRỊ (chỉ admin) ==================== -->
+<div id="admin-screen" class="screen hidden"></div>
+
 <!-- ==================== LOADING ==================== -->
 <div id="loading-overlay" class="screen hidden">
   <div class="loading-screen">
@@ -203,6 +201,19 @@
   </div>
 </div>
 
+<!-- Modal Admin: tạo / sửa tài khoản -->
+<div class="modal-overlay" id="admin-user-modal" onclick="AUTH.closeUserModal(event)">
+  <div class="modal-box modal-box-wide admin-form-box" onclick="event.stopPropagation()">
+    <div class="modal-title" id="admin-modal-title">➕ Thêm tài khoản</div>
+    <div class="admin-form" id="admin-form"></div>
+    <div class="admin-form-error hidden" id="admin-form-error"></div>
+    <div class="admin-form-actions">
+      <button class="btn btn-outline" onclick="AUTH.closeUserModal()">Huỷ</button>
+      <button class="btn btn-primary" id="admin-form-submit" onclick="AUTH.submitUserForm()">Lưu</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ==================== AUDIO ==================== -->
@@ -219,8 +230,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <!-- Cấu hình: API key, Spreadsheet ID, audio -->
-<script src="js/config.js"></script>
+<script src="js/config.js?v=8"></script>
+<!-- Tài khoản / đăng nhập / bảng xếp hạng / quản trị -->
+<script src="js/auth.js?v=1"></script>
 <!-- Toàn bộ logic game -->
-<script src="js/app.js"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>
