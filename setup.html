@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khởi tạo tài khoản Admin — Olympia</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #0A2E6B; --accent-dark: #071F49; --bg: #F4F5F8; --bg2: #FFFFFF;
+    --border: rgba(10,46,107,0.12); --text: #10182B; --text-muted: rgba(16,24,43,0.5);
+    --gold: #C8960C; --gold-dark: #97700A; --red: #C0392B;
+    --font-display: 'Barlow Condensed', sans-serif; --font-body: 'Barlow', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); font-family: var(--font-body); color: var(--text); padding: 24px;
+  }
+  .card {
+    width: 100%; max-width: 440px; background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 32px 28px; box-shadow: 0 12px 40px rgba(10,46,107,0.12);
+  }
+  h1 {
+    font-family: var(--font-display); font-size: 26px; font-weight: 900; color: var(--accent);
+    margin: 0 0 6px; text-align: center;
+  }
+  .sub { text-align: center; color: var(--text-muted); font-size: 14.5px; margin: 0 0 26px; line-height: 1.6; }
+  label { display: block; font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text); }
+  input {
+    width: 100%; padding: 13px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+    font-family: var(--font-body); font-size: 16px; background: var(--bg); color: var(--text);
+  }
+  input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 4px rgba(200,150,12,0.15); }
+  button {
+    width: 100%; margin-top: 24px; padding: 15px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: white;
+    font-family: var(--font-body); font-size: 16px; font-weight: 800; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(10,46,107,0.25); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+  .msg { margin-top: 18px; padding: 12px 14px; border-radius: 12px; font-size: 14.5px; font-weight: 600; line-height: 1.6; display: none; }
+  .msg.show { display: block; }
+  .msg.ok { background: rgba(26,122,46,0.1); color: #1A7A2E; }
+  .msg.err { background: rgba(192,57,43,0.1); color: var(--red); }
+  .api-row { margin-top: 22px; padding-top: 18px; border-top: 1px dashed var(--border); }
+  .api-row label { margin-top: 0; font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
+  .api-row input { font-size: 13px; padding: 9px 12px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>🔑 Khởi tạo Admin</h1>
+    <p class="sub">Chỉ dùng <b>một lần duy nhất</b> lúc mới deploy — tạo tài khoản quản trị đầu tiên cho hệ thống Olympia Web.</p>
+
+    <label>Họ và tên</label>
+    <input type="text" id="full_name" placeholder="Nguyễn Văn A" autocomplete="off">
+
+    <label>Tên đăng nhập admin</label>
+    <input type="text" id="username" placeholder="admin" autocomplete="off">
+
+    <label>Mật khẩu</label>
+    <input type="password" id="password" placeholder="Tối thiểu 4 ký tự" autocomplete="new-password">
+
+    <button id="submit-btn" onclick="doSetup()">Tạo tài khoản admin</button>
+    <div class="msg" id="msg"></div>
+
+    <div class="api-row">
+      <label>URL Worker (ACCOUNTS_API_URL) — tự lấy từ js/config.js, có thể sửa nếu cần</label>
+      <input type="text" id="api_url" placeholder="https://olympia-accounts-api.ten-ban.workers.dev">
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script>
+    document.getElementById('api_url').value = (window.CONFIG && CONFIG.ACCOUNTS_API_URL) || '';
+
+    async function doSetup() {
+      const full_name = document.getElementById('full_name').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const apiUrl = document.getElementById('api_url').value.trim().replace(/\/+$/, '');
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('submit-btn');
+
+      msg.className = 'msg'; msg.textContent = '';
+
+      if (!apiUrl) { showMsg('err', 'Chưa có URL Worker. Điền vào ô "URL Worker" bên dưới.'); return; }
+      if (!full_name || !username || !password) { showMsg('err', 'Vui lòng điền đủ 3 trường.'); return; }
+      if (password.length < 4) { showMsg('err', 'Mật khẩu cần tối thiểu 4 ký tự.'); return; }
+
+      btn.disabled = true; btn.textContent = 'Đang tạo...';
+      try {
+        const res = await fetch(apiUrl + '/setup', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ full_name, username, password })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { showMsg('err', data.error || 'Có lỗi xảy ra, thử lại sau.'); }
+        else { showMsg('ok', '✅ ' + (data.message || 'Đã tạo admin thành công!') + ' Giờ bạn có thể quay lại trang chủ và đăng nhập.'); }
+      } catch (e) {
+        showMsg('err', 'Không kết nối được tới Worker. Kiểm tra lại URL và mạng.');
+      }
+      btn.disabled = false; btn.textContent = 'Tạo tài khoản admin';
+    }
+
+    function showMsg(type, text) {
+      const msg = document.getElementById('msg');
+      msg.className = 'msg show ' + type;
+      msg.textContent = text;
+    }
+  </script>
+</body>
+</html>
