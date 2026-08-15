@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png" type="image/png">
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=11">
+<link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body data-theme="navy">
 
@@ -157,14 +157,20 @@
 <!-- ==================== RESEARCH SCREEN (🔎 Nghiên cứu) ==================== -->
 <div id="research-screen" class="screen hidden"></div>
 
-<!-- ==================== BẢNG XẾP HẠNG ==================== -->
-<div id="leaderboard-screen" class="screen hidden"></div>
+<!-- ==================== BẢNG XẾP HẠNG (cửa sổ nổi) ==================== -->
+<div class="modal-overlay island-modal-overlay" id="leaderboard-modal-overlay" onclick="AUTH.closeIslandModal(event)">
+  <div class="island-modal-box" id="leaderboard-screen" onclick="event.stopPropagation()"></div>
+</div>
 
-<!-- ==================== HỒ SƠ ==================== -->
-<div id="profile-screen" class="screen hidden"></div>
+<!-- ==================== HỒ SƠ (cửa sổ nổi) ==================== -->
+<div class="modal-overlay island-modal-overlay" id="profile-modal-overlay" onclick="AUTH.closeIslandModal(event)">
+  <div class="island-modal-box" id="profile-screen" onclick="event.stopPropagation()"></div>
+</div>
 
-<!-- ==================== QUẢN TRỊ (chỉ admin) ==================== -->
-<div id="admin-screen" class="screen hidden"></div>
+<!-- ==================== QUẢN TRỊ (cửa sổ nổi, chỉ admin) ==================== -->
+<div class="modal-overlay island-modal-overlay" id="admin-modal-overlay" onclick="AUTH.closeIslandModal(event)">
+  <div class="island-modal-box island-modal-box-wide" id="admin-screen" onclick="event.stopPropagation()"></div>
+</div>
 
 <!-- ==================== LOADING ==================== -->
 <div id="loading-overlay" class="screen hidden">
@@ -235,8 +241,8 @@
 <!-- Cấu hình: API key, Spreadsheet ID, audio -->
 <script src="js/config.js?v=10"></script>
 <!-- Tài khoản / đăng nhập / bảng xếp hạng / quản trị -->
-<script src="js/auth.js?v=3"></script>
+<script src="js/auth.js?v=4"></script>
 <!-- Toàn bộ logic game -->
-<script src="js/app.js?v=10"></script>
+<script src="js/app.js?v=11"></script>
 </body>
 </html>
