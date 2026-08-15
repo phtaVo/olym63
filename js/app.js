@@ -106,9 +106,15 @@ const STATE = {
 // ============================================================
 // SCREENS
 // ============================================================
+const TABBAR_SCREENS = ['home-screen', 'leaderboard-screen', 'profile-screen', 'admin-screen'];
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
+  const tabbar = document.getElementById('main-tabbar');
+  if (tabbar) {
+    tabbar.classList.toggle('hidden', !TABBAR_SCREENS.includes(id));
+    tabbar.querySelectorAll('.tabbar-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+  }
 }
 function goHome() {
   clearAllTimers(); AUDIO.stopAll();
@@ -816,6 +822,7 @@ function showResults() {
       }
     }
     STATE.score = newScore;
+    if (window.AUTH && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
   }).catch(() => displayResults());
 }
@@ -1317,3 +1324,8 @@ Bối cảnh bộ câu hỏi: ${context}`;
 function closeDeepModal() { document.getElementById('research-deep-modal').classList.remove('show'); }
 
 updateIntroToggleUI();
+
+// ============================================================
+// KHỞI ĐỘNG: kiểm tra đăng nhập rồi mới vào trang chủ
+// ============================================================
+AUTH.boot();
