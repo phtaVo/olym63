@@ -9,7 +9,7 @@
 <link rel="icon" href="assets/favicon.png" type="image/png">
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body data-theme="navy">
 
@@ -34,20 +34,23 @@
   </div>
 </div>
 
-<!-- ==================== TAB BAR (Trang chủ / Xếp hạng / Hồ sơ / Quản trị) ==================== -->
+<!-- ==================== SIDEBAR NỔI (Trang chủ / Xếp hạng / Quản trị / Hồ sơ) ==================== -->
 <nav id="main-tabbar" class="hidden">
-  <button class="tabbar-btn" data-screen="home-screen" onclick="AUTH.gotoHome()">
-    <span class="tabbar-icon">🏠</span><span class="tabbar-label">Trang chủ</span>
+  <button class="sidenav-avatar-btn" id="sidenav-avatar-btn" data-screen="profile-screen" onclick="AUTH.openProfile()" title="Hồ sơ của tôi">
+    <span id="sidenav-avatar-slot"></span>
   </button>
-  <button class="tabbar-btn" data-screen="leaderboard-screen" onclick="AUTH.openLeaderboard()">
-    <span class="tabbar-icon">🏆</span><span class="tabbar-label">Xếp hạng</span>
+  <div class="sidenav-divider"></div>
+  <button class="tabbar-btn" data-screen="home-screen" onclick="AUTH.gotoHome()" title="Trang chủ">
+    <span class="tabbar-icon">🏠</span>
   </button>
-  <button class="tabbar-btn" data-screen="profile-screen" onclick="AUTH.openProfile()">
-    <span class="tabbar-icon">👤</span><span class="tabbar-label">Hồ sơ</span>
+  <button class="tabbar-btn" data-screen="leaderboard-screen" onclick="AUTH.openLeaderboard()" title="Bảng xếp hạng">
+    <span class="tabbar-icon">🏆</span>
   </button>
-  <button class="tabbar-btn hidden" id="tab-admin-btn" data-screen="admin-screen" onclick="AUTH.openAdmin()">
-    <span class="tabbar-icon">⚙️</span><span class="tabbar-label">Quản trị</span>
+  <button class="tabbar-btn hidden" id="tab-admin-btn" data-screen="admin-screen" onclick="AUTH.openAdmin()" title="Quản trị">
+    <span class="tabbar-icon">⚙️</span>
   </button>
+  <div class="sidenav-spacer"></div>
+  <button class="sidenav-logout" onclick="AUTH.confirmLogout()" title="Đăng xuất">⎋</button>
 </nav>
 
 <!-- ==================== HOME ==================== -->
@@ -230,10 +233,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <!-- Cấu hình: API key, Spreadsheet ID, audio -->
-<script src="js/config.js?v=8"></script>
+<script src="js/config.js?v=9"></script>
 <!-- Tài khoản / đăng nhập / bảng xếp hạng / quản trị -->
-<script src="js/auth.js?v=1"></script>
+<script src="js/auth.js?v=2"></script>
 <!-- Toàn bộ logic game -->
-<script src="js/app.js?v=8"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>
