@@ -11,6 +11,11 @@ const CONFIG = {
     ve_dich: 'VeDich'
   },
 
+  // ==================== TÀI KHOẢN / BẢNG XẾP HẠNG (qua Worker riêng) ====================
+  // URL của Worker "olympia-accounts-api" — xem hướng dẫn deploy tại
+  // worker-accounts/README.md. Sau khi deploy xong, dán URL vào đây.
+  ACCOUNTS_API_URL: 'https://olympia-accounts-api.voducphat-learncode-tk01.workers.dev',
+
   // ==================== GEMINI (qua Worker proxy) ====================
   // API key KHÔNG còn nằm trong file này nữa — key được giấu trong một
   // Cloudflare Worker đứng giữa trình duyệt và Gemini, nên "View Page
