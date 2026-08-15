@@ -112,8 +112,9 @@ function showScreen(id) {
   document.getElementById(id).classList.remove('hidden');
   const tabbar = document.getElementById('main-tabbar');
   if (tabbar) {
-    tabbar.classList.toggle('hidden', !TABBAR_SCREENS.includes(id));
-    tabbar.querySelectorAll('.tabbar-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+    const loggedIn = window.AUTH && AUTH.getCurrentUser && AUTH.getCurrentUser();
+    tabbar.classList.toggle('hidden', !(TABBAR_SCREENS.includes(id) && loggedIn));
+    tabbar.querySelectorAll('.tabbar-btn, .sidenav-avatar-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
   }
 }
 function goHome() {
