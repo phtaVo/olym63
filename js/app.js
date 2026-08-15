@@ -112,7 +112,7 @@ function showScreen(id) {
   document.getElementById(id).classList.remove('hidden');
   const tabbar = document.getElementById('main-tabbar');
   if (tabbar) {
-    const loggedIn = window.AUTH && AUTH.getCurrentUser && AUTH.getCurrentUser();
+    const loggedIn = typeof AUTH !== 'undefined' && AUTH.getCurrentUser && AUTH.getCurrentUser();
     tabbar.classList.toggle('hidden', !(TABBAR_SCREENS.includes(id) && loggedIn));
     tabbar.querySelectorAll('.tabbar-btn, .sidenav-avatar-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
   }
@@ -823,7 +823,7 @@ function showResults() {
       }
     }
     STATE.score = newScore;
-    if (window.AUTH && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
+    if (typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
   }).catch(() => displayResults());
 }
