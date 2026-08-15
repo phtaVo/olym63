@@ -70,8 +70,18 @@ const AUTH = (function () {
   function afterLogin() {
     const adminBtn = document.getElementById('tab-admin-btn');
     if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser || currentUser.role !== 'admin');
+    renderSidenavUser();
     showScreen('home-screen');
     renderHome();
+  }
+
+  function renderSidenavUser() {
+    const slot = document.getElementById('sidenav-avatar-slot');
+    if (!slot) return;
+    const u = currentUser || {};
+    slot.innerHTML = avatarHtml(u.avatar, u.username, 40);
+    const btn = document.getElementById('sidenav-avatar-btn');
+    if (btn) btn.title = (u.username || 'Hồ sơ của tôi') + ' — bấm để xem hồ sơ';
   }
 
   // ============================================================
@@ -134,15 +144,6 @@ const AUTH = (function () {
         <div class="logo-sub">Chọn phần thi để bắt đầu</div>
       </div>
       <div class="home-right">
-      ${backendReady() ? `
-      <div class="home-user-row" onclick="AUTH.openProfile()">
-        ${avatarHtml(u.avatar, u.username, 46)}
-        <div class="home-user-info">
-          <div class="home-user-name">${esc(u.username || '')}</div>
-          <div class="home-user-sub">${esc(u.school || '')}${u.class ? ' · ' + esc(u.class) : ''}</div>
-        </div>
-        <button class="home-logout-btn" onclick="event.stopPropagation(); AUTH.confirmLogout()" title="Đăng xuất">⎋</button>
-      </div>` : ''}
       <div class="sections-grid">
         <div class="section-card" onclick="startGame('khoi_dong')">
           <div class="section-badge live">Đang mở</div>
@@ -311,6 +312,7 @@ const AUTH = (function () {
     try {
       const data = await apiFetch('/update-profile', { method: 'POST', body: JSON.stringify({ username: newUsername }) });
       currentUser = data.user;
+      renderSidenavUser();
       showToast('✅ Đã đổi tên người dùng!');
       renderProfile();
     } catch (e) {
@@ -346,6 +348,7 @@ const AUTH = (function () {
     try {
       const data = await apiFetch('/update-profile', { method: 'POST', body: JSON.stringify({ avatar: dataUrl }) });
       currentUser = data.user;
+      renderSidenavUser();
       showToast('✅ Đã đổi ảnh đại diện!');
       renderProfile();
     } catch (e) {
