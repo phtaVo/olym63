@@ -106,8 +106,9 @@ const STATE = {
 // ============================================================
 // SCREENS
 // ============================================================
-const TABBAR_SCREENS = ['home-screen', 'leaderboard-screen', 'profile-screen', 'admin-screen'];
+const TABBAR_SCREENS = ['home-screen'];
 function showScreen(id) {
+  if (typeof AUTH !== 'undefined' && AUTH.closeIslandModal) AUTH.closeIslandModal();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
   const tabbar = document.getElementById('main-tabbar');
