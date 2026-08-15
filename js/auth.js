@@ -127,7 +127,17 @@ const AUTH = (function () {
     showScreen('login-screen');
   }
 
-  function gotoHome() { showScreen('home-screen'); renderHome(); }
+  function gotoHome() { closeIslandModal(); showScreen('home-screen'); renderHome(); }
+
+  function setActiveTab(id) {
+    const tabbar = document.getElementById('main-tabbar');
+    if (tabbar) tabbar.querySelectorAll('.tabbar-btn, .sidenav-avatar-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
+  }
+  function closeIslandModal(e) {
+    if (e && e.target && !e.target.classList.contains('island-modal-overlay')) return;
+    document.querySelectorAll('.island-modal-overlay').forEach(o => o.classList.remove('show'));
+    setActiveTab('home-screen');
+  }
 
   // ============================================================
   // HOME (render động — có chip người dùng)
@@ -197,7 +207,8 @@ const AUTH = (function () {
   // LEADERBOARD
   // ============================================================
   function openLeaderboard() {
-    showScreen('leaderboard-screen');
+    document.getElementById('leaderboard-modal-overlay').classList.add('show');
+    setActiveTab('leaderboard-screen');
     renderLeaderboardShell();
     loadLeaderboard(lbMode);
   }
@@ -206,6 +217,7 @@ const AUTH = (function () {
     el.innerHTML = `
       <div class="lb-topbar">
         <div class="lb-title">🏆 Bảng xếp hạng</div>
+        <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
       </div>
       <div class="lb-tabs">
         <button class="lb-tab ${lbMode === 'khoi_dong' ? 'active' : ''}" onclick="AUTH.switchLeaderboardTab('khoi_dong')">🚀 Khởi Động</button>
@@ -254,14 +266,18 @@ const AUTH = (function () {
   // PROFILE
   // ============================================================
   function openProfile() {
-    showScreen('profile-screen');
+    document.getElementById('profile-modal-overlay').classList.add('show');
+    setActiveTab('profile-screen');
     renderProfile();
   }
   function renderProfile() {
     const el = document.getElementById('profile-screen');
     const u = currentUser || {};
     el.innerHTML = `
-      <div class="profile-topbar"><div class="profile-title">👤 Hồ sơ của tôi</div></div>
+      <div class="profile-topbar">
+        <div class="profile-title">👤 Hồ sơ của tôi</div>
+        <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
+      </div>
       <div class="profile-body">
         <div class="profile-avatar-wrap">
           <div class="profile-avatar-click" onclick="document.getElementById('avatar-file-input').click()">
@@ -378,8 +394,9 @@ const AUTH = (function () {
   // ADMIN
   // ============================================================
   function openAdmin() {
-    if (!currentUser || currentUser.role !== 'admin') { showToast('Chỉ admin mới vào được trang này.'); gotoHome(); return; }
-    showScreen('admin-screen');
+    if (!currentUser || currentUser.role !== 'admin') { showToast('Chỉ admin mới vào được trang này.'); return; }
+    document.getElementById('admin-modal-overlay').classList.add('show');
+    setActiveTab('admin-screen');
     renderAdminShell();
     loadAdminUsers();
   }
@@ -388,7 +405,10 @@ const AUTH = (function () {
     el.innerHTML = `
       <div class="admin-topbar">
         <div class="admin-title">⚙️ Quản trị tài khoản</div>
-        <button class="btn btn-primary btn-sm" onclick="AUTH.openUserModal()">➕ Thêm</button>
+        <div class="admin-topbar-actions">
+          <button class="btn btn-primary btn-sm" onclick="AUTH.openUserModal()">➕ Thêm</button>
+          <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
+        </div>
       </div>
       <div class="admin-body" id="admin-body"><div class="lb-loading">Đang tải...</div></div>`;
   }
@@ -520,6 +540,7 @@ const AUTH = (function () {
     openLeaderboard, switchLeaderboardTab,
     openProfile, saveUsername, onAvatarSelected, changePassword,
     openAdmin, openUserModal, closeUserModal, submitUserForm, deleteUser,
+    closeIslandModal,
     getCurrentUser: () => currentUser,
   };
 })();
