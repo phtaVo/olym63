@@ -715,3 +715,222 @@ body::before {
   .research-card { padding: 14px 16px; }
   .research-bullets, .rs-top10 { font-size: 15px; }
 }
+
+/* ==================== TABBAR (Trang chủ / Xếp hạng / Hồ sơ / Quản trị) ==================== */
+#main-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
+  display: flex; background: var(--bg2); border-top: 1.5px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(10,46,107,0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+#main-tabbar.hidden { display: none; }
+.tabbar-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; padding: 10px 4px 8px; background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-family: var(--font-body); transition: color 0.15s ease;
+}
+.tabbar-icon { font-size: 21px; line-height: 1; }
+.tabbar-label { font-size: 11.5px; font-weight: 700; }
+.tabbar-btn.active { color: var(--accent); }
+.tabbar-btn:active { opacity: 0.7; }
+.tabbar-btn.hidden { display: none; }
+
+/* Đẩy theme-btn lên trên tabbar để không đè lên nhau */
+body:has(#main-tabbar:not(.hidden)) #theme-btn { bottom: 84px; }
+
+/* Chừa chỗ dưới cùng cho các màn có tabbar để nội dung không bị che */
+#home-screen, #leaderboard-screen, #profile-screen, #admin-screen { padding-bottom: 0; }
+
+/* ==================== LOGIN ==================== */
+#login-screen { padding: 20px; }
+.login-card {
+  width: 100%; max-width: 400px; background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: 22px; padding: 36px 30px; box-shadow: 0 16px 48px rgba(10,46,107,0.14);
+  display: flex; flex-direction: column; align-items: center;
+}
+.login-logo { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; margin-bottom: 14px; box-shadow: 0 6px 18px rgba(10,46,107,0.22); }
+.login-title {
+  font-family: var(--font-display); font-size: 27px; font-weight: 900; color: var(--accent);
+  text-align: center; line-height: 1.15; letter-spacing: -0.5px;
+}
+.login-sub { font-size: 14.5px; color: var(--text-muted); margin: 8px 0 26px; text-align: center; }
+.login-label { align-self: flex-start; font-size: 13.5px; font-weight: 700; color: var(--text); margin: 12px 0 6px; }
+.login-input {
+  width: 100%; padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--border);
+  font-family: var(--font-body); font-size: 16px; background: var(--bg); color: var(--text); box-sizing: border-box;
+}
+.login-input:focus { outline: none; border-color: var(--gold); background: white; box-shadow: 0 0 0 4px rgba(200,150,12,0.15); }
+.login-error {
+  width: 100%; margin-top: 14px; padding: 10px 14px; border-radius: 10px;
+  background: rgba(192,57,43,0.1); color: #C0392B; font-size: 13.5px; font-weight: 600; line-height: 1.5;
+}
+.login-error.hidden { display: none; }
+.login-submit { width: 100%; margin-top: 22px; padding: 15px; font-size: 16px; }
+.login-hint { margin-top: 18px; font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.6; }
+
+/* ==================== HOME — chip người dùng ==================== */
+.home-user-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 18px;
+  background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px; cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.home-user-row:hover { box-shadow: 0 4px 14px rgba(10,46,107,0.1); transform: translateY(-1px); }
+.home-user-info { flex: 1; min-width: 0; }
+.home-user-name { font-weight: 800; font-size: 15.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-user-sub { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-logout-btn {
+  width: 38px; height: 38px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--bg);
+  color: var(--text-muted); font-size: 17px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s ease;
+}
+.home-logout-btn:hover { background: rgba(192,57,43,0.1); color: #C0392B; border-color: transparent; }
+
+/* Avatar dùng chung */
+.avatar-img { border-radius: 50%; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 2px var(--bg2), 0 0 0 3px var(--border); }
+.avatar-fallback {
+  border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: white; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; box-shadow: 0 0 0 2px var(--bg2), 0 0 0 3px var(--border);
+}
+
+/* ==================== BẢNG XẾP HẠNG ==================== */
+#leaderboard-screen {
+  padding: 0; overflow: hidden; justify-content: flex-start; align-items: stretch;
+  width: 100%; height: 100vh; height: 100dvh; background: var(--bg);
+}
+.lb-topbar {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  height: 60px; padding-top: env(safe-area-inset-top, 0px);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-bottom: 3px solid var(--gold);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.14);
+}
+.lb-title { font-family: var(--font-display); font-size: 21px; font-weight: 800; color: white; letter-spacing: 0.4px; }
+.lb-tabs { flex: 0 0 auto; display: flex; gap: 8px; padding: 14px 16px; background: var(--bg2); border-bottom: 1.5px solid var(--border); }
+.lb-tab {
+  flex: 1; padding: 11px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);
+  color: var(--text-muted); font-family: var(--font-body); font-size: 14.5px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.lb-tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+.lb-list {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth; padding: 16px 16px 100px; max-width: 680px; margin: 0 auto; width: 100%; box-sizing: border-box;
+}
+.lb-loading, .lb-empty { text-align: center; color: var(--text-muted); padding: 60px 20px; font-size: 15px; line-height: 1.7; }
+.lb-row {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 10px;
+  background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px;
+}
+.lb-row.lb-me { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(200,150,12,0.15); }
+.lb-row.lb-top1 { background: linear-gradient(135deg, rgba(200,150,12,0.1), transparent); }
+.lb-rank { width: 30px; text-align: center; font-size: 19px; font-weight: 900; color: var(--text-muted); flex-shrink: 0; }
+.lb-top1 .lb-rank, .lb-top2 .lb-rank, .lb-top3 .lb-rank { font-size: 24px; }
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-weight: 800; font-size: 15.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-sub { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-score { text-align: right; flex-shrink: 0; }
+.lb-score-num { font-family: var(--font-display); font-size: 24px; font-weight: 900; color: var(--gold-dark); line-height: 1; }
+.lb-score-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+
+/* ==================== HỒ SƠ ==================== */
+#profile-screen {
+  padding: 0; overflow: hidden; justify-content: flex-start; align-items: stretch;
+  width: 100%; height: 100vh; height: 100dvh; background: var(--bg);
+}
+.profile-topbar {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  height: 60px; padding-top: env(safe-area-inset-top, 0px);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-bottom: 3px solid var(--gold);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.14);
+}
+.profile-title { font-family: var(--font-display); font-size: 21px; font-weight: 800; color: white; letter-spacing: 0.4px; }
+.profile-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+  padding: 24px 16px 100px; max-width: 520px; margin: 0 auto; width: 100%; box-sizing: border-box;
+}
+.profile-avatar-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 22px; }
+.profile-avatar-click { position: relative; cursor: pointer; }
+.profile-avatar-edit {
+  position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--gold); color: white; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); border: 2px solid var(--bg2);
+}
+.profile-avatar-hint { font-size: 12.5px; color: var(--text-muted); margin-top: 10px; }
+.profile-card {
+  background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px;
+  padding: 18px 18px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(10,46,107,0.05);
+}
+.profile-card-title { font-weight: 800; font-size: 16px; color: var(--text); margin-bottom: 14px; }
+.profile-field-label { display: block; font-size: 13px; font-weight: 700; color: var(--text-muted); margin: 12px 0 6px; }
+.profile-field-label:first-child { margin-top: 0; }
+.profile-input {
+  width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+  font-family: var(--font-body); font-size: 15.5px; background: var(--bg); color: var(--text); box-sizing: border-box;
+}
+.profile-input:focus { outline: none; border-color: var(--gold); background: white; box-shadow: 0 0 0 3px rgba(200,150,12,0.13); }
+.profile-username-row { display: flex; gap: 10px; }
+.profile-username-row .profile-input { flex: 1; }
+.profile-info-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14.5px; }
+.profile-info-row:last-of-type { border-bottom: none; }
+.profile-info-label { color: var(--text-muted); font-weight: 600; }
+.profile-info-value { color: var(--text); font-weight: 700; text-align: right; }
+.profile-info-note { font-size: 12px; color: var(--text-muted); margin-top: 10px; line-height: 1.6; }
+.profile-form-error, .profile-form-ok { margin-top: 12px; padding: 10px 14px; border-radius: 10px; font-size: 13.5px; font-weight: 600; line-height: 1.5; }
+.profile-form-error { background: rgba(192,57,43,0.1); color: #C0392B; }
+.profile-form-ok { background: rgba(26,122,46,0.1); color: #1A7A2E; }
+.profile-form-error.hidden, .profile-form-ok.hidden { display: none; }
+.profile-logout-btn { width: 100%; margin-top: 4px; }
+
+/* ==================== QUẢN TRỊ (Admin) ==================== */
+#admin-screen {
+  padding: 0; overflow: hidden; justify-content: flex-start; align-items: stretch;
+  width: 100%; height: 100vh; height: 100dvh; background: var(--bg);
+}
+.admin-topbar {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 16px; height: 60px; padding-top: env(safe-area-inset-top, 0px);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-bottom: 3px solid var(--gold);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.14);
+}
+.admin-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: white; letter-spacing: 0.3px; }
+.admin-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
+  padding: 16px 16px 100px; max-width: 680px; margin: 0 auto; width: 100%; box-sizing: border-box;
+}
+.admin-user-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 10px;
+  background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px;
+}
+.admin-user-info { flex: 1; min-width: 0; }
+.admin-user-name { font-weight: 800; font-size: 15px; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-role-badge {
+  font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px;
+  background: var(--gold); color: white; padding: 2px 8px; border-radius: 6px;
+}
+.admin-user-sub { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-user-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.admin-user-actions .icon-btn { padding: 8px 10px; font-size: 16px; min-height: auto; }
+.admin-del-btn:hover { background: rgba(192,57,43,0.12); border-color: transparent; }
+
+.admin-form-box { max-height: 85vh; overflow-y: auto; }
+.admin-form { text-align: left; }
+.admin-form-error {
+  margin-top: 14px; padding: 10px 14px; border-radius: 10px; background: rgba(192,57,43,0.1);
+  color: #C0392B; font-size: 13.5px; font-weight: 600; line-height: 1.5;
+}
+.admin-form-error.hidden { display: none; }
+.admin-form-actions { display: flex; gap: 10px; margin-top: 20px; }
+.admin-form-actions .btn { flex: 1; }
+.uf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.uf-grid .profile-field-label { margin-top: 12px; }
+
+/* ==================== RESPONSIVE — tài khoản / xếp hạng / hồ sơ / quản trị ==================== */
+@media (max-width: 600px) {
+  .login-card { padding: 30px 22px; border-radius: 18px; }
+  .login-title { font-size: 24px; }
+  .lb-title, .profile-title { font-size: 18px; }
+  .admin-title { font-size: 17px; }
+  .lb-list, .profile-body, .admin-body { padding-left: 12px; padding-right: 12px; }
+  .uf-grid { grid-template-columns: 1fr; gap: 0; }
+  .tabbar-label { font-size: 10.5px; }
+}
