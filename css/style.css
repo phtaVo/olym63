@@ -964,7 +964,11 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
 /* ============================================================
    SOLO — thi đấu nhóm real-time (mời, Giành chuông)
    ============================================================ */
-#solo-screen { padding: 24px clamp(16px, 4vw, 48px) 40px; max-width: 860px; margin: 0 auto; }
+#solo-screen {
+  padding: 24px clamp(16px, 4vw, 48px) 40px; max-width: 860px; margin: 0 auto;
+  align-items: stretch; justify-content: flex-start;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
 
 .solo-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; gap: 12px; }
 .solo-back-btn {
