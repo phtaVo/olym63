@@ -17,6 +17,7 @@ const SOLO = (function () {
   let isHost = false;
   let pendingInvite = null; // { fromUsername, fromAvatar, roomCode, gameMode, sheet }
   let composeSheet = 'khoi_dong';
+  let homeTab = 'host';
   let localTimer = null;
   let localTimeLeft = 0;
 
@@ -259,6 +260,7 @@ const SOLO = (function () {
   }
 
   function setComposeSheet(sheet) { composeSheet = sheet; renderSolo(); }
+  function setHomeTab(tab) { homeTab = tab; renderSolo(); }
 
   function goToServerAddress() {
     const el = document.getElementById('solo-server-address');
@@ -400,53 +402,69 @@ const SOLO = (function () {
 
   function htmlHome() {
     const onLocalhost = /^(localhost|127\.0\.0\.1)/.test(window.location.host);
-    const guestJoinCard = onLocalhost ? '' : `
-      <div class="solo-card">
-        <div class="solo-card-title">🔗 Đã có người tạo máy chủ nhóm?</div>
-        <div class="solo-hint" style="margin-bottom:10px">Nhập đúng địa chỉ "Cùng Wi-Fi" mà máy chủ nhóm (host) đã gửi cho bạn (dạng http://192.168.x.x:3000), trình duyệt sẽ tự chuyển qua đó.</div>
-        <div class="solo-field">
-          <input type="text" class="solo-input" id="solo-server-address" placeholder="http://192.168.1.23:3000">
-        </div>
-        <button class="btn btn-outline" style="width:100%" onclick="SOLO.goToServerAddress()">Vào máy chủ nhóm</button>
+    const serverInfo = `<div class="solo-hint" style="text-align:center;margin-bottom:16px">Đang dùng máy chủ: <code>${esc(wsBase())}</code> — mọi người cần mở trang qua cùng địa chỉ này (chung Wi-Fi) mới chơi cùng nhau được.</div>`;
+
+    const tabs = `
+      <div class="solo-tabs">
+        <button class="solo-tab-btn ${homeTab === 'host' ? 'active' : ''}" onclick="SOLO.setHomeTab('host')">🖥️ Làm chủ phòng</button>
+        <button class="solo-tab-btn ${homeTab === 'join' ? 'active' : ''}" onclick="SOLO.setHomeTab('join')">🔗 Vào phòng</button>
       </div>`;
-    const hostDownloadCard = `
-      <div class="solo-card">
-        <div class="solo-card-title">🖥️ Bạn muốn làm chủ phòng (host)?</div>
-        <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới (không cần cài Node.js) — bấm đúp để chạy, nó sẽ hiện ra một địa chỉ, gửi địa chỉ đó cho cả nhóm (đang chung Wi-Fi) để họ dán vào ô "Vào máy chủ nhóm" ở trên.</div>
-        <div class="solo-choice-row">
-          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v1.0-solo-server/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
-          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v1.0-solo-server/olym63-solo-server-macos" download>⬇️ macOS</a>
-          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v1.0-solo-server/olym63-solo-server-linux" download>⬇️ Linux</a>
-        </div>
-        <div class="solo-hint" style="margin-top:10px">⚠️ File tải về phải nằm trong thư mục <code>local-server/</code> của project (đúng vị trí file gốc) thì mới đọc được web app. macOS/Linux cần cấp quyền chạy: <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
-        <div class="solo-hint">Sau khi chạy, cửa sổ hiện ra sẽ in 2 địa chỉ — <b>chính host cũng nên mở địa chỉ "Trên máy này" (http://localhost:3000)</b> thay vì ở lại trang này, vì trang GitHub (https) không tự kết nối được vào máy chủ chạy trên Wi-Fi nội bộ (giới hạn bảo mật của trình duyệt).</div>
-      </div>`;
-    return `
-      <div class="solo-hint" style="text-align:center;margin-bottom:14px">Đang dùng máy chủ: <code>${esc(wsBase())}</code> — mọi người cần mở trang qua cùng địa chỉ này (chung Wi-Fi) mới chơi cùng nhau được.</div>
-      ${guestJoinCard}
-      ${hostDownloadCard}
-      <div class="solo-card">
-        <div class="solo-card-title">📨 Mời bạn bè thi đấu</div>
-        <div class="solo-field">
-          <label class="solo-label">Bộ câu hỏi cho Giành chuông</label>
-          <div class="solo-choice-row">
-            <div class="solo-choice ${composeSheet === 'khoi_dong' ? 'active' : ''}" onclick="SOLO.setComposeSheet('khoi_dong')">Khởi động chung</div>
-            <div class="solo-choice ${composeSheet === 've_dich' ? 'active' : ''}" onclick="SOLO.setComposeSheet('ve_dich')">Về đích</div>
+
+    let content;
+    if (homeTab === 'join') {
+      content = `
+        ${onLocalhost ? '' : `
+        <div class="solo-card">
+          <div class="solo-card-title">Bước 1 · Nhập địa chỉ máy chủ nhóm</div>
+          <div class="solo-hint" style="margin-bottom:10px">Dán đúng địa chỉ "Cùng Wi-Fi" mà host đã gửi cho bạn (dạng http://192.168.x.x:3000). Trình duyệt sẽ tự chuyển bạn qua đó.</div>
+          <div class="solo-field">
+            <input type="text" class="solo-input" id="solo-server-address" placeholder="http://192.168.1.23:3000">
           </div>
+          <button class="btn btn-primary" style="width:100%" onclick="SOLO.goToServerAddress()">Vào máy chủ nhóm</button>
+        </div>`}
+        <div class="solo-card">
+          <div class="solo-card-title">${onLocalhost ? 'Vào phòng bằng mã' : 'Bước 2 · Vào phòng bằng mã'}</div>
+          <div class="solo-hint" style="margin-bottom:10px">${onLocalhost ? 'Nhập mã phòng do host gửi cho bạn.' : 'Chỉ dùng được sau khi bạn đã ở đúng địa chỉ máy chủ nhóm (bước 1). Nếu host đã gửi lời mời trực tiếp, bạn không cần bước này — cứ chờ popup lời mời hiện lên.'}</div>
+          <div class="solo-field">
+            <input type="text" class="solo-input" id="solo-join-code" placeholder="Nhập mã phòng (vd: A1B2C3)" style="text-transform:uppercase">
+          </div>
+          <button class="btn btn-outline" style="width:100%" onclick="SOLO.joinByCode()">Vào phòng</button>
+        </div>`;
+    } else {
+      content = `
+        <div class="solo-card">
+          <div class="solo-card-title">Bước 1 · Tải máy chủ nhóm</div>
+          <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới (không cần cài Node.js) — bấm đúp để chạy.</div>
+          <div class="solo-choice-row">
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-macos" download>⬇️ macOS</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-linux" download>⬇️ Linux</a>
+          </div>
+          <div class="solo-hint" style="margin-top:10px">⚠️ File tải về phải nằm trong thư mục <code>local-server/</code> của project (đúng vị trí file gốc). macOS/Linux cần cấp quyền chạy: <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
+          <div class="solo-hint">Sau khi chạy, cửa sổ hiện ra sẽ in 2 địa chỉ — <b>chính bạn (host) hãy mở địa chỉ "Trên máy này" (http://localhost:3000)</b> thay vì ở lại trang này, rồi gửi địa chỉ "Cùng Wi-Fi" cho cả nhóm để họ dán vào tab "Vào phòng".</div>
         </div>
-        <div class="solo-field">
-          <label class="solo-label">Tên người chơi muốn mời (tối đa 3, cách nhau bởi dấu phẩy)</label>
-          <input type="text" class="solo-input" id="solo-invite-usernames" placeholder="vd: minh, lan, hoa">
-        </div>
-        <button class="btn btn-primary" style="width:100%" onclick="SOLO.createAndInvite()">🔔 Tạo phòng & Gửi lời mời</button>
-      </div>
-      <div class="solo-card">
-        <div class="solo-card-title">🔑 Vào phòng bằng mã</div>
-        <div class="solo-field">
-          <input type="text" class="solo-input" id="solo-join-code" placeholder="Nhập mã phòng (vd: A1B2C3)" style="text-transform:uppercase">
-        </div>
-        <button class="btn btn-outline" style="width:100%" onclick="SOLO.joinByCode()">Vào phòng</button>
-      </div>
+        <div class="solo-card">
+          <div class="solo-card-title">Bước 2 · Mời bạn bè thi đấu</div>
+          <div class="solo-hint" style="margin-bottom:10px">Chỉ làm được bước này SAU KHI bạn đã mở trang qua http://localhost:3000 (bước 1) — chưa mở qua đó thì nút bên dưới sẽ báo lỗi.</div>
+          <div class="solo-field">
+            <label class="solo-label">Bộ câu hỏi cho Giành chuông</label>
+            <div class="solo-choice-row">
+              <div class="solo-choice ${composeSheet === 'khoi_dong' ? 'active' : ''}" onclick="SOLO.setComposeSheet('khoi_dong')">Khởi động chung</div>
+              <div class="solo-choice ${composeSheet === 've_dich' ? 'active' : ''}" onclick="SOLO.setComposeSheet('ve_dich')">Về đích</div>
+            </div>
+          </div>
+          <div class="solo-field">
+            <label class="solo-label">Tên người chơi muốn mời (tối đa 3, cách nhau bởi dấu phẩy)</label>
+            <input type="text" class="solo-input" id="solo-invite-usernames" placeholder="vd: minh, lan, hoa">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="SOLO.createAndInvite()">🔔 Tạo phòng & Gửi lời mời</button>
+        </div>`;
+    }
+
+    return `
+      ${serverInfo}
+      ${tabs}
+      ${content}
       <div class="solo-card">
         <div class="solo-card-title">⚡ Tăng tốc</div>
         <div class="solo-hint">Sắp ra mắt trong Solo.</div>
@@ -587,7 +605,7 @@ const SOLO = (function () {
   }
 
   return {
-    openLobby, backToHome, setComposeSheet, goToServerAddress, createAndInvite, joinByCode, hostStartMatch,
+    openLobby, backToHome, setComposeSheet, setHomeTab, goToServerAddress, createAndInvite, joinByCode, hostStartMatch,
     pressReady, onAnswerInput, onAnswerKeydown, pressBuzz, playAgain,
     acceptInvite, declineInvite, connectPresence, disconnectPresence
   };
