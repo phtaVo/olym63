@@ -73,6 +73,7 @@ const AUTH = (function () {
     renderSidenavUser();
     showScreen('home-screen');
     renderHome();
+    if (typeof SOLO !== 'undefined') SOLO.connectPresence();
   }
 
   function renderSidenavUser() {
@@ -125,6 +126,7 @@ const AUTH = (function () {
     document.getElementById('login-password').value = '';
     hideLoginErr();
     showScreen('login-screen');
+    if (typeof SOLO !== 'undefined') SOLO.disconnectPresence();
   }
 
   function gotoHome() { closeIslandModal(); showScreen('home-screen'); renderHome(); }
@@ -182,6 +184,13 @@ const AUTH = (function () {
           <div class="section-num">Phần 03</div>
           <div class="section-name">Tăng<br>Tốc</div>
           <div class="section-desc">Nhanh tay · Nhanh mắt</div>
+        </div>
+        <div class="section-card" onclick="SOLO.openLobby()">
+          <div class="section-badge live">Đang mở</div>
+          <div class="section-icon">🎮</div>
+          <div class="section-num">Thi đấu nhóm</div>
+          <div class="section-name">Solo</div>
+          <div class="section-desc">2-4 người · Giành chuông</div>
         </div>
       </div>
       <div class="intro-toggle-row">
