@@ -1,0 +1,13 @@
+{
+  "name": "olym63-local-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Máy chủ chạy local: phục vụ web Olym63 và real-time cho module Solo qua mạng Wi-Fi nội bộ (không cần Cloudflare trả phí).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
