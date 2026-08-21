@@ -414,9 +414,9 @@ const SOLO = (function () {
         <div class="solo-card-title">🖥️ Bạn muốn làm chủ phòng (host)?</div>
         <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới (không cần cài Node.js) — bấm đúp để chạy, nó sẽ hiện ra một địa chỉ, gửi địa chỉ đó cho cả nhóm (đang chung Wi-Fi) để họ dán vào ô "Vào máy chủ nhóm" ở trên.</div>
         <div class="solo-choice-row">
-          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
-          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-macos" download>⬇️ macOS</a>
-          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-linux" download>⬇️ Linux</a>
+          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v1.0-solo-server/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
+          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v1.0-solo-server/olym63-solo-server-macos" download>⬇️ macOS</a>
+          <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v1.0-solo-server/olym63-solo-server-linux" download>⬇️ Linux</a>
         </div>
         <div class="solo-hint" style="margin-top:10px">⚠️ File tải về phải nằm trong thư mục <code>local-server/</code> của project (đúng vị trí file gốc) thì mới đọc được web app. macOS/Linux cần cấp quyền chạy: <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
         <div class="solo-hint">Sau khi chạy, cửa sổ hiện ra sẽ in 2 địa chỉ — <b>chính host cũng nên mở địa chỉ "Trên máy này" (http://localhost:3000)</b> thay vì ở lại trang này, vì trang GitHub (https) không tự kết nối được vào máy chủ chạy trên Wi-Fi nội bộ (giới hạn bảo mật của trình duyệt).</div>
