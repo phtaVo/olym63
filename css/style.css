@@ -983,6 +983,15 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
   background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px;
   padding: 22px; margin-bottom: 16px;
 }
+.solo-tabs { display: flex; gap: 8px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 14px; padding: 5px; margin-bottom: 16px; }
+.solo-tab-btn {
+  flex: 1; padding: 11px 12px; border-radius: 10px; border: none; background: transparent;
+  color: var(--text-muted); font-weight: 700; font-size: 13.5px; cursor: pointer; transition: all 0.15s ease;
+  font-family: inherit;
+}
+.solo-tab-btn.active { background: var(--accent); color: white; box-shadow: 0 3px 10px rgba(10,46,107,0.25); }
+.solo-tab-btn:not(.active):hover { background: var(--bg2); color: var(--text); }
+
 .solo-card-title { font-weight: 700; font-size: 15px; margin-bottom: 12px; color: var(--text); }
 
 .solo-field { margin-bottom: 14px; }
