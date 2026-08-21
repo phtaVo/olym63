@@ -47,6 +47,15 @@ const CONFIG = {
     fail:        'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/failans.mp3',
     cauhoiVD:    'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/cauhoi_vd.mp3',
     cauhoi15sVD: 'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/15s_vd.mp3',
-    starHope:    'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/starhope.mp3'
-  }
+    starHope:    'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/starhope.mp3',
+    buzzer:      'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/chuong.mp3'
+  },
+
+  // ==================== MODULE SOLO (thi đấu nhóm real-time) ====================
+  // Để trống: Solo sẽ TỰ nhận diện máy chủ dựa trên địa chỉ đang mở trang web
+  // (dùng cho chế độ chạy qua Wi-Fi nội bộ bằng local-server/ — xem
+  // local-server/README.md). Chỉ điền giá trị vào đây nếu bạn tự deploy một
+  // backend real-time riêng (vd Cloudflare Durable Objects) và muốn Solo luôn
+  // trỏ tới đó thay vì tự nhận diện, ví dụ: 'wss://ten-worker.workers.dev'
+  SOLO_WS_URL: ''
 };
