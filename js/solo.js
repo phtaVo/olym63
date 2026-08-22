@@ -43,6 +43,19 @@ const SOLO = (function () {
     return `${window.location.protocol}//${window.location.host}`;
   }
   function backendReady() { return !!wsBase(); }
+  // Phân biệt "đang mở qua server thật" (localhost / IP Wi-Fi nội bộ, nơi
+  // tạo phòng/vào phòng thực sự hoạt động) với "đang ở trang tĩnh" như
+  // GitHub Pages (nơi các nút Tạo/Vào phòng sẽ luôn báo lỗi vì không có
+  // server thật đứng sau) — để chỉ hiện đúng phần dùng được.
+  function looksLikeRealServer() {
+    const h = window.location.hostname;
+    if (!h) return false;
+    if (h === 'localhost' || h === '127.0.0.1') return true;
+    if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    return false;
+  }
   function esc(s) { return typeof escapeHTML === 'function' ? escapeHTML(s) : String(s == null ? '' : s); }
   function me() {
     const u = (typeof AUTH !== 'undefined' && AUTH.getCurrentUser) ? (AUTH.getCurrentUser() || {}) : {};
@@ -221,15 +234,6 @@ const SOLO = (function () {
   function setComposeSheet(sheet) { composeSheet = sheet; renderSolo(); }
   function setHomeTab(tab) { homeTab = tab; renderSolo(); }
 
-  function goToServerAddress() {
-    const el = document.getElementById('solo-server-address');
-    if (!el) return;
-    let addr = el.value.trim();
-    if (!addr) { showToast('Nhập địa chỉ máy chủ nhóm.'); return; }
-    if (!/^https?:\/\//i.test(addr)) addr = 'http://' + addr;
-    window.location.href = addr.replace(/\/+$/, '') + '/';
-  }
-
   async function createRoom() {
     if (!backendReady()) { showToast('Không xác định được máy chủ.'); return; }
     const nameEl = document.getElementById('solo-host-name');
@@ -395,8 +399,33 @@ const SOLO = (function () {
   }
 
   function htmlHome() {
-    const onLocalhost = /^(localhost|127\.0\.0\.1)/.test(window.location.host);
-    const serverInfo = `<div class="solo-hint" style="text-align:center;margin-bottom:16px">Đang dùng máy chủ: <code>${esc(wsBase())}</code></div>`;
+    const isRealServer = looksLikeRealServer();
+    const serverInfo = isRealServer
+      ? `<div class="solo-hint" style="text-align:center;margin-bottom:16px">Đang dùng máy chủ: <code>${esc(wsBase())}</code></div>`
+      : '';
+
+    // Đang ở trang tĩnh (GitHub Pages...) — Tạo/Vào phòng sẽ không hoạt động
+    // được ở đây (trình duyệt chặn https gọi tới máy chủ Wi-Fi nội bộ),
+    // nên chỉ hiện phần tải máy chủ để tránh gây hiểu lầm.
+    if (!isRealServer) {
+      return `
+        <div class="solo-card">
+          <div class="solo-card-title">🖥️ Cần chạy máy chủ nhóm trước</div>
+          <div class="solo-hint" style="margin-bottom:10px">Trang này đang chạy từ web tĩnh (không tự tạo/vào phòng được ở đây). Một bạn trong nhóm ("host") tải file chạy sẵn bên dưới — không cần cài Node.js, tải về là chạy được ngay:</div>
+          <div class="solo-choice-row">
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-macos" download>⬇️ macOS</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-linux" download>⬇️ Linux</a>
+          </div>
+          <div class="solo-hint" style="margin-top:10px">macOS/Linux cần cấp quyền chạy lần đầu: mở Terminal, gõ <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
+          <div class="solo-hint">Chạy xong, cửa sổ hiện ra sẽ in địa chỉ dạng <code>http://localhost:3000</code> — <b>host mở đúng địa chỉ đó</b> (thay cho trang này) để tạo phòng và lấy link mời bạn bè. Bạn bè được mời chỉ cần bấm vào link, không cần làm bước nào ở đây cả.</div>
+        </div>
+        <div class="solo-card">
+          <div class="solo-card-title">⚡ Tăng tốc</div>
+          <div class="solo-hint">Sắp ra mắt trong Solo.</div>
+        </div>
+      `;
+    }
 
     const tabs = `
       <div class="solo-tabs">
@@ -421,15 +450,6 @@ const SOLO = (function () {
           <button class="btn btn-primary" style="width:100%" onclick="SOLO.joinByCode()">Vào phòng</button>
           <div class="solo-hint" style="margin-top:8px">Cách nhanh hơn: bấm thẳng vào link phòng mà bạn mình gửi — không cần nhập mã, cũng không cần bước dưới đây.</div>
         </div>
-        ${onLocalhost ? '' : `
-        <div class="solo-card">
-          <div class="solo-card-title">Chưa đúng địa chỉ máy chủ nhóm?</div>
-          <div class="solo-hint" style="margin-bottom:10px">Nếu bạn mình gửi một địa chỉ dạng http://192.168.x.x:3000 (không phải link phòng), dán vào đây rồi bấm để chuyển qua đó trước khi vào phòng.</div>
-          <div class="solo-field">
-            <input type="text" class="solo-input" id="solo-server-address" placeholder="http://192.168.1.23:3000">
-          </div>
-          <button class="btn btn-outline" style="width:100%" onclick="SOLO.goToServerAddress()">Đi tới địa chỉ đó</button>
-        </div>`}
       `;
     } else {
       content = `
@@ -446,17 +466,6 @@ const SOLO = (function () {
             <div class="solo-choice ${composeSheet === 've_dich' ? 'active' : ''}" onclick="SOLO.setComposeSheet('ve_dich')">Về đích</div>
           </div>
           <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="SOLO.createRoom()">🚀 Tạo phòng thi đấu</button>
-        </div>
-        <div class="solo-card">
-          <div class="solo-card-title">Chưa có máy chủ nhóm?</div>
-          <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới — không cần cài Node.js, tải về là chạy được ngay, không cần để đúng thư mục nào.</div>
-          <div class="solo-choice-row">
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v2.0-solo-server/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v2.0-solo-server/olym63-solo-server-macos" download>⬇️ macOS</a>
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v2.0-solo-server/olym63-solo-server-linux" download>⬇️ Linux</a>
-          </div>
-          <div class="solo-hint" style="margin-top:10px">macOS/Linux cần cấp quyền chạy lần đầu: mở Terminal, gõ <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
-          <div class="solo-hint">Chạy xong, cửa sổ hiện ra sẽ in địa chỉ dạng <code>http://localhost:3000</code> — mở đúng địa chỉ đó (không phải trang này) rồi quay lại tạo phòng ở trên.</div>
         </div>
       `;
     }
@@ -611,7 +620,7 @@ const SOLO = (function () {
 
   return {
     openLobby, openJoinFromLink, submitJoinGate, backToHome, setComposeSheet, setHomeTab,
-    goToServerAddress, createRoom, joinByCode, copyShareLink, hostStartMatch,
+    createRoom, joinByCode, copyShareLink, hostStartMatch,
     pressReady, onAnswerInput, onAnswerKeydown, pressBuzz, playAgain
   };
 })();
