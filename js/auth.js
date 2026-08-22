@@ -50,6 +50,11 @@ const AUTH = (function () {
   // BOOT
   // ============================================================
   async function boot() {
+    const joinCode = new URLSearchParams(window.location.search).get('join');
+    if (joinCode && typeof SOLO !== 'undefined') {
+      SOLO.openJoinFromLink(joinCode);
+      return;
+    }
     if (!backendReady()) {
       console.warn('[AUTH] CONFIG.ACCOUNTS_API_URL chưa được cấu hình — bỏ qua đăng nhập, vào thẳng trang chủ.');
       showScreen('home-screen'); renderHome(); return;
@@ -73,7 +78,6 @@ const AUTH = (function () {
     renderSidenavUser();
     showScreen('home-screen');
     renderHome();
-    if (typeof SOLO !== 'undefined') SOLO.connectPresence();
   }
 
   function renderSidenavUser() {
@@ -126,7 +130,6 @@ const AUTH = (function () {
     document.getElementById('login-password').value = '';
     hideLoginErr();
     showScreen('login-screen');
-    if (typeof SOLO !== 'undefined') SOLO.disconnectPresence();
   }
 
   function gotoHome() { closeIslandModal(); showScreen('home-screen'); renderHome(); }
