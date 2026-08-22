@@ -1059,6 +1059,10 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
 .solo-leaderboard-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; background: var(--bg); margin-bottom: 8px; }
 .solo-leaderboard-rank { font-family: var(--font-display); font-weight: 800; font-size: 18px; width: 28px; color: var(--gold-dark); }
 
+.solo-join-gate { max-width: 380px; margin: 15vh auto 0; text-align: center; padding: 0 16px; }
+.solo-join-gate-emoji { font-size: 52px; margin-bottom: 10px; }
+.solo-join-gate-title { font-weight: 800; font-size: 19px; margin-bottom: 6px; color: var(--text); }
+
 @media (max-width: 600px) {
   #solo-screen { padding: 16px 14px 32px; }
   .solo-buzzer-btn { width: 132px; height: 132px; font-size: 15px; }
