@@ -19,7 +19,7 @@ const path = require('path');
 const os = require('os');
 const { WebSocketServer } = require('ws');
 
-const ROOT = path.join(process.pkg ? path.dirname(process.execPath) : __dirname, '..'); // thư mục gốc project (chứa index.html)
+const ROOT = path.join(__dirname, '..'); // thư mục gốc project (chứa index.html) — khi đóng gói bằng pkg, các file này được nhúng sẵn bên trong nên không cần nằm cùng thư mục thật ngoài đĩa
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 const KD_ANSWER_SECONDS = 10;
@@ -56,50 +56,10 @@ function getVeDichTimes(points) {
 }
 
 // ============================================================
-// DIRECTORY — presence + chuyển tiếp lời mời
-// ============================================================
-class Directory {
-  constructor() { this.sockets = new Map(); } // username -> ws
-
-  send(username, obj) {
-    const ws = this.sockets.get(username);
-    if (!ws || ws.readyState !== ws.OPEN) return false;
-    try { ws.send(JSON.stringify(obj)); return true; } catch (e) { return false; }
-  }
-
-  handleConnection(ws, username) {
-    const old = this.sockets.get(username);
-    if (old) { try { old.close(); } catch (e) {} }
-    this.sockets.set(username, ws);
-
-    ws.on('message', (data) => {
-      let msg; try { msg = JSON.parse(data); } catch (e) { return; }
-      if (msg.type === 'invite') {
-        const toUsernames = Array.isArray(msg.toUsernames) ? msg.toUsernames : [];
-        const delivered = [], offline = [];
-        toUsernames.forEach((u) => {
-          const ok = this.send(u, {
-            type: 'invite_received', fromUsername: username, fromAvatar: msg.fromAvatar || null,
-            roomCode: msg.roomCode, gameMode: msg.gameMode, sheet: msg.sheet || null
-          });
-          (ok ? delivered : offline).push(u);
-        });
-        this.send(username, { type: 'invite_sent_ack', roomCode: msg.roomCode, delivered, offline });
-      } else if (msg.type === 'invite_response') {
-        this.send(msg.toUsername, { type: 'invite_response', fromUsername: username, roomCode: msg.roomCode, accepted: !!msg.accepted });
-      } else if (msg.type === 'ping') {
-        this.send(username, { type: 'pong' });
-      }
-    });
-
-    const cleanup = () => { if (this.sockets.get(username) === ws) this.sockets.delete(username); };
-    ws.on('close', cleanup);
-    ws.on('error', cleanup);
-  }
-}
-
-// ============================================================
 // SOLO ROOM — trạng thái 1 phòng + luật "Giành chuông"
+// (Không còn hệ thống "mời qua username/presence" nữa — người chơi
+// vào phòng bằng LINK (?join=CODE) hoặc nhập mã phòng, rồi tự đặt
+// tên hiển thị lúc vào.)
 // ============================================================
 class SoloRoom {
   constructor(code, onEmpty) {
@@ -323,7 +283,6 @@ function serveStatic(req, res) {
 }
 
 const rooms = new Map(); // roomCode -> SoloRoom
-const directory = new Directory();
 function deleteRoom(code) { rooms.delete(code); }
 function getOrCreateRoom(code) {
   code = code.toUpperCase();
@@ -352,12 +311,6 @@ const wss = new WebSocketServer({ noServer: true });
 
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url, 'http://internal');
-  if (url.pathname === '/presence/ws') {
-    const username = (url.searchParams.get('username') || '').trim();
-    if (!username) { socket.destroy(); return; }
-    wss.handleUpgrade(req, socket, head, (ws) => directory.handleConnection(ws, username));
-    return;
-  }
   const m = url.pathname.match(/^\/rooms\/([A-Za-z0-9]{4,10})\/ws$/);
   if (m) {
     const username = (url.searchParams.get('username') || '').trim();
