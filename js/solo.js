@@ -451,9 +451,9 @@ const SOLO = (function () {
           <div class="solo-card-title">Chưa có máy chủ nhóm?</div>
           <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới — không cần cài Node.js, tải về là chạy được ngay, không cần để đúng thư mục nào.</div>
           <div class="solo-choice-row">
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-macos" download>⬇️ macOS</a>
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-linux" download>⬇️ Linux</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v2.0-solo-server/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v2.0-solo-server/olym63-solo-server-macos" download>⬇️ macOS</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v2.0-solo-server/olym63-solo-server-linux" download>⬇️ Linux</a>
           </div>
           <div class="solo-hint" style="margin-top:10px">macOS/Linux cần cấp quyền chạy lần đầu: mở Terminal, gõ <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
           <div class="solo-hint">Chạy xong, cửa sổ hiện ra sẽ in địa chỉ dạng <code>http://localhost:3000</code> — mở đúng địa chỉ đó (không phải trang này) rồi quay lại tạo phòng ở trên.</div>
