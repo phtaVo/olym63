@@ -3,21 +3,22 @@
 // Hiện có: Giành chuông (bộ câu hỏi Khởi động chung / Về đích)
 // Tăng tốc trong Solo sẽ được bổ sung sau.
 //
+// Cách mời: chủ phòng tạo phòng rồi gửi LINK phòng cho bạn bè
+// (không cần biết username của nhau). Ai bấm vào link chỉ cần tự
+// đặt tên hiển thị là vào chơi được ngay — không cần tài khoản.
+//
 // Dùng chung với app.js: verifyAnswer(), loadKhoiDong(), loadVeDich(),
-// AUDIO, CONFIG, showToast(), showScreen(), goHome(), escapeHTML()
-// (tất cả là biến/hàm toàn cục do các file này chỉ dùng thẻ <script>
-// thường, không phải module — nhất quán với cách app.js/auth.js viết).
+// AUDIO, CONFIG, showToast(), showScreen(), goHome(), escapeHTML().
 // ============================================================
 const SOLO = (function () {
-  let presenceWS = null;
-  let presenceReconnectTimer = null;
   let roomWS = null;
   let myUsername = null;
   let myAvatar = null;
   let isHost = false;
-  let pendingInvite = null; // { fromUsername, fromAvatar, roomCode, gameMode, sheet }
   let composeSheet = 'khoi_dong';
   let homeTab = 'host';
+  let displayName = '';
+  let joinGateCode = null; // khác null khi vào từ link mời (?join=CODE), chờ nhập tên
   let localTimer = null;
   let localTimeLeft = 0;
 
@@ -32,7 +33,6 @@ const SOLO = (function () {
   // ---------------- HELPERS ----------------
   function wsBase() {
     if (CONFIG.SOLO_WS_URL) return CONFIG.SOLO_WS_URL.replace(/\/+$/, '');
-    // Tự nhận diện: dùng đúng máy chủ đang phục vụ trang này (local-server qua Wi-Fi)
     if (!window.location.host) return '';
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${proto}//${window.location.host}`;
@@ -46,78 +46,37 @@ const SOLO = (function () {
   function esc(s) { return typeof escapeHTML === 'function' ? escapeHTML(s) : String(s == null ? '' : s); }
   function me() {
     const u = (typeof AUTH !== 'undefined' && AUTH.getCurrentUser) ? (AUTH.getCurrentUser() || {}) : {};
-    return { username: u.username || '', avatar: u.avatar || null };
+    return { username: u.username || '' };
   }
+  function loadSavedName() { try { return localStorage.getItem('olym63_solo_name') || ''; } catch (e) { return ''; } }
+  function saveName(n) { try { localStorage.setItem('olym63_solo_name', n); } catch (e) {} }
   function playBuzzerSfx() {
     const el = document.getElementById('audio-buzzer');
     if (el && el.src) { el.currentTime = 0; el.play().catch(() => {}); }
   }
 
   // ============================================================
-  // PRESENCE — kết nối luôn giữ khi đã đăng nhập, để nhận lời mời
+  // VÀO TỪ LINK MỜI (?join=CODE) — không cần đăng nhập
   // ============================================================
-  function connectPresence() {
-    if (!backendReady()) return;
-    const u = me();
-    if (!u.username) return;
-    myUsername = u.username; myAvatar = u.avatar;
-    if (presenceWS && (presenceWS.readyState === WebSocket.OPEN || presenceWS.readyState === WebSocket.CONNECTING)) return;
-    try {
-      presenceWS = new WebSocket(`${wsBase()}/presence/ws?username=${encodeURIComponent(myUsername)}`);
-    } catch (e) { return; }
-    presenceWS.onmessage = onPresenceMessage;
-    presenceWS.onclose = () => {
-      presenceWS = null;
-      if (presenceReconnectTimer) clearTimeout(presenceReconnectTimer);
-      presenceReconnectTimer = setTimeout(connectPresence, 4000);
-    };
-    presenceWS.onerror = () => { try { presenceWS.close(); } catch (e) {} };
-  }
-  function disconnectPresence() {
-    if (presenceReconnectTimer) { clearTimeout(presenceReconnectTimer); presenceReconnectTimer = null; }
-    if (presenceWS) { try { presenceWS.close(); } catch (e) {} presenceWS = null; }
-  }
-  function sendPresence(obj) {
-    if (presenceWS && presenceWS.readyState === WebSocket.OPEN) presenceWS.send(JSON.stringify(obj));
+  function openJoinFromLink(code) {
+    joinGateCode = String(code || '').toUpperCase();
+    AUDIO.init(CONFIG.AUDIO_URLS);
+    const bz = document.getElementById('audio-buzzer');
+    if (bz && CONFIG.AUDIO_URLS.buzzer) bz.src = CONFIG.AUDIO_URLS.buzzer;
+    if (!displayName) displayName = loadSavedName();
+    showScreen('solo-screen');
+    renderSolo();
   }
 
-  function onPresenceMessage(ev) {
-    let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
-    if (msg.type === 'invite_received') {
-      pendingInvite = msg;
-      showInviteModal(msg);
-    } else if (msg.type === 'invite_response') {
-      showToast(msg.accepted ? `✅ ${msg.fromUsername} đã chấp nhận lời mời!` : `❌ ${msg.fromUsername} đã từ chối lời mời.`);
-    } else if (msg.type === 'invite_sent_ack') {
-      if (msg.offline && msg.offline.length) showToast(`⚠️ Chưa thấy online: ${msg.offline.join(', ')} (họ cần mở app để nhận lời mời)`);
-    }
-  }
-
-  function showInviteModal(msg) {
-    const sheetLabel = msg.sheet === 've_dich' ? 'Về đích' : 'Khởi động chung';
-    const text = `Người chơi ${msg.fromUsername} muốn mời bạn tham gia thi đấu Giành chuông bộ câu hỏi của phần thi ${sheetLabel}.`;
-    const el = document.getElementById('solo-invite-text');
-    if (el) el.textContent = text;
-    document.getElementById('solo-invite-modal').classList.add('show');
-  }
-  function hideInviteModal() {
-    const m = document.getElementById('solo-invite-modal');
-    if (m) m.classList.remove('show');
-  }
-  function acceptInvite() {
-    if (!pendingInvite) return;
-    const inv = pendingInvite; pendingInvite = null;
-    hideInviteModal();
+  function submitJoinGate() {
+    const nameEl = document.getElementById('solo-gate-name');
+    const name = (nameEl && nameEl.value || '').trim().slice(0, 24);
+    if (!name) { showToast('Nhập tên của bạn.'); return; }
+    displayName = name; saveName(name);
+    myUsername = name; myAvatar = '';
+    const code = joinGateCode; joinGateCode = null;
     isHost = false;
-    sendPresence({ type: 'invite_response', toUsername: inv.fromUsername, roomCode: inv.roomCode, accepted: true });
-    openLobby();
-    connectRoom(inv.roomCode);
-  }
-  function declineInvite() {
-    if (!pendingInvite) return;
-    const inv = pendingInvite; pendingInvite = null;
-    hideInviteModal();
-    sendPresence({ type: 'invite_response', toUsername: inv.fromUsername, roomCode: inv.roomCode, accepted: false });
+    connectRoom(code);
   }
 
   // ============================================================
@@ -239,13 +198,12 @@ const SOLO = (function () {
   // HÀNH ĐỘNG NGƯỜI DÙNG
   // ============================================================
   function openLobby() {
-    const u = me();
-    if (!u.username) { showToast('Vui lòng đăng nhập trước.'); return; }
-    myUsername = u.username; myAvatar = u.avatar;
+    if (!displayName) {
+      displayName = loadSavedName() || me().username || '';
+    }
     AUDIO.init(CONFIG.AUDIO_URLS);
     const bz = document.getElementById('audio-buzzer');
     if (bz && CONFIG.AUDIO_URLS.buzzer) bz.src = CONFIG.AUDIO_URLS.buzzer;
-    connectPresence();
     showScreen('solo-screen');
     renderSolo();
   }
@@ -256,6 +214,7 @@ const SOLO = (function () {
       sendRoom({ type: 'leave_room' });
       closeRoom(true);
     }
+    joinGateCode = null;
     goHome();
   }
 
@@ -271,12 +230,13 @@ const SOLO = (function () {
     window.location.href = addr.replace(/\/+$/, '') + '/';
   }
 
-  async function createAndInvite() {
-    if (!backendReady()) { showToast('Chưa cấu hình CONFIG.SOLO_WS_URL.'); return; }
-    const raw = document.getElementById('solo-invite-usernames');
-    if (!raw) return;
-    const usernames = raw.value.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3);
-    if (usernames.length === 0) { showToast('Nhập ít nhất 1 tên người chơi để mời.'); return; }
+  async function createRoom() {
+    if (!backendReady()) { showToast('Không xác định được máy chủ.'); return; }
+    const nameEl = document.getElementById('solo-host-name');
+    const name = (nameEl && nameEl.value || '').trim().slice(0, 24);
+    if (!name) { showToast('Nhập tên hiển thị của bạn.'); return; }
+    displayName = name; saveName(name);
+    myUsername = name; myAvatar = '';
     try {
       const res = await fetch(httpBase() + '/rooms', { method: 'POST' });
       const data = await res.json();
@@ -284,22 +244,39 @@ const SOLO = (function () {
       isHost = true;
       connectRoom(data.roomCode, () => {
         sendRoom({ type: 'set_game', sheet: composeSheet });
-        sendPresence({ type: 'invite', toUsernames: usernames, roomCode: data.roomCode, gameMode: 'gianh_chuong', sheet: composeSheet, fromAvatar: myAvatar });
-        showToast('📨 Đã gửi lời mời — đang chờ mọi người chấp nhận...');
       });
     } catch (e) {
-      showToast('❌ Không tạo được phòng. Kiểm tra CONFIG.SOLO_WS_URL.');
+      showToast('❌ Không tạo được phòng. Đảm bảo bạn đang mở đúng địa chỉ máy chủ nhóm (không phải trang GitHub).');
     }
   }
 
   function joinByCode() {
-    if (!backendReady()) { showToast('Chưa cấu hình CONFIG.SOLO_WS_URL.'); return; }
-    const el = document.getElementById('solo-join-code');
-    if (!el) return;
-    const code = el.value.trim().toUpperCase();
+    if (!backendReady()) { showToast('Không xác định được máy chủ.'); return; }
+    const nameEl = document.getElementById('solo-join-name');
+    const codeEl = document.getElementById('solo-join-code');
+    const name = (nameEl && nameEl.value || '').trim().slice(0, 24);
+    const code = (codeEl && codeEl.value || '').trim().toUpperCase();
+    if (!name) { showToast('Nhập tên của bạn.'); return; }
     if (!code) { showToast('Nhập mã phòng.'); return; }
+    displayName = name; saveName(name);
+    myUsername = name; myAvatar = '';
     isHost = false;
     connectRoom(code);
+  }
+
+  function copyShareLink() {
+    const el = document.getElementById('solo-share-link');
+    if (!el) return;
+    el.select();
+    el.setSelectionRange(0, 99999);
+    const done = () => showToast('📋 Đã copy link phòng!');
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(el.value).then(done).catch(() => { document.execCommand('copy'); done(); });
+      } else {
+        document.execCommand('copy'); done();
+      }
+    } catch (e) { showToast('Không copy được — hãy tự bôi đen và copy.'); }
   }
 
   function hostStartMatch() {
@@ -347,6 +324,8 @@ const SOLO = (function () {
   function renderSolo() {
     const el = document.getElementById('solo-screen');
     if (!el || el.classList.contains('hidden')) return;
+
+    if (joinGateCode) { el.innerHTML = htmlJoinGate(); return; }
     if (!backendReady()) { el.innerHTML = htmlNotConfigured(); return; }
 
     let body;
@@ -380,7 +359,7 @@ const SOLO = (function () {
 
   function subtitleFor(phase) {
     const map = {
-      idle: 'Mời bạn bè cùng thi đấu, hoặc nhập mã phòng để vào',
+      idle: 'Tạo phòng mới hoặc vào phòng có sẵn',
       lobby: 'Chờ mọi người vào phòng',
       ready_check: 'Bấm chuông khi bạn đã sẵn sàng',
       countdown: 'Chuẩn bị...',
@@ -393,72 +372,93 @@ const SOLO = (function () {
     return map[phase] || '';
   }
 
+  function htmlJoinGate() {
+    return `
+      <div class="solo-join-gate">
+        <div class="solo-join-gate-emoji">🎮</div>
+        <div class="solo-join-gate-title">Bạn được mời vào phòng ${esc(joinGateCode)}</div>
+        <div class="solo-hint" style="text-align:center;margin-bottom:18px">Nhập tên để vào chơi cùng mọi người</div>
+        <div class="solo-field">
+          <input type="text" class="solo-input" id="solo-gate-name" placeholder="Tên của bạn" maxlength="24" value="${esc(displayName)}"
+            onkeydown="if(event.key==='Enter') SOLO.submitJoinGate()">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="SOLO.submitJoinGate()">Vào phòng</button>
+      </div>
+    `;
+  }
+
   function htmlNotConfigured() {
     return `<div class="solo-card">
       <div class="solo-card-title">⚠️ Không tìm thấy máy chủ Solo</div>
-      <div class="solo-hint">Trang này có vẻ đang được mở trực tiếp từ file (không qua server), nên Solo không tự nhận diện được máy chủ. Hãy nhờ người "host" chạy <code>local-server</code> (xem <code>local-server/README.md</code>) rồi mở trang qua địa chỉ <code>http://...</code> mà server đó in ra.</div>
+      <div class="solo-hint">Trang này có vẻ đang được mở trực tiếp từ file (không qua server), nên Solo không tự nhận diện được máy chủ. Hãy tải và chạy máy chủ nhóm (xem <code>local-server/README.md</code>) rồi mở trang qua địa chỉ <code>http://...</code> mà nó in ra.</div>
     </div>`;
   }
 
   function htmlHome() {
     const onLocalhost = /^(localhost|127\.0\.0\.1)/.test(window.location.host);
-    const serverInfo = `<div class="solo-hint" style="text-align:center;margin-bottom:16px">Đang dùng máy chủ: <code>${esc(wsBase())}</code> — mọi người cần mở trang qua cùng địa chỉ này (chung Wi-Fi) mới chơi cùng nhau được.</div>`;
+    const serverInfo = `<div class="solo-hint" style="text-align:center;margin-bottom:16px">Đang dùng máy chủ: <code>${esc(wsBase())}</code></div>`;
 
     const tabs = `
       <div class="solo-tabs">
-        <button class="solo-tab-btn ${homeTab === 'host' ? 'active' : ''}" onclick="SOLO.setHomeTab('host')">🖥️ Làm chủ phòng</button>
-        <button class="solo-tab-btn ${homeTab === 'join' ? 'active' : ''}" onclick="SOLO.setHomeTab('join')">🔗 Vào phòng</button>
+        <button class="solo-tab-btn ${homeTab === 'host' ? 'active' : ''}" onclick="SOLO.setHomeTab('host')">🚀 Tạo phòng mới</button>
+        <button class="solo-tab-btn ${homeTab === 'join' ? 'active' : ''}" onclick="SOLO.setHomeTab('join')">🔗 Vào phòng có sẵn</button>
       </div>`;
 
     let content;
     if (homeTab === 'join') {
       content = `
+        <div class="solo-card">
+          <div class="solo-card-title">Tên hiển thị của bạn</div>
+          <div class="solo-field">
+            <input type="text" class="solo-input" id="solo-join-name" placeholder="vd: Lan" maxlength="24" value="${esc(displayName)}">
+          </div>
+        </div>
+        <div class="solo-card">
+          <div class="solo-card-title">Mã phòng</div>
+          <div class="solo-field">
+            <input type="text" class="solo-input" id="solo-join-code" placeholder="vd: A1B2C3" style="text-transform:uppercase">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="SOLO.joinByCode()">Vào phòng</button>
+          <div class="solo-hint" style="margin-top:8px">Cách nhanh hơn: bấm thẳng vào link phòng mà bạn mình gửi — không cần nhập mã, cũng không cần bước dưới đây.</div>
+        </div>
         ${onLocalhost ? '' : `
         <div class="solo-card">
-          <div class="solo-card-title">Bước 1 · Nhập địa chỉ máy chủ nhóm</div>
-          <div class="solo-hint" style="margin-bottom:10px">Dán đúng địa chỉ "Cùng Wi-Fi" mà host đã gửi cho bạn (dạng http://192.168.x.x:3000). Trình duyệt sẽ tự chuyển bạn qua đó.</div>
+          <div class="solo-card-title">Chưa đúng địa chỉ máy chủ nhóm?</div>
+          <div class="solo-hint" style="margin-bottom:10px">Nếu bạn mình gửi một địa chỉ dạng http://192.168.x.x:3000 (không phải link phòng), dán vào đây rồi bấm để chuyển qua đó trước khi vào phòng.</div>
           <div class="solo-field">
             <input type="text" class="solo-input" id="solo-server-address" placeholder="http://192.168.1.23:3000">
           </div>
-          <button class="btn btn-primary" style="width:100%" onclick="SOLO.goToServerAddress()">Vào máy chủ nhóm</button>
+          <button class="btn btn-outline" style="width:100%" onclick="SOLO.goToServerAddress()">Đi tới địa chỉ đó</button>
         </div>`}
-        <div class="solo-card">
-          <div class="solo-card-title">${onLocalhost ? 'Vào phòng bằng mã' : 'Bước 2 · Vào phòng bằng mã'}</div>
-          <div class="solo-hint" style="margin-bottom:10px">${onLocalhost ? 'Nhập mã phòng do host gửi cho bạn.' : 'Chỉ dùng được sau khi bạn đã ở đúng địa chỉ máy chủ nhóm (bước 1). Nếu host đã gửi lời mời trực tiếp, bạn không cần bước này — cứ chờ popup lời mời hiện lên.'}</div>
-          <div class="solo-field">
-            <input type="text" class="solo-input" id="solo-join-code" placeholder="Nhập mã phòng (vd: A1B2C3)" style="text-transform:uppercase">
-          </div>
-          <button class="btn btn-outline" style="width:100%" onclick="SOLO.joinByCode()">Vào phòng</button>
-        </div>`;
+      `;
     } else {
       content = `
         <div class="solo-card">
-          <div class="solo-card-title">Bước 1 · Tải máy chủ nhóm</div>
-          <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới (không cần cài Node.js) — bấm đúp để chạy.</div>
+          <div class="solo-card-title">Tên hiển thị của bạn</div>
+          <div class="solo-field">
+            <input type="text" class="solo-input" id="solo-host-name" placeholder="vd: Minh" maxlength="24" value="${esc(displayName)}">
+          </div>
+        </div>
+        <div class="solo-card">
+          <div class="solo-card-title">Bộ câu hỏi cho Giành chuông</div>
+          <div class="solo-choice-row">
+            <div class="solo-choice ${composeSheet === 'khoi_dong' ? 'active' : ''}" onclick="SOLO.setComposeSheet('khoi_dong')">Khởi động chung</div>
+            <div class="solo-choice ${composeSheet === 've_dich' ? 'active' : ''}" onclick="SOLO.setComposeSheet('ve_dich')">Về đích</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" onclick="SOLO.createRoom()">🚀 Tạo phòng thi đấu</button>
+        </div>
+        <div class="solo-card">
+          <div class="solo-card-title">Chưa có máy chủ nhóm?</div>
+          <div class="solo-hint" style="margin-bottom:10px">Tải file chạy sẵn bên dưới — không cần cài Node.js, tải về là chạy được ngay, không cần để đúng thư mục nào.</div>
           <div class="solo-choice-row">
             <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
             <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-macos" download>⬇️ macOS</a>
             <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-linux" download>⬇️ Linux</a>
           </div>
-          <div class="solo-hint" style="margin-top:10px">⚠️ File tải về phải nằm trong thư mục <code>local-server/</code> của project (đúng vị trí file gốc). macOS/Linux cần cấp quyền chạy: <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
-          <div class="solo-hint">Sau khi chạy, cửa sổ hiện ra sẽ in 2 địa chỉ — <b>chính bạn (host) hãy mở địa chỉ "Trên máy này" (http://localhost:3000)</b> thay vì ở lại trang này, rồi gửi địa chỉ "Cùng Wi-Fi" cho cả nhóm để họ dán vào tab "Vào phòng".</div>
+          <div class="solo-hint" style="margin-top:10px">macOS/Linux cần cấp quyền chạy lần đầu: mở Terminal, gõ <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
+          <div class="solo-hint">Chạy xong, cửa sổ hiện ra sẽ in địa chỉ dạng <code>http://localhost:3000</code> — mở đúng địa chỉ đó (không phải trang này) rồi quay lại tạo phòng ở trên.</div>
         </div>
-        <div class="solo-card">
-          <div class="solo-card-title">Bước 2 · Mời bạn bè thi đấu</div>
-          <div class="solo-hint" style="margin-bottom:10px">Chỉ làm được bước này SAU KHI bạn đã mở trang qua http://localhost:3000 (bước 1) — chưa mở qua đó thì nút bên dưới sẽ báo lỗi.</div>
-          <div class="solo-field">
-            <label class="solo-label">Bộ câu hỏi cho Giành chuông</label>
-            <div class="solo-choice-row">
-              <div class="solo-choice ${composeSheet === 'khoi_dong' ? 'active' : ''}" onclick="SOLO.setComposeSheet('khoi_dong')">Khởi động chung</div>
-              <div class="solo-choice ${composeSheet === 've_dich' ? 'active' : ''}" onclick="SOLO.setComposeSheet('ve_dich')">Về đích</div>
-            </div>
-          </div>
-          <div class="solo-field">
-            <label class="solo-label">Tên người chơi muốn mời (tối đa 3, cách nhau bởi dấu phẩy)</label>
-            <input type="text" class="solo-input" id="solo-invite-usernames" placeholder="vd: minh, lan, hoa">
-          </div>
-          <button class="btn btn-primary" style="width:100%" onclick="SOLO.createAndInvite()">🔔 Tạo phòng & Gửi lời mời</button>
-        </div>`;
+      `;
     }
 
     return `
@@ -487,10 +487,16 @@ const SOLO = (function () {
   function htmlRoomLobby() {
     const players = room.players.map(p => renderPlayerRow(p)).join('');
     const sheetLabel = room.sheet === 've_dich' ? 'Về đích' : 'Khởi động chung';
+    const shareLink = httpBase() + '/?join=' + room.code;
     return `
       <div class="solo-card">
         <div class="solo-room-code">${esc(room.code)}</div>
-        <div class="solo-hint" style="text-align:center;margin-top:6px">Chia sẻ mã này, hoặc chờ lời mời được chấp nhận</div>
+        ${isHost ? `
+        <div class="solo-hint" style="text-align:center;margin:10px 0 8px">Gửi link này cho bạn bè (đang chung Wi-Fi) — bấm vào là vào thẳng phòng, không cần nhập mã:</div>
+        <div class="solo-field" style="display:flex;gap:8px">
+          <input type="text" class="solo-input" id="solo-share-link" value="${esc(shareLink)}" readonly onclick="this.select()">
+          <button class="btn btn-outline" style="white-space:nowrap" onclick="SOLO.copyShareLink()">Copy</button>
+        </div>` : `<div class="solo-hint" style="text-align:center;margin-top:6px">Đang ở trong phòng...</div>`}
       </div>
       <div class="solo-card">
         <div class="solo-card-title">Giành chuông · ${esc(sheetLabel)}</div>
@@ -529,7 +535,6 @@ const SOLO = (function () {
     const pc = q.points === 10 ? 'p10' : (q.points === 20 ? 'p20' : 'p30');
     const isReading = room.phase === 'question_reading';
     const isGrading = room.phase === 'grading';
-    const buzzedPlayer = room.players.find(p => p.username === room.buzzedUsername);
 
     let meta = '';
     if (room.sheet === 've_dich') {
@@ -605,8 +610,8 @@ const SOLO = (function () {
   }
 
   return {
-    openLobby, backToHome, setComposeSheet, setHomeTab, goToServerAddress, createAndInvite, joinByCode, hostStartMatch,
-    pressReady, onAnswerInput, onAnswerKeydown, pressBuzz, playAgain,
-    acceptInvite, declineInvite, connectPresence, disconnectPresence
+    openLobby, openJoinFromLink, submitJoinGate, backToHome, setComposeSheet, setHomeTab,
+    goToServerAddress, createRoom, joinByCode, copyShareLink, hostStartMatch,
+    pressReady, onAnswerInput, onAnswerKeydown, pressBuzz, playAgain
   };
 })();
