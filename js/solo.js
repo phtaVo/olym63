@@ -422,9 +422,9 @@ const SOLO = (function () {
           <div class="solo-card-title">🖥️ Cần chạy máy chủ nhóm trước</div>
           <div class="solo-hint" style="margin-bottom:10px">Trang này đang chạy từ web tĩnh (không tự tạo/vào phòng được ở đây). Một bạn trong nhóm ("host") tải file chạy sẵn bên dưới — không cần cài Node.js, tải về là chạy được ngay:</div>
           <div class="solo-choice-row">
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-macos" download>⬇️ macOS</a>
-            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="local-server-builds/olym63-solo-server-linux" download>⬇️ Linux</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v3.0-solo-server/olym63-solo-server-windows.exe" download>⬇️ Windows</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v3.0-solo-server/olym63-solo-server-macos" download>⬇️ macOS</a>
+            <a class="btn btn-outline" style="text-decoration:none;text-align:center" href="https://github.com/phtaVo/olym63/releases/download/v3.0-solo-server/olym63-solo-server-linux" download>⬇️ Linux</a>
           </div>
           <div class="solo-hint" style="margin-top:10px">macOS/Linux cần cấp quyền chạy lần đầu: mở Terminal, gõ <code>chmod +x tên-file</code> rồi <code>./tên-file</code>.</div>
           <div class="solo-hint">Chạy xong, cửa sổ hiện ra sẽ in địa chỉ dạng <code>http://localhost:3000</code> — <b>host mở đúng địa chỉ đó</b> (thay cho trang này) để tạo phòng và lấy link mời bạn bè. Bạn bè được mời chỉ cần bấm vào link, không cần làm bước nào ở đây cả.</div>
