@@ -140,18 +140,25 @@ const SOLO = (function () {
       case 'countdown_start':
         startCountdownUI(msg.seconds); break;
       case 'question_start':
-        room.phase = (msg.subphase === 'reading') ? 'question_reading' : 'question_answering';
+        room.phase = (msg.subphase === 'reading') ? 'question_reading' : 'question_thinking';
         room.currentIndex = msg.index; room.subphase = msg.subphase; room.phaseDuration = msg.duration;
         room.currentQuestion = { question: msg.text, answer: (room.questions[msg.index] || {}).answer, points: msg.points };
         room.buzzedUsername = null; room.myAnswer = ''; room.lastResult = null;
         if (room.sheet === 'khoi_dong' && msg.index === 0) AUDIO.playBgKD();
         startLocalTimer(msg.duration);
         break;
-      case 'answer_phase_start':
-        room.phase = 'question_answering'; room.subphase = 'answering'; room.phaseDuration = msg.duration;
+      case 'answer_phase_start': // Về đích: hết giờ đọc, bắt đầu giờ suy nghĩ (chuông vẫn CHƯA mở)
+        room.phase = 'question_thinking'; room.subphase = 'thinking'; room.phaseDuration = msg.duration;
         if (room.currentQuestion) room.currentQuestion.points = msg.points;
         room.buzzedUsername = null; room.myAnswer = '';
         if (msg.points === 10) AUDIO.playCauHoi15s(); else AUDIO.playCauHoiVD();
+        startLocalTimer(msg.duration);
+        break;
+      case 'buzz_window_start': // hết giờ đọc/suy nghĩ — CHUÔNG MỞ
+        room.phase = 'question_buzz'; room.subphase = 'buzz'; room.phaseDuration = msg.duration;
+        if (room.currentQuestion) room.currentQuestion.points = msg.points;
+        room.buzzedUsername = null;
+        playBuzzerSfx();
         startLocalTimer(msg.duration);
         break;
       case 'buzzed':
@@ -339,7 +346,8 @@ const SOLO = (function () {
       case 'ready_check':   body = htmlReadyCheck(); break;
       case 'countdown':     body = htmlCountdown(); break;
       case 'question_reading':
-      case 'question_answering':
+      case 'question_thinking':
+      case 'question_buzz':
       case 'grading':       body = htmlQuestion(); break;
       case 'result':        body = htmlResult(); break;
       case 'finished':      body = htmlFinished(); break;
@@ -355,7 +363,7 @@ const SOLO = (function () {
       </div>
       ${body}
     `;
-    if (room.phase === 'question_answering') {
+    if (room.phase === 'question_thinking' || room.phase === 'question_buzz') {
       const input = document.getElementById('solo-answer-input');
       if (input) { input.value = room.myAnswer || ''; input.focus(); }
     }
@@ -368,7 +376,8 @@ const SOLO = (function () {
       ready_check: 'Bấm chuông khi bạn đã sẵn sàng',
       countdown: 'Chuẩn bị...',
       question_reading: 'Đọc câu hỏi',
-      question_answering: 'Giành chuông & trả lời',
+      question_thinking: 'Suy nghĩ — chuông chưa mở',
+      question_buzz: '🔔 Chuông đã mở — giành quyền trả lời!',
       grading: 'Đang chấm điểm...',
       result: 'Kết quả',
       finished: 'Kết thúc'
@@ -542,16 +551,21 @@ const SOLO = (function () {
   function htmlQuestion() {
     const q = room.currentQuestion || {};
     const pc = q.points === 10 ? 'p10' : (q.points === 20 ? 'p20' : 'p30');
-    const isReading = room.phase === 'question_reading';
+    const isReading = room.phase === 'question_reading';    // Về đích: đang đọc, chưa được gõ/bấm gì
+    const isThinking = room.phase === 'question_thinking';   // đang suy nghĩ — được gõ, NHƯNG CHUÔNG CHƯA MỞ
+    const isBuzzWindow = room.phase === 'question_buzz';     // hết giờ — chuông đã mở, ai bấm trước được chấm
     const isGrading = room.phase === 'grading';
+    const inputDisabled = isReading; // chỉ khoá ô nhập lúc đang đọc câu hỏi (Về đích)
+    const buzzDisabled = isReading || isThinking || !!room.buzzedUsername;
 
-    let meta = '';
-    if (room.sheet === 've_dich') {
-      meta = `<span class="points-badge ${pc}">+${q.points || 10} điểm</span>
-        <span class="phase-badge ${isReading ? 'reading' : 'answering'}">${isReading ? 'Đọc câu hỏi' : 'Trả lời'}</span>`;
-    } else {
-      meta = `<span class="points-badge p10">+10 điểm</span>`;
-    }
+    const phaseLabel = isReading ? 'Đọc câu hỏi' : isThinking ? 'Suy nghĩ' : isBuzzWindow ? '🔔 Chuông đã mở!' : '';
+    const phaseClass = isReading ? 'reading' : isThinking ? 'reading' : 'answering';
+    let meta = `<span class="points-badge ${pc}">+${q.points || 10} điểm</span>`;
+    if (phaseLabel) meta += `<span class="phase-badge ${phaseClass}">${phaseLabel}</span>`;
+
+    let inputPlaceholder = 'Nhập câu trả lời rồi bấm Enter để ghi nhận...';
+    if (isReading) inputPlaceholder = 'Chờ hết thời gian đọc...';
+    else if (isThinking) inputPlaceholder = 'Suy nghĩ và gõ trước — chuông sắp mở...';
 
     return `
       <div class="solo-timer-row">
@@ -564,13 +578,13 @@ const SOLO = (function () {
         ? `<div class="solo-hint" style="text-align:center">🤔 Đang chấm điểm cho <b>${esc(room.buzzedUsername)}</b>...</div>`
         : `
       <div class="solo-buzzer-wrap" style="padding-top:6px">
-        <button class="solo-buzzer-btn ${room.buzzedUsername ? 'claimed' : ''}" ${(isReading || room.buzzedUsername) ? 'disabled' : ''} onclick="SOLO.pressBuzz()">
-          🔔<br>${room.buzzedUsername ? esc(room.buzzedUsername) + '<br>đã giành!' : 'Giành<br>chuông'}
+        <button class="solo-buzzer-btn ${room.buzzedUsername ? 'claimed' : ''}" ${buzzDisabled ? 'disabled' : ''} onclick="SOLO.pressBuzz()">
+          🔔<br>${room.buzzedUsername ? esc(room.buzzedUsername) + '<br>đã giành!' : (isBuzzWindow ? 'Giành<br>chuông' : 'Chuông<br>chưa mở')}
         </button>
       </div>
       <div class="solo-field">
-        <input type="text" class="solo-input" id="solo-answer-input" placeholder="${isReading ? 'Chờ hết thời gian đọc...' : 'Nhập câu trả lời rồi bấm Enter để ghi nhận...'}"
-          autocomplete="off" spellcheck="false" ${isReading ? 'disabled' : ''}
+        <input type="text" class="solo-input" id="solo-answer-input" placeholder="${inputPlaceholder}"
+          autocomplete="off" spellcheck="false" ${inputDisabled ? 'disabled' : ''}
           oninput="SOLO.onAnswerInput(event)" onkeydown="SOLO.onAnswerKeydown(event)">
       </div>
       <div class="saved-answer-indicator hidden" id="solo-saved-indicator"></div>
