@@ -274,7 +274,14 @@ function normalizeImageUrl(url) {
   if (gh) return `https://raw.githubusercontent.com/${gh[1]}/${gh[2]}/${gh[3]}`;
   return url;
 }
-function directDriveVideoUrl(id) { return `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`; }
+// Các địa chỉ có thể phát trực tiếp một video Drive, thử lần lượt cho đến khi được
+function driveVideoCandidates(id) {
+  const list = [];
+  if (CONFIG.DRIVE_API_KEY) list.push(`https://www.googleapis.com/drive/v3/files/${id}?alt=media&key=${encodeURIComponent(CONFIG.DRIVE_API_KEY)}`);
+  list.push(`https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`);
+  list.push(`https://drive.google.com/uc?export=download&id=${id}`);
+  return list;
+}
 function guessMediaType(url, hints) {
   const h = (hints || []).join(' ').toLowerCase();
   if (/video|clip/.test(h)) return 'video';
@@ -405,8 +412,12 @@ function mountVideo(url, opts) {
   v.setAttribute('controlsList', 'nodownload noplaybackrate noremoteplayback');
   v.addEventListener('contextmenu', e => e.preventDefault());
   v.addEventListener('ended', finish);
+  const sources = id ? driveVideoCandidates(id) : [url];
+  let srcIdx = 0;
   v.addEventListener('error', () => {
     if (finished) return;
+    console.warn('[VIDEO] Lỗi tải nguồn', srcIdx + 1, '/', sources.length, v.error && v.error.code, sources[srcIdx].replace(/key=[^&]+/, 'key=***'));
+    if (srcIdx + 1 < sources.length) { srcIdx++; v.src = sources[srcIdx]; v.load(); return; }   // thử nguồn kế tiếp
     if (opts.onFail) { stopPoll(); area.innerHTML = '<div class="media-error">⚠️ Không tải được video — chuyển sang chế độ tính giờ cố định</div>'; if (run === STATE.runId) opts.onFail(); return; }
     // Dự phòng: nhúng trình phát của Google Drive, người chơi bấm nút khi xem xong
     area.innerHTML = '';
@@ -423,7 +434,7 @@ function mountVideo(url, opts) {
       later(finish, 1500);
     }
   });
-  v.src = id ? directDriveVideoUrl(id) : url;
+  v.src = sources[0];
   area.appendChild(v);
 
   // Chờ video tải XONG (đã đệm hết) rồi mới gọi onReady
