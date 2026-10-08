@@ -147,9 +147,55 @@ const AUTH = (function () {
   // ============================================================
   // HOME (render động — có chip người dùng)
   // ============================================================
+  let homeTab = 'olympia';
+  function setHomeTab(tab) { homeTab = (tab === 'ddvq') ? 'ddvq' : 'olympia'; renderHome(); }
+
   function renderHome() {
     const el = document.getElementById('home-screen');
-    const u = currentUser || {};
+    const olympiaCards = `
+        <div class="section-card" onclick="startGame('khoi_dong')">
+          <div class="section-badge live">Đang mở</div>
+          <div class="section-icon">🚀</div>
+          <div class="section-num">Phần 01</div>
+          <div class="section-name">Khởi<br>Động</div>
+          <div class="section-desc">${CONFIG.GAME.KHOI_DONG_TIME} giây · ${CONFIG.GAME.KHOI_DONG_COUNT} câu · +10đ/câu</div>
+        </div>
+        <div class="section-card" onclick="startGame('vcnv')">
+          <div class="section-badge live">Đang mở</div>
+          <div class="section-icon">🧩</div>
+          <div class="section-num">Phần 02</div>
+          <div class="section-name">Vượt<br>Chướng Ngại Vật</div>
+          <div class="section-desc">${CONFIG.GAME.VCNV_COUNT} câu · hình ảnh + từ khóa</div>
+        </div>
+        <div class="section-card" onclick="startGame('tang_toc')">
+          <div class="section-badge live">Đang mở</div>
+          <div class="section-icon">⚡</div>
+          <div class="section-num">Phần 03</div>
+          <div class="section-name">Tăng<br>Tốc</div>
+          <div class="section-desc">${CONFIG.GAME.TANG_TOC_COUNT} câu · hình ảnh/video · tối đa +40đ</div>
+        </div>
+        <div class="section-card" onclick="startGame('ve_dich')">
+          <div class="section-badge live">Đang mở</div>
+          <div class="section-icon">🏆</div>
+          <div class="section-num">Phần 04</div>
+          <div class="section-name">Về<br>Đích</div>
+          <div class="section-desc">3 câu · chọn gói 20/30đ · Ngôi sao HV</div>
+        </div>`;
+    const ddvqCards = `
+        <div class="section-card locked" onclick="showComingSoon('Xuất Phát')">
+          <div class="section-badge">Sắp ra mắt</div>
+          <div class="section-icon">🏁</div>
+          <div class="section-num">ĐĐVQ · Phần 01</div>
+          <div class="section-name">Xuất<br>Phát</div>
+          <div class="section-desc">Đang được phát triển</div>
+        </div>
+        <div class="section-card locked" onclick="showComingSoon('Vinh Quang')">
+          <div class="section-badge">Sắp ra mắt</div>
+          <div class="section-icon">👑</div>
+          <div class="section-num">ĐĐVQ · Phần 02</div>
+          <div class="section-name">Vinh<br>Quang</div>
+          <div class="section-desc">Đang được phát triển</div>
+        </div>`;
     el.innerHTML = `
       <div class="home-content">
       <div class="logo-area">
@@ -159,42 +205,12 @@ const AUTH = (function () {
         <div class="logo-sub">Chọn phần thi để bắt đầu</div>
       </div>
       <div class="home-right">
+      <div class="home-tabs">
+        <button class="home-tab ${homeTab === 'olympia' ? 'active' : ''}" onclick="AUTH.setHomeTab('olympia')">Olympia</button>
+        <button class="home-tab ${homeTab === 'ddvq' ? 'active' : ''}" onclick="AUTH.setHomeTab('ddvq')">ĐĐVQ</button>
+      </div>
       <div class="sections-grid">
-        <div class="section-card" onclick="startGame('khoi_dong')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🚀</div>
-          <div class="section-num">Phần 01</div>
-          <div class="section-name">Khởi<br>Động</div>
-          <div class="section-desc">70 giây · 12 câu · +10đ/câu</div>
-        </div>
-        <div class="section-card" onclick="startGame('ve_dich')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🏆</div>
-          <div class="section-num">Phần 04</div>
-          <div class="section-name">Về<br>Đích</div>
-          <div class="section-desc">6 câu · 10/20/30đ · Ngôi sao HV</div>
-        </div>
-        <div class="section-card locked" onclick="showComingSoon('Vượt Chướng Ngại Vật')">
-          <div class="section-badge">Sắp ra mắt</div>
-          <div class="section-icon">🧩</div>
-          <div class="section-num">Phần 02</div>
-          <div class="section-name">Vượt<br>Chướng Ngại Vật</div>
-          <div class="section-desc">60 giây · 1 từ hàng rào</div>
-        </div>
-        <div class="section-card locked" onclick="showComingSoon('Tăng Tốc')">
-          <div class="section-badge">Sắp ra mắt</div>
-          <div class="section-icon">⚡</div>
-          <div class="section-num">Phần 03</div>
-          <div class="section-name">Tăng<br>Tốc</div>
-          <div class="section-desc">Nhanh tay · Nhanh mắt</div>
-        </div>
-        <div class="section-card" onclick="SOLO.openLobby()">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🎮</div>
-          <div class="section-num">Thi đấu nhóm</div>
-          <div class="section-name">Solo</div>
-          <div class="section-desc">2-4 người · Giành chuông</div>
-        </div>
+        ${homeTab === 'olympia' ? olympiaCards : ddvqCards}
       </div>
       <div class="intro-toggle-row">
         <span class="intro-toggle-label">🎬 Hiệu ứng giới thiệu</span>
@@ -547,7 +563,7 @@ const AUTH = (function () {
   }
 
   return {
-    boot, login, loginKeydown, logout, confirmLogout, gotoHome,
+    boot, login, loginKeydown, logout, confirmLogout, gotoHome, setHomeTab,
     submitScore,
     openLeaderboard, switchLeaderboardTab,
     openProfile, saveUsername, onAvatarSelected, changePassword,
