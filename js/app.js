@@ -10,6 +10,7 @@
 const AUDIO = {
   introKD: null, introVD: null, bgKD: null, correct: null,
   fail: null, cauhoiVD: null, cauhoi15sVD: null, starHopeEl: null,
+  mocauhoiVD: null, mocauhoiTT: null, nhapcauhoiTT: null,
 
   init(urls) {
     this.introKD     = document.getElementById('audio-intro-kd');
@@ -20,6 +21,9 @@ const AUDIO = {
     this.cauhoiVD    = document.getElementById('audio-cauhoi-vd');
     this.cauhoi15sVD = document.getElementById('audio-cauhoi-15s-vd');
     this.starHopeEl  = document.getElementById('audio-star-hope');
+    this.mocauhoiVD   = document.getElementById('audio-mocauhoi-vd');
+    this.mocauhoiTT   = document.getElementById('audio-mocauhoi-tt');
+    this.nhapcauhoiTT = document.getElementById('audio-nhapcauhoi-tt');
     if (!urls) return;
     if (urls.introKD     && this.introKD)     this.introKD.src     = urls.introKD;
     if (urls.introVD     && this.introVD)     this.introVD.src     = urls.introVD;
@@ -29,6 +33,9 @@ const AUDIO = {
     if (urls.cauhoiVD    && this.cauhoiVD)    this.cauhoiVD.src    = urls.cauhoiVD;
     if (urls.cauhoi15sVD && this.cauhoi15sVD) this.cauhoi15sVD.src = urls.cauhoi15sVD;
     if (urls.starHope    && this.starHopeEl)  this.starHopeEl.src  = urls.starHope;
+    if (urls.mocauhoiVD   && this.mocauhoiVD)   this.mocauhoiVD.src   = urls.mocauhoiVD;
+    if (urls.mocauhoiTT   && this.mocauhoiTT)   this.mocauhoiTT.src   = urls.mocauhoiTT;
+    if (urls.nhapcauhoiTT && this.nhapcauhoiTT) this.nhapcauhoiTT.src = urls.nhapcauhoiTT;
   },
 
   play(el) {
@@ -39,8 +46,9 @@ const AUDIO = {
 
   stopAll() {
     [this.introKD, this.introVD, this.bgKD, this.correct, this.fail,
-     this.cauhoiVD, this.cauhoi15sVD, this.starHopeEl]
-      .forEach(a => { if (a) { a.pause(); a.currentTime = 0; } });
+     this.cauhoiVD, this.cauhoi15sVD, this.starHopeEl,
+     this.mocauhoiVD, this.mocauhoiTT, this.nhapcauhoiTT]
+      .forEach(a => { if (a) { a.onended = null; a.pause(); a.currentTime = 0; } });
   },
 
   playSFX(ok)     { this.play(ok ? this.correct : this.fail); },
@@ -100,8 +108,37 @@ const STATE = {
   mode: null, questions: [], currentIndex: 0, score: 0,
   timerInterval: null, phaseTimer: null, answers: [], timeLeft: 70,
   starHope: false, starHopeUsed: false,
-  vedich: { phase: 'reading', phaseTimeLeft: 0, readTime: 0, answerTime: 0, savedAnswer: null }
+  vedich: { phase: 'reading', phaseTimeLeft: 0, readTime: 0, answerTime: 0, savedAnswer: null },
+  vcnv: { locked: false },
+  tt: { phase: 'idle', savedAnswer: null, savedAt: null, t0: 0 },
+  vdPool: null, vdPick: [null, null, null],
+  runId: 0, timeouts: []
 };
+
+// setTimeout có theo dõi: bị huỷ khi về trang chủ / bắt đầu lượt mới
+function later(fn, ms) {
+  const run = STATE.runId;
+  const id = setTimeout(() => { if (run === STATE.runId) fn(); }, ms);
+  STATE.timeouts.push(id);
+  return id;
+}
+
+// Phát audio, gọi onDone ĐÚNG 1 LẦN khi phát xong (hoặc sau fallbackMs nếu không phát được)
+function playUntilEnd(el, onDone, fallbackMs) {
+  const run = STATE.runId;
+  let fired = false;
+  const fire = () => {
+    if (fired) return; fired = true;
+    if (el) { el.onended = null; el.onerror = null; }
+    if (run !== STATE.runId) return;
+    onDone();
+  };
+  if (!el || !el.src || el.src === window.location.href) { later(fire, fallbackMs || 1500); return; }
+  el.onended = fire; el.onerror = () => later(fire, fallbackMs || 1500);
+  el.currentTime = 0;
+  const pr = el.play();
+  if (pr && pr.catch) pr.catch(() => later(fire, fallbackMs || 1500));
+}
 
 // ============================================================
 // SCREENS
@@ -119,7 +156,7 @@ function showScreen(id) {
   }
 }
 function goHome() {
-  clearAllTimers(); AUDIO.stopAll();
+  STATE.runId++; clearAllTimers(); AUDIO.stopAll(); clearMedia();
   if (_introProgressTimer) { clearInterval(_introProgressTimer); _introProgressTimer = null; }
   showScreen('home-screen');
 }
@@ -143,8 +180,12 @@ function showToast(msg) {
 let _introProgressTimer = null;
 const INTRO_CONFIG = {
   khoi_dong: { title: 'Khởi Động', subtitle: 'Phần Thi Khởi Động' },
-  ve_dich:   { title: 'Về Đích',   subtitle: 'Phần Thi Về Đích'   }
+  ve_dich:   { title: 'Về Đích',   subtitle: 'Phần Thi Về Đích'   },
+  vcnv:      { title: 'Vượt Chướng Ngại Vật', subtitle: 'Phần Thi Vượt Chướng Ngại Vật' },
+  tang_toc:  { title: 'Tăng Tốc',  subtitle: 'Phần Thi Tăng Tốc'  }
 };
+const MODE_LABELS = { khoi_dong: 'Khởi Động', vcnv: 'Vượt Chướng Ngại Vật', tang_toc: 'Tăng Tốc', ve_dich: 'Về Đích' };
+function modeLabel(m) { return MODE_LABELS[m] || m; }
 
 function showIntroScreen(mode, audioEl, onDone) {
   const cfg = INTRO_CONFIG[mode] || { title: mode, subtitle: '' };
@@ -210,15 +251,58 @@ function shuffleArray(array) {
   return arr;
 }
 
+// ---------- Tiện ích đọc dữ liệu sheet ----------
+const HEADER_RE = /^(câu hỏi|cau hoi|question|đáp án|dap an|answer|điểm|diem|points?|từ khóa|tu khoa|keywords?|link|ảnh|hình ảnh|số ký tự|số kí tự|video|đề)$/i;
+// Bỏ hàng trống; nếu hàng đầu là tiêu đề thì bỏ, nếu là câu hỏi thật thì giữ (DB mới KHÔNG có hàng tiêu đề)
+function dataRows(rows) {
+  let r = rows.filter(row => row.some(c => String(c == null ? '' : c).trim() !== ''));
+  if (r.length && r[0].slice(0, 4).some(c => HEADER_RE.test(String(c == null ? '' : c).trim()))) r = r.slice(1);
+  return r;
+}
+const cell = (r, i) => String(r[i] == null ? '' : r[i]).trim();
+const isUrl = s => /^https?:\/\//i.test(String(s || '').trim());
+
+function driveId(url) {
+  const u = String(url || '');
+  let m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/) || u.match(/[?&]id=([\w-]+)/) || u.match(/drive\.google\.com\/.*\/d\/([\w-]+)/);
+  return (m && /drive\.google\.com|docs\.google\.com|drive\.usercontent\.google\.com/.test(u)) ? m[1] : null;
+}
+function normalizeImageUrl(url) {
+  const id = driveId(url);
+  if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1600`;
+  const gh = String(url).match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+  if (gh) return `https://raw.githubusercontent.com/${gh[1]}/${gh[2]}/${gh[3]}`;
+  return url;
+}
+function directDriveVideoUrl(id) { return `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`; }
+function guessMediaType(url, hints) {
+  const h = (hints || []).join(' ').toLowerCase();
+  if (/video|clip/.test(h)) return 'video';
+  if (/ảnh|hình|image|img|photo/.test(h)) return 'image';
+  if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url)) return 'image';
+  if (/\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(url)) return 'video';
+  if (driveId(url)) return 'video';   // link Google Drive = video (theo quy ước của đề)
+  return 'image';
+}
+// Tìm link media trong 1 hàng (bỏ qua các cột trong skipCols)
+function findMediaInRow(r, fromIdx) {
+  for (let i = fromIdx; i < r.length; i++) {
+    if (isUrl(cell(r, i))) {
+      const hints = r.map((c, j) => (j !== i && !isUrl(cell(r, j)) && j >= 2) ? cell(r, j) : '').filter(Boolean);
+      return { url: cell(r, i), type: guessMediaType(cell(r, i), hints), idx: i };
+    }
+  }
+  return null;
+}
+
 async function loadKhoiDong() {
   try {
-    const rows = await fetchSheetRows(CONFIG.SHEET_NAMES.khoi_dong);
-    // rows[0] là hàng tiêu đề -> bỏ qua
-    const data = rows.slice(1);
-    const questions = data
-      .filter(r => r[0] && r[1])
-      .map(r => ({ question: String(r[0]).trim(), answer: String(r[1]).trim() }));
-    return { success: true, questions: shuffleArray(questions).slice(0, 12) };
+    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.khoi_dong));
+    const questions = rows
+      .filter(r => cell(r, 0) && cell(r, 1))
+      .map(r => ({ question: cell(r, 0), answer: cell(r, 1) }));
+    if (!questions.length) return { success: false, error: 'Sheet KhoiDong chưa có câu hỏi' };
+    return { success: true, questions: shuffleArray(questions).slice(0, CONFIG.GAME.KHOI_DONG_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -226,21 +310,134 @@ async function loadKhoiDong() {
 
 async function loadVeDich() {
   try {
-    const rows = await fetchSheetRows(CONFIG.SHEET_NAMES.ve_dich);
-    const data = rows.slice(1);
-    const all = data
-      .filter(r => r[0] && r[1])
-      .map(r => ({ question: String(r[0]).trim(), answer: String(r[1]).trim(), points: parseInt(r[2]) || 10 }));
-    const p10 = shuffleArray(all.filter(q => q.points === 10));
-    const p20 = shuffleArray(all.filter(q => q.points === 20));
-    const p30 = shuffleArray(all.filter(q => q.points === 30));
-    if (p10.length < 2) return { success: false, error: 'Không đủ câu hỏi 10 điểm (cần ít nhất 2)' };
-    if (p20.length < 2) return { success: false, error: 'Không đủ câu hỏi 20 điểm (cần ít nhất 2)' };
-    if (p30.length < 2) return { success: false, error: 'Không đủ câu hỏi 30 điểm (cần ít nhất 2)' };
-    return { success: true, questions: [...p10.slice(0,2), ...p20.slice(0,2), ...p30.slice(0,2)] };
+    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.ve_dich));
+    const all = rows
+      .filter(r => cell(r, 0) && cell(r, 1))
+      .map(r => {
+        const m = findMediaInRow(r, 3);   // cột D trở đi: link video (Google Drive)
+        return { question: cell(r, 0), answer: cell(r, 1), points: parseInt(cell(r, 2)) || 10,
+                 media: m ? m.url : null, mediaType: m ? m.type : null };
+      });
+    const pools = {
+      20: shuffleArray(all.filter(q => q.points === 20)),
+      30: shuffleArray(all.filter(q => q.points === 30))
+    };
+    if (!pools[20].length && !pools[30].length) return { success: false, error: 'Sheet VeDich chưa có câu 20 hoặc 30 điểm' };
+    return { success: true, questions: [...pools[20], ...pools[30]], pools };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
+}
+
+// VCNV: A = số ký tự, B = các từ khóa, C = link ảnh, D = đáp án
+async function loadVcnv() {
+  try {
+    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.vcnv));
+    const qs = rows
+      .filter(r => cell(r, 3))
+      .map(r => ({ chars: cell(r, 0), keywords: cell(r, 1), image: cell(r, 2), answer: cell(r, 3) }))
+      .map(q => Object.assign(q, {
+        question: `Chướng ngại vật gồm có ${q.chars} kí tự — Các từ khóa: ${q.keywords}`
+      }));
+    if (!qs.length) return { success: false, error: 'Sheet VCNV chưa có câu hỏi' };
+    return { success: true, questions: shuffleArray(qs).slice(0, CONFIG.GAME.VCNV_COUNT) };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+// Tăng Tốc: A = câu hỏi (link ảnh/video hoặc chữ), B = đáp án
+async function loadTangToc() {
+  try {
+    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.tang_toc));
+    const qs = rows.filter(r => cell(r, 1)).map(r => {
+      let text = '', media = null, type = null;
+      if (isUrl(cell(r, 0))) {
+        media = cell(r, 0);
+        type = guessMediaType(media, r.map((c, j) => (j >= 2 && !isUrl(cell(r, j))) ? cell(r, j) : '').filter(Boolean));
+      } else {
+        text = cell(r, 0);
+        const m = findMediaInRow(r, 2);
+        if (m) { media = m.url; type = m.type; }
+      }
+      const label = text || (type === 'video' ? '🎬 Câu hỏi video' : (type === 'image' ? '🖼️ Câu hỏi hình ảnh' : 'Câu hỏi'));
+      return { question: label, text, media, mediaType: type, answer: cell(r, 1) };
+    }).filter(q => q.text || q.media);
+    if (!qs.length) return { success: false, error: 'Sheet TangToc chưa có câu hỏi' };
+    return { success: true, questions: shuffleArray(qs).slice(0, CONFIG.GAME.TANG_TOC_COUNT) };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+// ---------- Hiển thị hình ảnh / video trong màn hình câu hỏi ----------
+function clearMedia() {
+  const area = document.getElementById('media-area');
+  if (!area) return;
+  area.querySelectorAll('video').forEach(v => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} });
+  area.innerHTML = ''; area.classList.add('hidden');
+}
+
+function mountImage(url) {
+  const area = document.getElementById('media-area');
+  area.innerHTML = ''; area.classList.remove('hidden');
+  const img = document.createElement('img');
+  img.className = 'q-img'; img.alt = 'Hình ảnh câu hỏi'; img.referrerPolicy = 'no-referrer';
+  img.onerror = () => { area.innerHTML = '<div class="media-error">⚠️ Không tải được hình ảnh (kiểm tra link / quyền chia sẻ)</div>'; };
+  img.src = normalizeImageUrl(url);
+  area.appendChild(img);
+}
+
+// Video chỉ phát 1 lần: không có thanh điều khiển, không tua, không phát lại.
+// opts: { muted, onEnded }  →  trả về { play() }
+function mountVideo(url, opts) {
+  opts = opts || {};
+  const run = STATE.runId;
+  const area = document.getElementById('media-area');
+  area.innerHTML = ''; area.classList.remove('hidden');
+  const id = driveId(url);
+  let finished = false;
+  const finish = () => { if (finished) return; finished = true; if (run === STATE.runId && opts.onEnded) opts.onEnded(); };
+
+  const v = document.createElement('video');
+  v.className = 'q-video'; v.playsInline = true; v.preload = 'auto'; v.muted = !!opts.muted;
+  v.disablePictureInPicture = true; v.controls = false;
+  v.setAttribute('controlsList', 'nodownload noplaybackrate noremoteplayback');
+  v.addEventListener('contextmenu', e => e.preventDefault());
+  v.addEventListener('ended', finish);
+  v.addEventListener('error', () => {
+    if (finished) return;
+    // Dự phòng: nhúng trình phát của Google Drive, người chơi bấm nút khi xem xong
+    area.innerHTML = '';
+    if (id) {
+      const f = document.createElement('iframe');
+      f.className = 'q-video q-iframe'; f.allow = 'autoplay'; f.allowFullscreen = false;
+      f.src = `https://drive.google.com/file/d/${id}/preview`;
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary btn-sm media-done-btn'; btn.textContent = '✔ Đã xem xong — bắt đầu trả lời';
+      btn.onclick = finish;
+      area.appendChild(f); area.appendChild(btn);
+    } else {
+      area.innerHTML = '<div class="media-error">⚠️ Không phát được video — tiếp tục câu hỏi…</div>';
+      later(finish, 1500);
+    }
+  });
+  v.src = id ? directDriveVideoUrl(id) : url;
+  area.appendChild(v);
+
+  return {
+    play() {
+      const pr = v.play();
+      if (pr && pr.catch) pr.catch(() => {
+        // Trình duyệt chặn tự phát → hiện nút bấm để phát (vẫn chỉ 1 lần)
+        if (finished || !v.parentNode) return;
+        const b = document.createElement('button');
+        b.className = 'btn btn-primary media-play-btn'; b.textContent = '▶ Bấm để phát video';
+        b.onclick = () => { b.remove(); v.play().catch(() => {}); };
+        area.appendChild(b);
+      });
+    }
+  };
 }
 
 // ============================================================
@@ -390,14 +587,15 @@ CHỈ TRẢ VỀ JSON thuần, không markdown, không giải thích thêm:
 // START GAME
 // ============================================================
 function startGame(mode) {
-  STATE.mode = mode; STATE.score = 0; STATE.answers = [];
+  STATE.runId++; clearAllTimers(); clearMedia();
+  STATE.mode = mode; STATE.score = 0; STATE.answers = []; STATE.vdPool = null;
   STATE.starHope = false; STATE.starHopeUsed = false; STATE.currentIndex = 0;
   AUDIO.stopAll(); showScreen('loading-overlay');
 
   AUDIO.init(CONFIG.AUDIO_URLS);
 
-  const loader = mode === 'khoi_dong' ? loadKhoiDong() : loadVeDich();
-  loader.then(onQuestionsLoaded).catch(err => onLoadError(err));
+  const loaders = { khoi_dong: loadKhoiDong, ve_dich: loadVeDich, vcnv: loadVcnv, tang_toc: loadTangToc };
+  loaders[mode]().then(onQuestionsLoaded).catch(err => onLoadError(err));
 }
 
 function onQuestionsLoaded(result) {
@@ -406,21 +604,22 @@ function onQuestionsLoaded(result) {
     showScreen('home-screen'); return;
   }
   STATE.questions = result.questions; STATE.currentIndex = 0; STATE.score = 0; STATE.answers = [];
+  STATE.vdPool = result.pools || null;
   setupGameUI();
 
-  if (!introEnabled) {
-    showScreen('game-screen');
-    if (STATE.mode === 'khoi_dong') startKhoiDong();
-    else startVeDich();
-    return;
-  }
+  if (!introEnabled) { beginMode(); return; }
 
-  const introAudio = STATE.mode === 'khoi_dong' ? AUDIO.introKD : AUDIO.introVD;
-  showIntroScreen(STATE.mode, introAudio, () => {
-    showScreen('game-screen');
-    if (STATE.mode === 'khoi_dong') startKhoiDong();
-    else startVeDich();
-  });
+  const introAudio = STATE.mode === 'khoi_dong' ? AUDIO.introKD : (STATE.mode === 've_dich' ? AUDIO.introVD : null);
+  showIntroScreen(STATE.mode, introAudio, beginMode);
+}
+
+// Sau màn giới thiệu: vào thẳng phần thi (Về Đích thì qua màn chọn gói câu hỏi trước)
+function beginMode() {
+  if (STATE.mode === 've_dich') { showVeDichPicker(); return; }
+  showScreen('game-screen');
+  if (STATE.mode === 'khoi_dong') startKhoiDong();
+  else if (STATE.mode === 'vcnv') startVcnv();
+  else if (STATE.mode === 'tang_toc') startTangToc();
 }
 
 function onLoadError(err) { showToast('Lỗi kết nối: ' + err); showScreen('home-screen'); }
@@ -430,7 +629,9 @@ function onLoadError(err) { showToast('Lỗi kết nối: ' + err); showScreen('
 // ============================================================
 function setupGameUI() {
   const mode = STATE.mode;
-  document.getElementById('mode-label').textContent = mode === 'khoi_dong' ? 'Khởi Động' : 'Về Đích';
+  document.getElementById('mode-label').textContent = modeLabel(mode);
+  clearMedia();
+  const rp = document.getElementById('reveal-panel'); if (rp) { rp.className = 'reveal-panel hidden'; rp.innerHTML = ''; }
   document.getElementById('score-display').textContent = '0';
   document.getElementById('score-display').className = 'score-number';
   document.getElementById('feedback-bar').className = 'feedback-bar hidden';
@@ -453,15 +654,16 @@ function setupGameUI() {
 // KHỞI ĐỘNG
 // ============================================================
 function startKhoiDong() {
-  const total = Math.min(STATE.questions.length, 12);
-  STATE.timeLeft = 70;
-  updateTimerUI(70, 70); updateQCounter(1, total);
+  const total = Math.min(STATE.questions.length, CONFIG.GAME.KHOI_DONG_COUNT);
+  const T = CONFIG.GAME.KHOI_DONG_TIME;
+  STATE.timeLeft = T;
+  updateTimerUI(T, T); updateQCounter(1, total);
   showQuestion(STATE.questions[0]);
   AUDIO.playBgKD();
 
   STATE.timerInterval = setInterval(() => {
     STATE.timeLeft--;
-    updateTimerUI(STATE.timeLeft, 70);
+    updateTimerUI(STATE.timeLeft, T);
     if (STATE.timeLeft <= 0) endKhoiDong();
   }, 1000);
 
@@ -474,6 +676,8 @@ function onInputKeydown(e) {
   e.preventDefault();
   if (STATE.mode === 'khoi_dong') handleKhoiDongAnswer();
   else if (STATE.mode === 've_dich') submitVeDichAnswerNow();
+  else if (STATE.mode === 'vcnv') submitVcnv(false);
+  else if (STATE.mode === 'tang_toc') submitTtAnswerNow();
 }
 
 function submitVeDichAnswerNow() {
@@ -505,7 +709,7 @@ function handleKhoiDongAnswer() {
   const input = document.getElementById('answer-input');
   const userAnswer = input.value.trim();
   const q = STATE.questions[STATE.currentIndex];
-  const total = Math.min(STATE.questions.length, 12);
+  const total = Math.min(STATE.questions.length, CONFIG.GAME.KHOI_DONG_COUNT);
 
   const entry = { question: q.question, userAnswer, correctAnswer: q.answer, correct: null, points: 10 };
   STATE.answers.push(entry);
@@ -558,6 +762,7 @@ function showVeDichQuestion() {
   STATE.vedich.phase = 'reading'; STATE.vedich.readTime = times.read;
   STATE.vedich.answerTime = times.answer; STATE.vedich.phaseTimeLeft = times.read;
   STATE.vedich.savedAnswer = null;
+  clearMedia();
 
   const input = document.getElementById('answer-input');
   input.disabled = true; input.value = ''; input.placeholder = 'Chờ hết thời gian đọc...';
@@ -599,6 +804,20 @@ function showQuestionContent(q, times) {
   document.getElementById('question-meta').innerHTML = `
     <span class="points-badge ${pc}">+${q.points} điểm</span>
     <span class="phase-badge reading" id="phase-badge">Đọc câu hỏi</span>`;
+
+  // Câu có VIDEO: tự phát 1 lần; hết video mới tính giờ suy nghĩ + nhập đáp án
+  if (q.media && q.mediaType === 'video') {
+    STATE.vedich.phase = 'video';
+    const badge = document.getElementById('phase-badge');
+    if (badge) badge.textContent = '🎬 Xem video';
+    const d = document.getElementById('timer-display'); d.textContent = '▶'; d.className = 'game-timer-display';
+    document.getElementById('timeline-fill').style.width = '100%';
+    document.getElementById('answer-input').placeholder = 'Xem hết video để bắt đầu trả lời...';
+    const ctrl = mountVideo(q.media, { muted: false, onEnded: () => { if (STATE.vedich.phase === 'video') startVeDichAnswerPhase(); } });
+    ctrl.play();
+    return;
+  }
+  if (q.media && q.mediaType === 'image') mountImage(q.media);
 
   updateTimerUI(times.read, times.read); clearPhaseTimer();
   STATE.phaseTimer = setInterval(() => {
@@ -670,6 +889,276 @@ function gradeVeDichCurrent() {
 }
 
 function endVeDich() { clearAllTimers(); AUDIO.stopAll(); setTimeout(() => showResults(), 500); }
+
+// ============================================================
+// VỀ ĐÍCH — CHỌN GÓI CÂU HỎI (20 / 30) + XÁC NHẬN
+// ============================================================
+function showVeDichPicker() {
+  STATE.vdPick = [null, null, null];
+  const pool = STATE.vdPool || { 20: [], 30: [] };
+  const cellBtn = (pts, slot) =>
+    `<td><button class="vdp-cell" id="vdp-${pts}-${slot}" onclick="vdPick(${slot},${pts})" aria-label="Câu ${slot + 1} gói ${pts}"></button></td>`;
+  document.getElementById('vd-pick-screen').innerHTML = `
+    <div class="vdp-card">
+      <div class="vdp-eyebrow">Về Đích</div>
+      <div class="vdp-title">Chọn gói câu hỏi</div>
+      <table class="vdp-table">
+        <thead><tr><th></th><th>Câu 1</th><th>Câu 2</th><th>Câu 3</th></tr></thead>
+        <tbody>
+          <tr><th class="vdp-pts">20</th>${[0,1,2].map(i => cellBtn(20, i)).join('')}</tr>
+          <tr><th class="vdp-pts">30</th>${[0,1,2].map(i => cellBtn(30, i)).join('')}</tr>
+        </tbody>
+      </table>
+      <div class="vdp-summary" id="vdp-summary">Gói đã chọn: – · – · –</div>
+      <div class="vdp-bank">Ngân hàng câu hỏi: 20đ × ${pool[20].length} · 30đ × ${pool[30].length}</div>
+      <div class="vdp-actions">
+        <button class="btn btn-outline" onclick="goHome()">← Trang chủ</button>
+        <button class="btn btn-primary" id="vdp-confirm" onclick="confirmVeDichPick()" disabled>Xác nhận</button>
+      </div>
+    </div>`;
+  showScreen('vd-pick-screen');
+}
+
+function vdPick(slot, pts) {
+  STATE.vdPick[slot] = (STATE.vdPick[slot] === pts) ? null : pts;
+  [20, 30].forEach(p => {
+    const b = document.getElementById(`vdp-${p}-${slot}`);
+    if (!b) return;
+    const on = STATE.vdPick[slot] === p;
+    b.classList.toggle('sel', on); b.textContent = on ? 'X' : '';
+  });
+  const done = STATE.vdPick.every(v => v);
+  document.getElementById('vdp-summary').textContent = 'Gói đã chọn: ' + STATE.vdPick.map(v => v || '–').join(' · ');
+  document.getElementById('vdp-confirm').disabled = !done;
+}
+
+function confirmVeDichPick() {
+  if (!STATE.vdPick.every(v => v)) return;
+  const pool = STATE.vdPool || { 20: [], 30: [] };
+  const need = { 20: 0, 30: 0 };
+  STATE.vdPick.forEach(p => need[p]++);
+  for (const p of [20, 30]) {
+    if (pool[p].length < need[p]) { showToast(`Không đủ câu ${p} điểm (cần ${need[p]}, hiện có ${pool[p].length})`); return; }
+  }
+  const used = { 20: 0, 30: 0 };
+  STATE.questions = STATE.vdPick.map(p => pool[p][used[p]++]);
+  STATE.currentIndex = 0; STATE.score = 0; STATE.answers = [];
+  STATE.starHope = false; STATE.starHopeUsed = false;
+
+  // Vừa phát âm thanh mở câu hỏi, vừa chuyển sang màn hình thi; hết âm thanh thì bắt đầu
+  AUDIO.stopAll();
+  setupGameUI();
+  showScreen('game-screen');
+  document.getElementById('question-meta').innerHTML = '';
+  const el = document.getElementById('question-text');
+  el.classList.remove('entering', 'star-msg'); void el.offsetWidth;
+  el.textContent = 'Phần thi Về Đích sắp bắt đầu...'; el.classList.add('entering');
+  const input = document.getElementById('answer-input');
+  input.disabled = true; input.placeholder = 'Chờ bắt đầu...';
+  updateQCounter(1, STATE.questions.length);
+  const d = document.getElementById('timer-display'); d.textContent = '🏆'; d.className = 'game-timer-display';
+  document.getElementById('timeline-fill').style.width = '100%';
+  playUntilEnd(AUDIO.mocauhoiVD, () => startVeDich(), 2500);
+}
+
+// ============================================================
+// VƯỢT CHƯỚNG NGẠI VẬT (chấm cục bộ, KHÔNG dùng AI)
+// ============================================================
+function strictNorm(s) {
+  return String(s || '').toLowerCase().normalize('NFC')
+    .replace(/[^\p{L}\p{N}\s]/gu, '').replace(/\s+/g, '');
+}
+function vcnvIsCorrect(user, answer) {
+  const u = strictNorm(user);
+  if (!u) return false;
+  return String(answer).split('/').some(a => strictNorm(a) === u);   // đáp án có thể ghi nhiều cách, ngăn cách bằng "/"
+}
+
+function startVcnv() { STATE.currentIndex = 0; showVcnvQuestion(); }
+
+function showVcnvQuestion() {
+  if (STATE.currentIndex >= STATE.questions.length) { endVcnv(); return; }
+  const q = STATE.questions[STATE.currentIndex];
+  const T = CONFIG.GAME.VCNV_TIME;
+  clearAllTimers(); clearMedia();
+  STATE.vcnv.locked = false;
+  updateQCounter(STATE.currentIndex + 1, STATE.questions.length);
+  document.getElementById('feedback-bar').className = 'feedback-bar hidden';
+  document.getElementById('question-meta').innerHTML = '<span class="phase-badge answering">Vượt chướng ngại vật</span>';
+
+  // 1) Hình ảnh (link ở cột C)
+  if (q.image) mountImage(q.image);
+  // 2) Số kí tự  3) Các từ khóa
+  const el = document.getElementById('question-text');
+  el.classList.remove('entering', 'star-msg'); void el.offsetWidth;
+  el.innerHTML = `<div class="vcnv-line">CHƯỚNG NGẠI VẬT GỒM CÓ <b>${escapeHTML(q.chars)}</b> KÍ TỰ</div>
+                  <div class="vcnv-line vcnv-keys">CÁC TỪ KHÓA: <b>${escapeHTML(q.keywords)}</b></div>`;
+  el.classList.add('entering');
+
+  const input = document.getElementById('answer-input');
+  input.value = ''; input.disabled = false; input.placeholder = 'Nhập đáp án chướng ngại vật...'; input.focus();
+
+  STATE.timeLeft = T; updateTimerUI(T, T);
+  STATE.timerInterval = setInterval(() => {
+    STATE.timeLeft--; updateTimerUI(STATE.timeLeft, T);
+    if (STATE.timeLeft <= 0) submitVcnv(true);
+  }, 1000);
+}
+
+function submitVcnv(timedOut) {
+  if (STATE.vcnv.locked) return;
+  STATE.vcnv.locked = true;
+  clearAllTimers();
+  const q = STATE.questions[STATE.currentIndex];
+  const input = document.getElementById('answer-input');
+  const userAnswer = input.value.trim();
+  const correct = vcnvIsCorrect(userAnswer, q.answer);
+  input.disabled = true;
+
+  STATE.answers.push({ question: q.question, userAnswer, correctAnswer: q.answer, correct, points: CONFIG.GAME.VCNV_POINTS });
+  AUDIO.playSFX(correct);
+  if (correct) { STATE.score += CONFIG.GAME.VCNV_POINTS; updateScoreUI(true); showFeedback('correct', `✅ Chính xác! +${CONFIG.GAME.VCNV_POINTS} điểm`); }
+  else showFeedback('wrong', (timedOut && !userAnswer ? '⏰ Hết giờ — ' : '❌ Chưa đúng — ') + `Đáp án: ${q.answer}`);
+
+  later(() => { STATE.currentIndex++; showVcnvQuestion(); }, correct ? 1500 : 2800);
+}
+
+function endVcnv() { clearAllTimers(); AUDIO.stopAll(); clearMedia(); later(() => showResults(), 300); }
+
+// ============================================================
+// TĂNG TỐC
+// ============================================================
+function ttPoints(sec) {
+  if (sec == null) return 10;
+  if (sec < 5) return 40;
+  if (sec < 10) return 30;
+  if (sec < 15) return 20;
+  return 10;
+}
+
+function startTangToc() { STATE.currentIndex = 0; showTtQuestion(); }
+
+function showTtQuestion() {
+  if (STATE.currentIndex >= STATE.questions.length) { endTangToc(); return; }
+  const q = STATE.questions[STATE.currentIndex];
+  clearAllTimers(); clearMedia(); AUDIO.stopAll();
+  STATE.tt = { phase: 'opening', savedAnswer: null, savedAt: null, t0: 0, audioDone: false, videoDone: false };
+  updateQCounter(STATE.currentIndex + 1, STATE.questions.length);
+
+  const rp = document.getElementById('reveal-panel'); rp.className = 'reveal-panel hidden'; rp.innerHTML = '';
+  document.getElementById('feedback-bar').className = 'feedback-bar hidden';
+  const savedEl = document.getElementById('saved-answer-indicator'); savedEl.className = 'saved-answer-indicator hidden'; savedEl.textContent = '';
+  document.getElementById('question-meta').innerHTML =
+    '<span class="phase-badge reading" id="phase-badge">Chuẩn bị</span><span class="points-badge p20">Tối đa +40 điểm</span>';
+
+  const el = document.getElementById('question-text');
+  el.classList.remove('entering', 'star-msg'); void el.offsetWidth;
+  el.textContent = q.text || ''; el.classList.add('entering');
+
+  // Khoá ô trả lời cho đến khi hết âm thanh mở câu hỏi
+  const input = document.getElementById('answer-input');
+  input.value = ''; input.disabled = true; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
+  const d = document.getElementById('timer-display'); d.textContent = '⚡'; d.className = 'game-timer-display';
+  document.getElementById('timeline-fill').style.width = '100%';
+
+  let vctrl = null;
+  if (q.media && q.mediaType === 'video') {
+    // Video hiện ra cùng lúc với âm thanh nhưng CHƯA phát
+    vctrl = mountVideo(q.media, { muted: true, onEnded: () => {
+      STATE.tt.videoDone = true;
+      if (STATE.tt.audioDone) ttStartInput(q);
+    } });
+  } else if (q.media) {
+    mountImage(q.media);
+  }
+
+  // Âm thanh mở câu hỏi phát cùng lúc với hình ảnh / video xuất hiện
+  playUntilEnd(AUDIO.mocauhoiTT, () => {
+    STATE.tt.audioDone = true;
+    if (vctrl) {                       // video: hết âm thanh thì tự phát (không tiếng), hết video mới cho nhập
+      if (STATE.tt.videoDone) { ttStartInput(q); return; }
+      const badge = document.getElementById('phase-badge'); if (badge) badge.textContent = '🎬 Xem video';
+      vctrl.play();
+    } else {
+      ttStartInput(q);                 // hình ảnh: hết âm thanh là mở ô trả lời
+    }
+  }, 2500);
+}
+
+function ttStartInput(q) {
+  if (STATE.tt.phase !== 'opening') return;
+  STATE.tt.phase = 'answering';
+  STATE.tt.t0 = performance.now();                 // mốc 0s để tính giờ Enter cuối cùng
+  const input = document.getElementById('answer-input');
+  input.disabled = false; input.placeholder = 'Nhập đáp án rồi bấm Enter (Enter cuối cùng được tính giờ)'; input.focus();
+  const badge = document.getElementById('phase-badge');
+  if (badge) { badge.className = 'phase-badge answering'; badge.textContent = 'Trả lời'; }
+
+  const fallback = CONFIG.GAME.TANG_TOC_FALLBACK_SECONDS;
+  const totalSec = () => (isFinite(AUDIO.nhapcauhoiTT && AUDIO.nhapcauhoiTT.duration) && AUDIO.nhapcauhoiTT.duration > 0)
+    ? AUDIO.nhapcauhoiTT.duration : fallback;
+  const tick = () => {
+    const left = Math.max(0, Math.ceil(totalSec() - (performance.now() - STATE.tt.t0) / 1000));
+    updateTimerUI(left, Math.ceil(totalSec()));
+  };
+  tick(); clearPhaseTimer();
+  STATE.phaseTimer = setInterval(tick, 200);
+
+  // Âm thanh nhập câu hỏi chính là khung thời gian trả lời; hết âm thanh = hết giờ
+  playUntilEnd(AUDIO.nhapcauhoiTT, () => ttFinish(q), fallback * 1000);
+}
+
+function submitTtAnswerNow() {
+  if (STATE.tt.phase !== 'answering') return;
+  const input = document.getElementById('answer-input');
+  if (input.disabled) return;
+  const val = input.value.trim();
+  const at = (performance.now() - STATE.tt.t0) / 1000;
+  STATE.tt.savedAnswer = val; STATE.tt.savedAt = at;   // Enter lần cuối sẽ ghi đè lần trước
+  const savedEl = document.getElementById('saved-answer-indicator');
+  savedEl.className = 'saved-answer-indicator';
+  savedEl.textContent = val === ''
+    ? '📝 Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
+    : `📝 Đã ghi nhận: "${val}" lúc ${at.toFixed(1)}s — vẫn có thể nhập lại`;
+  input.classList.remove('flash-saved'); void input.offsetWidth; input.classList.add('flash-saved');
+  setTimeout(() => input.classList.remove('flash-saved'), 300);
+}
+
+function ttFinish(q) {
+  if (STATE.tt.phase !== 'answering') return;
+  STATE.tt.phase = 'reveal';
+  clearPhaseTimer(); AUDIO.stopAll();
+  const input = document.getElementById('answer-input');
+  input.disabled = true;
+  const savedEl = document.getElementById('saved-answer-indicator'); savedEl.className = 'saved-answer-indicator hidden';
+
+  const elapsed = (performance.now() - STATE.tt.t0) / 1000;
+  let userAnswer, time;
+  if (STATE.tt.savedAnswer !== null) { userAnswer = STATE.tt.savedAnswer; time = STATE.tt.savedAt; }
+  else { userAnswer = input.value.trim(); time = elapsed; }       // chưa bấm Enter lần nào: tính tới lúc hết giờ
+
+  const rp = document.getElementById('reveal-panel');
+  rp.className = 'reveal-panel';
+  rp.innerHTML = '<div class="reveal-wait">⏳ Đang chấm điểm...</div>';
+  const badge = document.getElementById('phase-badge'); if (badge) { badge.className = 'phase-badge star'; badge.textContent = 'Kết quả'; }
+
+  const entry = { question: q.question, userAnswer, correctAnswer: q.answer, correct: null, time };
+  gradeAnswerAsync(entry, (correct) => {
+    entry.correct = correct;
+    const pts = correct ? ttPoints(time) : 0;
+    STATE.answers.push(entry);
+    AUDIO.playSFX(correct);
+    if (correct) { STATE.score += pts; updateScoreUI(true); }
+    rp.innerHTML = `
+      <div class="reveal-row"><span>Đáp án của bạn</span><b>${userAnswer ? escapeHTML(userAnswer) : '(bỏ trống)'}</b></div>
+      <div class="reveal-row"><span>Thời gian trả lời (Enter cuối cùng)</span><b>${userAnswer ? time.toFixed(1) + ' giây' : '—'}</b></div>
+      <div class="reveal-row"><span>Đáp án chương trình</span><b>${escapeHTML(q.answer)}</b></div>
+      <div class="reveal-result ${correct ? 'correct' : 'wrong'}">${correct ? `✅ Chính xác! +${pts} điểm` : '❌ Chưa đúng — +0 điểm'}</div>`;
+    later(() => { STATE.currentIndex++; showTtQuestion(); }, 5000);
+  });
+}
+
+function endTangToc() { clearAllTimers(); AUDIO.stopAll(); clearMedia(); later(() => showResults(), 300); }
 
 // ============================================================
 // GRADING (wrapper async -> callback, để không đổi phần gọi cũ)
@@ -811,12 +1300,16 @@ function showResults() {
   clearAllTimers(); AUDIO.stopAll();
   showFeedback('info', 'Đang chấm lại...');
 
-  regradeAnswers(STATE.answers, STATE.questions).then(regradedAnswers => {
+  // VCNV đã chấm cục bộ (không dùng AI) nên không chấm lại bằng Gemini
+  const regrade = STATE.mode === 'vcnv' ? Promise.resolve(STATE.answers) : regradeAnswers(STATE.answers, STATE.questions);
+  regrade.then(regradedAnswers => {
     STATE.answers = regradedAnswers;
     let newScore = 0;
     for (const a of STATE.answers) {
       if (a.correct) {
         if (STATE.mode === 'khoi_dong') { newScore += 10; }
+        else if (STATE.mode === 'vcnv') { newScore += CONFIG.GAME.VCNV_POINTS; }
+        else if (STATE.mode === 'tang_toc') { newScore += ttPoints(a.time); }
         else { let pts = a.points || 10; if (a.usedStar) pts *= 2; newScore += pts; }
       } else if (STATE.mode === 've_dich' && a.usedStar) {
         // Dùng ngôi sao hy vọng mà trả lời sai -> bị trừ điểm; điểm cuối có thể âm.
@@ -867,6 +1360,8 @@ function displayResults() {
     if (STATE.mode === 've_dich') {
       const pc = a.points === 10 ? 'p10' : (a.points === 20 ? 'p20' : 'p30');
       ptsHtml = `<span class="pts-chip ${pc}">${a.points}đ${a.usedStar ? ' ⭐' : ''}</span>`;
+    } else if (STATE.mode === 'tang_toc') {
+      ptsHtml = `<span class="pts-chip p20">${a.correct ? '+' + ttPoints(a.time) + 'đ' : '0đ'}${a.time != null ? ' · ⏱ ' + a.time.toFixed(1) + 's' : ''}</span>`;
     }
     let explanationHtml = '';
     if (!isCorrect && !isSkipped && a.explanation) {
@@ -901,6 +1396,7 @@ function restartGame() { startGame(STATE.mode); }
 // TIMERS
 // ============================================================
 function clearAllTimers() {
+  STATE.timeouts.forEach(id => clearTimeout(id)); STATE.timeouts = [];
   if (STATE.timerInterval) { clearInterval(STATE.timerInterval); STATE.timerInterval = null; }
   clearPhaseTimer();
 }
@@ -1108,7 +1604,7 @@ Chỉ tạo những mục (##) thực sự có dữ liệu liên quan — bỏ q
 ==================================================
 Hãy luôn tự hỏi: "Nếu người học chỉ có 5 phút để xem lại bộ câu hỏi này, đâu là những kiến thức quan trọng nhất họ nên nhớ?" Kết quả phải giống một "CHEAT SHEET KIẾN THỨC OLYMPIA" chứ không phải một bài giải. Ưu tiên: ít chữ + nhiều keyword + thông tin chính xác + liên kết thông minh + dễ quét mắt + dễ ghi nhớ + có thể dùng để trả lời câu hỏi khác.
 
-BỘ CÂU HỎI (${answers.length} câu, chế độ ${mode === 'khoi_dong' ? 'Khởi Động' : 'Về Đích'}):
+BỘ CÂU HỎI (${answers.length} câu, chế độ ${modeLabel(mode)}):
 
 ${qaList}
 
