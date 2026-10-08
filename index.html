@@ -19,7 +19,7 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=13">
+<link rel="stylesheet" href="css/style.css?v=14">
 </head>
 <body data-theme="navy">
 
@@ -148,6 +148,7 @@
     </div>
     <div class="question-area">
       <div class="question-meta" id="question-meta"></div>
+      <div class="media-area hidden" id="media-area"></div>
       <div class="question-box">
         <div class="question-text" id="question-text">Đang tải câu hỏi...</div>
       </div>
@@ -156,10 +157,14 @@
         <span class="input-hint">Enter ↵</span>
       </div>
       <div class="saved-answer-indicator hidden" id="saved-answer-indicator"></div>
+      <div class="reveal-panel hidden" id="reveal-panel"></div>
       <div class="feedback-bar hidden" id="feedback-bar"></div>
     </div>
   </div>
 </div>
+
+<!-- ==================== VỀ ĐÍCH: CHỌN GÓI CÂU HỎI ==================== -->
+<div id="vd-pick-screen" class="screen hidden"></div>
 
 <!-- ==================== RESULT SCREEN ==================== -->
 <div id="result-screen" class="screen hidden"></div>
@@ -248,16 +253,19 @@
 <audio id="audio-cauhoi-15s-vd" preload="auto"></audio>
 <audio id="audio-star-hope"     preload="auto"></audio>
 <audio id="audio-buzzer"        preload="auto"></audio>
+<audio id="audio-mocauhoi-vd"   preload="auto"></audio>
+<audio id="audio-mocauhoi-tt"   preload="auto"></audio>
+<audio id="audio-nhapcauhoi-tt" preload="auto"></audio>
 
 <!-- Thư viện đọc CSV từ Google Sheet -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <!-- Cấu hình: API key, Spreadsheet ID, audio -->
-<script src="js/config.js?v=10"></script>
+<script src="js/config.js?v=11"></script>
 <!-- Tài khoản / đăng nhập / bảng xếp hạng / quản trị -->
-<script src="js/auth.js?v=4"></script>
+<script src="js/auth.js?v=5"></script>
 <!-- Toàn bộ logic game -->
-<script src="js/app.js?v=11"></script>
+<script src="js/app.js?v=12"></script>
 <!-- Module Solo: thi đấu nhóm real-time (mời, Giành chuông) -->
 <script src="js/solo.js?v=1"></script>
 </body>
