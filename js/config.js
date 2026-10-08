@@ -14,6 +14,10 @@ const CONFIG = {
   },
 
   // ==================== THÔNG SỐ CÁC PHẦN THI (sửa nhanh tại đây) ====================
+  // Khoá API Google (Drive API) để phát video Drive ổn định — xem hướng dẫn gửi kèm.
+  // Để trống thì web thử link tải trực tiếp (hay bị Google chặn với file lớn).
+  DRIVE_API_KEY: '',
+
   GAME: {
     KHOI_DONG_COUNT: 18,          // số câu random ở Khởi Động
     KHOI_DONG_TIME: 70,           // tổng thời gian (giây)
