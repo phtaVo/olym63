@@ -3,12 +3,25 @@
 
 const CONFIG = {
   // ID của Google Sheet chứa câu hỏi (lấy từ URL sheet, đoạn giữa /d/ và /edit)
-  SPREADSHEET_ID: '10Z5aWLvNB5qWcWusD1YnmdQp-ZXoC2wSJeHdjo-aLOw',
+  SPREADSHEET_ID: '16X-QIXWX-zmt2gVNh94qvYlWDWYRMcwSui5rbybpqjM',
 
   // Tên 2 sheet (tab) trong file Google Sheet
   SHEET_NAMES: {
     khoi_dong: 'KhoiDong',
+    vcnv: 'VCNV',
+    tang_toc: 'TangToc',
     ve_dich: 'VeDich'
+  },
+
+  // ==================== THÔNG SỐ CÁC PHẦN THI (sửa nhanh tại đây) ====================
+  GAME: {
+    KHOI_DONG_COUNT: 18,          // số câu random ở Khởi Động
+    KHOI_DONG_TIME: 70,           // tổng thời gian (giây)
+    VCNV_COUNT: 5,                // số chướng ngại vật random
+    VCNV_TIME: 60,                // thời gian cho MỖI chướng ngại vật (giây)
+    VCNV_POINTS: 10,              // điểm mỗi chướng ngại vật đúng
+    TANG_TOC_COUNT: 4,            // số câu Tăng Tốc
+    TANG_TOC_FALLBACK_SECONDS: 20 // dự phòng nếu không đọc được độ dài file nhapcauhoi_tt
   },
 
   // ==================== TÀI KHOẢN / BẢNG XẾP HẠNG (qua Worker riêng) ====================
@@ -48,7 +61,10 @@ const CONFIG = {
     cauhoiVD:    'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/cauhoi_vd.mp3',
     cauhoi15sVD: 'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/15s_vd.mp3',
     starHope:    'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/starhope.mp3',
-    buzzer:      'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/chuong.mp3'
+    buzzer:      'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/chuong.mp3',
+    mocauhoiVD:  'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/mocauhoi_vd.mp4',
+    mocauhoiTT:  'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/mocauhoi_tt.mp4',
+    nhapcauhoiTT:'https://raw.githubusercontent.com/phtaVo/olympia-audio/main/nhapcauhoi_tt.mp4'
   },
 
   // ==================== MODULE SOLO (thi đấu nhóm real-time) ====================
