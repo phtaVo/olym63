@@ -1145,3 +1145,5 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
   .reveal-row { flex-direction: column; align-items: flex-start; gap: 2px; }
   .reveal-row b { text-align: left; }
 }
+
+.media-loading { font-weight: 700; color: var(--gold-dark); padding: 8px 14px; border-radius: 10px; background: rgba(200,134,10,0.08); border: 1px solid rgba(200,134,10,0.2); }
