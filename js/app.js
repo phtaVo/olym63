@@ -407,6 +407,7 @@ function mountVideo(url, opts) {
   v.addEventListener('ended', finish);
   v.addEventListener('error', () => {
     if (finished) return;
+    if (opts.onFail) { stopPoll(); area.innerHTML = '<div class="media-error">⚠️ Không tải được video — chuyển sang chế độ tính giờ cố định</div>'; if (run === STATE.runId) opts.onFail(); return; }
     // Dự phòng: nhúng trình phát của Google Drive, người chơi bấm nút khi xem xong
     area.innerHTML = '';
     if (id) {
@@ -425,7 +426,35 @@ function mountVideo(url, opts) {
   v.src = id ? directDriveVideoUrl(id) : url;
   area.appendChild(v);
 
+  // Chờ video tải XONG (đã đệm hết) rồi mới gọi onReady
+  let pollId = null, readyFired = false;
+  const stopPoll = () => { if (pollId) { clearInterval(pollId); pollId = null; } };
+  const fireReady = () => {
+    if (readyFired) return; readyFired = true; stopPoll();
+    const lb = area.querySelector('.media-loading'); if (lb) lb.remove();
+    if (run === STATE.runId && opts.onReady) opts.onReady();
+  };
+  if (opts.onReady) {
+    const lb = document.createElement('div'); lb.className = 'media-loading'; lb.textContent = '⏳ Đang tải video...';
+    area.appendChild(lb);
+    v.load();
+    const startedAt = performance.now();
+    pollId = setInterval(() => {
+      if (run !== STATE.runId || !v.isConnected) { stopPoll(); return; }
+      const dur = v.duration;
+      let bufferedAll = false;
+      if (isFinite(dur) && dur > 0 && v.buffered.length) bufferedAll = v.buffered.end(v.buffered.length - 1) >= dur - 0.25;
+      if (bufferedAll) { fireReady(); return; }
+      if (isFinite(dur) && dur > 0 && v.buffered.length) {
+        const pct = Math.min(99, Math.floor(v.buffered.end(v.buffered.length - 1) / dur * 100));
+        lb.textContent = `⏳ Đang tải video... ${pct}%`;
+      }
+      if (performance.now() - startedAt > 60000 && v.readyState >= 3) fireReady();   // quá 60s mà đã phát được thì cho chạy
+    }, 250);
+  }
+
   return {
+    el: v,
     play() {
       const pr = v.play();
       if (pr && pr.catch) pr.catch(() => {
@@ -1061,28 +1090,52 @@ function showTtQuestion() {
   const d = document.getElementById('timer-display'); d.textContent = '⚡'; d.className = 'game-timer-display';
   document.getElementById('timeline-fill').style.width = '100%';
 
-  let vctrl = null;
-  if (q.media && q.mediaType === 'video') {
-    // Video hiện ra cùng lúc với âm thanh nhưng CHƯA phát
-    vctrl = mountVideo(q.media, { muted: true, onEnded: () => {
-      STATE.tt.videoDone = true;
-      if (STATE.tt.audioDone) ttStartInput(q);
-    } });
-  } else if (q.media) {
-    mountImage(q.media);
-  }
+  const openingAudio = (afterAudio) => playUntilEnd(AUDIO.mocauhoiTT, afterAudio, 2500);
 
-  // Âm thanh mở câu hỏi phát cùng lúc với hình ảnh / video xuất hiện
-  playUntilEnd(AUDIO.mocauhoiTT, () => {
-    STATE.tt.audioDone = true;
-    if (vctrl) {                       // video: hết âm thanh thì tự phát (không tiếng), hết video mới cho nhập
-      if (STATE.tt.videoDone) { ttStartInput(q); return; }
-      const badge = document.getElementById('phase-badge'); if (badge) badge.textContent = '🎬 Xem video';
-      vctrl.play();
-    } else {
-      ttStartInput(q);                 // hình ảnh: hết âm thanh là mở ô trả lời
-    }
-  }, 2500);
+  if (q.media && q.mediaType === 'video') {
+    // 1) Tải xong toàn bộ video  2) phát nhạc mở câu hỏi (video hiện sẵn, chưa chạy)
+    // 3) hết nhạc: video tự phát + mở ô nhập; thời lượng video chính là thời gian trả lời
+    STATE.tt.phase = 'loading';
+    const badge0 = document.getElementById('phase-badge'); if (badge0) badge0.textContent = 'Đang tải video';
+    d.textContent = '⏳';
+    input.placeholder = 'Đang tải video...';
+    const vctrl = mountVideo(q.media, {
+      muted: true,
+      onReady: () => {
+        STATE.tt.phase = 'opening';
+        const b = document.getElementById('phase-badge'); if (b) b.textContent = 'Chuẩn bị';
+        d.textContent = '⚡'; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
+        openingAudio(() => ttStartVideoRound(q, vctrl));
+      },
+      onEnded: () => { if (STATE.tt.phase === 'answering' && STATE.tt.videoMode) ttFinish(q); },
+      onFail: () => {            // không tải được video: quay về cách tính giờ bằng âm thanh nhập câu hỏi
+        STATE.tt.phase = 'opening';
+        openingAudio(() => ttStartInput(q));
+      }
+    });
+    return;
+  }
+  if (q.media) mountImage(q.media);
+  openingAudio(() => ttStartInput(q));       // hình ảnh: hết âm thanh là mở ô trả lời
+}
+
+// Câu video: video tự phát, người chơi nhập trong lúc video chạy, hết video = hết giờ
+function ttStartVideoRound(q, vctrl) {
+  if (STATE.tt.phase !== 'opening') return;
+  STATE.tt.phase = 'answering'; STATE.tt.videoMode = true;
+  const input = document.getElementById('answer-input');
+  input.disabled = false; input.placeholder = 'Nhập đáp án rồi bấm Enter (Enter cuối cùng được tính giờ)'; input.focus();
+  const badge = document.getElementById('phase-badge');
+  if (badge) { badge.className = 'phase-badge answering'; badge.textContent = '🎬 Xem video & trả lời'; }
+  STATE.tt.t0 = performance.now();
+  vctrl.play();
+  const v = vctrl.el;
+  const tick = () => {
+    const dur = isFinite(v.duration) && v.duration > 0 ? v.duration : CONFIG.GAME.TANG_TOC_FALLBACK_SECONDS;
+    updateTimerUI(Math.max(0, Math.ceil(dur - v.currentTime)), Math.ceil(dur));
+  };
+  tick(); clearPhaseTimer();
+  STATE.phaseTimer = setInterval(tick, 200);
 }
 
 function ttStartInput(q) {
@@ -1119,7 +1172,7 @@ function submitTtAnswerNow() {
   savedEl.className = 'saved-answer-indicator';
   savedEl.textContent = val === ''
     ? '📝 Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
-    : `📝 Đã ghi nhận: "${val}" lúc ${at.toFixed(1)}s — vẫn có thể nhập lại`;
+    : `📝 Đã ghi nhận: "${val}" lúc ${at.toFixed(2)}s — vẫn có thể nhập lại`;
   input.classList.remove('flash-saved'); void input.offsetWidth; input.classList.add('flash-saved');
   setTimeout(() => input.classList.remove('flash-saved'), 300);
 }
@@ -1151,7 +1204,7 @@ function ttFinish(q) {
     if (correct) { STATE.score += pts; updateScoreUI(true); }
     rp.innerHTML = `
       <div class="reveal-row"><span>Đáp án của bạn</span><b>${userAnswer ? escapeHTML(userAnswer) : '(bỏ trống)'}</b></div>
-      <div class="reveal-row"><span>Thời gian trả lời (Enter cuối cùng)</span><b>${userAnswer ? time.toFixed(1) + ' giây' : '—'}</b></div>
+      <div class="reveal-row"><span>Thời gian trả lời (Enter cuối cùng)</span><b>${userAnswer ? time.toFixed(2) + ' giây' : '—'}</b></div>
       <div class="reveal-row"><span>Đáp án chương trình</span><b>${escapeHTML(q.answer)}</b></div>
       <div class="reveal-result ${correct ? 'correct' : 'wrong'}">${correct ? `✅ Chính xác! +${pts} điểm` : '❌ Chưa đúng — +0 điểm'}</div>`;
     later(() => { STATE.currentIndex++; showTtQuestion(); }, 5000);
@@ -1361,7 +1414,7 @@ function displayResults() {
       const pc = a.points === 10 ? 'p10' : (a.points === 20 ? 'p20' : 'p30');
       ptsHtml = `<span class="pts-chip ${pc}">${a.points}đ${a.usedStar ? ' ⭐' : ''}</span>`;
     } else if (STATE.mode === 'tang_toc') {
-      ptsHtml = `<span class="pts-chip p20">${a.correct ? '+' + ttPoints(a.time) + 'đ' : '0đ'}${a.time != null ? ' · ⏱ ' + a.time.toFixed(1) + 's' : ''}</span>`;
+      ptsHtml = `<span class="pts-chip p20">${a.correct ? '+' + ttPoints(a.time) + 'đ' : '0đ'}${a.time != null ? ' · ⏱ ' + a.time.toFixed(2) + 's' : ''}</span>`;
     }
     let explanationHtml = '';
     if (!isCorrect && !isSkipped && a.explanation) {
