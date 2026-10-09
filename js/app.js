@@ -261,6 +261,12 @@ function dataRows(rows) {
 }
 const cell = (r, i) => String(r[i] == null ? '' : r[i]).trim();
 const isUrl = s => /^https?:\/\//i.test(String(s || '').trim());
+// Tách link ra khỏi đoạn chữ (link video có thể nằm ngay trong ô câu hỏi)
+function splitTextAndUrl(t) {
+  const m = String(t || '').match(/https?:\/\/[^\s"'<>]+/);
+  if (!m) return { text: String(t || '').trim(), url: null };
+  return { text: String(t).replace(m[0], '').replace(/\s{2,}/g, ' ').trim(), url: m[0] };
+}
 
 function driveId(url) {
   const u = String(url || '');
@@ -321,9 +327,14 @@ async function loadVeDich() {
     const all = rows
       .filter(r => cell(r, 0) && cell(r, 1))
       .map(r => {
-        const m = findMediaInRow(r, 3);   // cột D trở đi: link video (Google Drive)
-        return { question: cell(r, 0), answer: cell(r, 1), points: parseInt(cell(r, 2)) || 10,
-                 media: m ? m.url : null, mediaType: m ? m.type : null };
+        // Link video có thể nằm trong ô câu hỏi (cột A) hoặc ở các cột sau (C trở đi)
+        const sp = splitTextAndUrl(cell(r, 0));
+        let url = sp.url, type = null;
+        if (url) type = guessMediaType(url, []);
+        else { const m = findMediaInRow(r, 2); if (m) { url = m.url; type = m.type; } }
+        const text = sp.text || (type === 'video' ? '🎬 Xem video và trả lời câu hỏi' : (type === 'image' ? '🖼️ Quan sát hình ảnh và trả lời' : cell(r, 0)));
+        return { question: text, answer: cell(r, 1), points: parseInt(cell(r, 2)) || 10,
+                 media: url, mediaType: type };
       });
     const pools = {
       20: shuffleArray(all.filter(q => q.points === 20)),
@@ -359,11 +370,12 @@ async function loadTangToc() {
     const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.tang_toc));
     const qs = rows.filter(r => cell(r, 1)).map(r => {
       let text = '', media = null, type = null;
-      if (isUrl(cell(r, 0))) {
-        media = cell(r, 0);
+      const sp = splitTextAndUrl(cell(r, 0));
+      if (sp.url) {
+        media = sp.url; text = sp.text;
         type = guessMediaType(media, r.map((c, j) => (j >= 2 && !isUrl(cell(r, j))) ? cell(r, j) : '').filter(Boolean));
       } else {
-        text = cell(r, 0);
+        text = sp.text;
         const m = findMediaInRow(r, 2);
         if (m) { media = m.url; type = m.type; }
       }
@@ -418,7 +430,16 @@ function mountVideo(url, opts) {
     if (finished) return;
     console.warn('[VIDEO] Lỗi tải nguồn', srcIdx + 1, '/', sources.length, v.error && v.error.code, sources[srcIdx].replace(/key=[^&]+/, 'key=***'));
     if (srcIdx + 1 < sources.length) { srcIdx++; v.src = sources[srcIdx]; v.load(); return; }   // thử nguồn kế tiếp
-    if (opts.onFail) { stopPoll(); area.innerHTML = '<div class="media-error">⚠️ Không tải được video — chuyển sang chế độ tính giờ cố định</div>'; if (run === STATE.runId) opts.onFail(); return; }
+    if (opts.onFail) {
+      stopPoll(); area.innerHTML = '';
+      if (id) {   // vẫn cho xem video bằng trình phát của Drive (người chơi tự bấm phát); giờ tính cố định
+        const f = document.createElement('iframe');
+        f.className = 'q-video q-iframe'; f.allow = 'autoplay'; f.src = `https://drive.google.com/file/d/${id}/preview`;
+        area.appendChild(f);
+      } else area.innerHTML = '<div class="media-error">⚠️ Không tải được video — chuyển sang chế độ tính giờ cố định</div>';
+      if (run === STATE.runId) opts.onFail();
+      return;
+    }
     // Dự phòng: nhúng trình phát của Google Drive, người chơi bấm nút khi xem xong
     area.innerHTML = '';
     if (id) {
@@ -467,14 +488,18 @@ function mountVideo(url, opts) {
   return {
     el: v,
     play() {
-      const pr = v.play();
-      if (pr && pr.catch) pr.catch(() => {
-        // Trình duyệt chặn tự phát → hiện nút bấm để phát (vẫn chỉ 1 lần)
+      const showBtn = () => {
         if (finished || !v.parentNode) return;
         const b = document.createElement('button');
         b.className = 'btn btn-primary media-play-btn'; b.textContent = '▶ Bấm để phát video';
         b.onclick = () => { b.remove(); v.play().catch(() => {}); };
         area.appendChild(b);
+      };
+      const pr = v.play();
+      if (pr && pr.catch) pr.catch(() => {
+        // Trình duyệt chặn tự phát có tiếng → thử lại không tiếng; vẫn bị chặn mới hiện nút
+        if (!v.muted) { v.muted = true; const p2 = v.play(); if (p2 && p2.catch) p2.catch(showBtn); }
+        else showBtn();
       });
     }
   };
@@ -849,12 +874,20 @@ function showQuestionContent(q, times) {
   if (q.media && q.mediaType === 'video') {
     STATE.vedich.phase = 'video';
     const badge = document.getElementById('phase-badge');
-    if (badge) badge.textContent = '🎬 Xem video';
-    const d = document.getElementById('timer-display'); d.textContent = '▶'; d.className = 'game-timer-display';
+    if (badge) badge.textContent = 'Đang tải video';
+    const d = document.getElementById('timer-display'); d.textContent = '⏳'; d.className = 'game-timer-display';
     document.getElementById('timeline-fill').style.width = '100%';
-    document.getElementById('answer-input').placeholder = 'Xem hết video để bắt đầu trả lời...';
-    const ctrl = mountVideo(q.media, { muted: false, onEnded: () => { if (STATE.vedich.phase === 'video') startVeDichAnswerPhase(); } });
-    ctrl.play();
+    const inp = document.getElementById('answer-input');
+    inp.disabled = true; inp.placeholder = 'Xem hết video để bắt đầu trả lời...';   // ô trả lời khoá trong lúc xem video
+    const ctrl = mountVideo(q.media, {
+      muted: false,
+      onReady: () => {                 // tải xong hết mới phát
+        if (STATE.vedich.phase !== 'video') return;
+        const b = document.getElementById('phase-badge'); if (b) b.textContent = '🎬 Xem video';
+        d.textContent = '▶'; ctrl.play();
+      },
+      onEnded: () => { if (STATE.vedich.phase === 'video') startVeDichAnswerPhase(); }   // xem xong mới tính giờ
+    });
     return;
   }
   if (q.media && q.mediaType === 'image') mountImage(q.media);
@@ -1121,6 +1154,8 @@ function showTtQuestion() {
       onEnded: () => { if (STATE.tt.phase === 'answering' && STATE.tt.videoMode) ttFinish(q); },
       onFail: () => {            // không tải được video: quay về cách tính giờ bằng âm thanh nhập câu hỏi
         STATE.tt.phase = 'opening';
+        const b = document.getElementById('phase-badge'); if (b) b.textContent = 'Chuẩn bị';
+        d.textContent = '⚡'; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
         openingAudio(() => ttStartInput(q));
       }
     });
