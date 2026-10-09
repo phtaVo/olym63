@@ -235,7 +235,7 @@ function fetchSheetRows(sheetName) {
         return r.text();
       })
       .then(csvText => {
-        const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: true });
+        const parsed = Papa.parse(csvText.trim(), { skipEmptyLines: true, delimiter: ',' });   // cố định dấu phẩy, không để Papa tự đoán
         resolve(parsed.data);
       })
       .catch(reject);
@@ -263,9 +263,10 @@ const cell = (r, i) => String(r[i] == null ? '' : r[i]).trim();
 const isUrl = s => /^https?:\/\//i.test(String(s || '').trim());
 // Tách link ra khỏi đoạn chữ (link video có thể nằm ngay trong ô câu hỏi)
 function splitTextAndUrl(t) {
-  const m = String(t || '').match(/https?:\/\/[^\s"'<>]+/);
-  if (!m) return { text: String(t || '').trim(), url: null };
-  return { text: String(t).replace(m[0], '').replace(/\s{2,}/g, ' ').trim(), url: m[0] };
+  const str = String(t || '');
+  const urls = str.match(/https?:\/\/[^\s"'<>]+/g) || [];
+  const text = urls.reduce((acc, u) => acc.replace(u, ' '), str).replace(/\s+/g, ' ').trim();
+  return { text, url: urls[0] || null, urls };
 }
 
 function driveId(url) {
@@ -368,20 +369,26 @@ async function loadVcnv() {
 async function loadTangToc() {
   try {
     const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.tang_toc));
-    const qs = rows.filter(r => cell(r, 1)).map(r => {
-      let text = '', media = null, type = null;
-      const sp = splitTextAndUrl(cell(r, 0));
-      if (sp.url) {
-        media = sp.url; text = sp.text;
-        type = guessMediaType(media, r.map((c, j) => (j >= 2 && !isUrl(cell(r, j))) ? cell(r, j) : '').filter(Boolean));
-      } else {
-        text = sp.text;
-        const m = findMediaInRow(r, 2);
-        if (m) { media = m.url; type = m.type; }
-      }
+    console.log('[TangToc] đọc được', rows.length, 'hàng:', rows.map(r => [cell(r, 0).slice(0, 50), cell(r, 1)]));
+    const qs = [];
+    const mk = (text, media, type, answer) => {
       const label = text || (type === 'video' ? '🎬 Câu hỏi video' : (type === 'image' ? '🖼️ Câu hỏi hình ảnh' : 'Câu hỏi'));
-      return { question: label, text, media, mediaType: type, answer: cell(r, 1) };
-    }).filter(q => q.text || q.media);
+      if (text || media) qs.push({ question: label, text, media, mediaType: type, answer });
+    };
+    rows.filter(r => cell(r, 1)).forEach(r => {
+      const sp = splitTextAndUrl(cell(r, 0));
+      const hints = r.map((c, j) => (j >= 2 && !isUrl(cell(r, j))) ? cell(r, j) : '').filter(Boolean);
+      // Một ô chứa NHIỀU link (mỗi dòng 1 câu) và ô đáp án cũng nhiều dòng tương ứng → tách thành nhiều câu
+      const answers = String(r[1] == null ? '' : r[1]).split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      if (sp.urls.length > 1 && answers.length === sp.urls.length) {
+        sp.urls.forEach((u, i) => mk('', u, guessMediaType(u, []), answers[i]));
+        return;
+      }
+      if (sp.urls.length > 1) console.warn('[TangToc] Ô câu hỏi có', sp.urls.length, 'link nhưng ô đáp án có', answers.length, 'dòng → chỉ dùng link đầu tiên. Nên để mỗi câu 1 hàng.');
+      if (sp.url) mk(sp.text, sp.url, guessMediaType(sp.url, hints), cell(r, 1));
+      else { const m = findMediaInRow(r, 2); mk(sp.text, m ? m.url : null, m ? m.type : null, cell(r, 1)); }
+    });
+    console.log('[TangToc] số câu hợp lệ:', qs.length);
     if (!qs.length) return { success: false, error: 'Sheet TangToc chưa có câu hỏi' };
     return { success: true, questions: shuffleArray(qs).slice(0, CONFIG.GAME.TANG_TOC_COUNT) };
   } catch (e) {
@@ -670,6 +677,12 @@ function onQuestionsLoaded(result) {
   }
   STATE.questions = result.questions; STATE.currentIndex = 0; STATE.score = 0; STATE.answers = [];
   STATE.vdPool = result.pools || null;
+  // Cảnh báo khi ngân hàng câu hỏi trong sheet ít hơn số câu cần random
+  const want = { khoi_dong: CONFIG.GAME.KHOI_DONG_COUNT, vcnv: CONFIG.GAME.VCNV_COUNT, tang_toc: CONFIG.GAME.TANG_TOC_COUNT }[STATE.mode];
+  if (want && result.questions.length < want) {
+    console.warn(`[${STATE.mode}] Sheet chỉ đọc được ${result.questions.length} câu hợp lệ, cần ${want}.`);
+    showToast(`⚠️ Sheet chỉ có ${result.questions.length} câu hợp lệ (cần ${want}). Kiểm tra lại sheet.`);
+  }
   setupGameUI();
 
   if (!introEnabled) { beginMode(); return; }
