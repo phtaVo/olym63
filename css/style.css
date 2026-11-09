@@ -1115,9 +1115,9 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
 .reveal-wait { font-weight: 600; color: var(--gold-dark); }
 
 /* ==================== VỀ ĐÍCH: CHỌN GÓI 20 / 30 ==================== */
-#vd-pick-screen { padding: 20px; background: var(--bg); z-index: 20; }
+#vd-pick-screen { padding: 20px; background: var(--bg); z-index: 20; overflow-y: auto; justify-content: flex-start; }
 .vdp-card {
-  width: min(560px, 100%); background: var(--bg2); border: 1.5px solid var(--border); border-top: 4px solid var(--gold);
+  width: min(560px, 100%); margin: auto; flex-shrink: 0; background: var(--bg2); border: 1.5px solid var(--border); border-top: 4px solid var(--gold);
   border-radius: 16px; padding: 28px 26px 24px; box-shadow: var(--shadow-lg); text-align: center;
 }
 .vdp-eyebrow { font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: var(--gold-dark); }
@@ -1137,10 +1137,16 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
 .vdp-actions { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
 .vdp-actions .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* Khởi Động: bảng đáp án hiện sau mỗi lần Enter */
+.reveal-panel.kd-correct { border-color: rgba(0,120,40,0.45); background: rgba(0,120,40,0.07); }
+.reveal-panel.kd-wrong { border-color: rgba(200,30,30,0.40); background: rgba(200,30,30,0.06); }
+.reveal-panel.kd-correct .reveal-row b { color: var(--green); }
+.reveal-panel .reveal-row.kd-answer b { font-size: 30px; }
+
 /* ==================== CHỌN BỘ CÂU HỎI (phạm vi + môn) ==================== */
-#src-pick-screen { padding: 24px 16px; background: var(--bg); z-index: 20; overflow-y: auto; align-items: flex-start; }
+#src-pick-screen { padding: 24px 16px; background: var(--bg); z-index: 20; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
 .srcp-card {
-  width: min(720px, 100%); margin: auto; background: var(--bg2);
+  width: min(720px, 100%); margin: auto; flex-shrink: 0; background: var(--bg2);
   border: 1.5px solid var(--border); border-radius: 20px; overflow: hidden;
   box-shadow: var(--shadow-lg); text-align: left;
 }
