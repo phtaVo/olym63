@@ -708,32 +708,54 @@ function openSourcePicker(mode) {
   showScreen('src-pick-screen');
 }
 
+const SUBJECT_ICONS = {
+  'Art/Sports': '🎨', 'Biology': '🧬', 'Chemistry': '⚗️', 'English': '🔤', 'General/Social': '🌐',
+  'Geography': '🌍', 'History': '🏛️', 'Literature': '📖', 'Logic/IQ': '🧩', 'Math': '➗', 'Physics': '⚛️'
+};
+const SCOPE_HINTS = { ALL: 'Tuần + Tháng + Quý', W: 'Đề theo tuần', M: 'Đề theo tháng', Q: 'Đề theo quý' };
+
 function renderSourcePicker() {
   const m = _srcPick.mode;
-  const sheets = scopeSheetNames(m, _srcPick.scope).join(' + ');
-  const chip = (cls, onclick, active, label) =>
-    `<button class="srcp-chip ${active ? 'active' : ''}" onclick="${onclick}">${escapeHTML(label)}</button>`;
-  const subjects = [{ id: 'ALL', label: 'Tất cả các môn' }].concat(CONFIG.SUBJECTS.map(s => ({ id: s, label: s })));
+  const sheets = scopeSheetNames(m, _srcPick.scope);
+  const scopeBtn = sc => `
+    <button type="button" class="srcp-scope ${_srcPick.scope === sc.id ? 'active' : ''}" onclick="srcPickScope('${sc.id}')">
+      <span class="srcp-scope-name">${escapeHTML(sc.label)}</span>
+      <span class="srcp-scope-hint">${escapeHTML(SCOPE_HINTS[sc.id] || '')}</span>
+    </button>`;
+  const subjBtn = (id, label, icon) => `
+    <button type="button" class="srcp-subj ${_srcPick.subject === id ? 'active' : ''}" onclick="srcPickSubject('${id.replace(/'/g, "\\'")}')">
+      <span class="srcp-subj-ico">${icon}</span><span class="srcp-subj-name">${escapeHTML(label)}</span>
+    </button>`;
   document.getElementById('src-pick-screen').innerHTML = `
     <div class="srcp-card">
-      <div class="srcp-eyebrow">${escapeHTML(modeLabel(m))}</div>
-      <div class="srcp-title">Chọn bộ câu hỏi</div>
-
-      <div class="srcp-label">Phạm vi</div>
-      <div class="srcp-row">
-        ${CONFIG.SCOPES.map(sc => chip('', `srcPickScope('${sc.id}')`, _srcPick.scope === sc.id, sc.label)).join('')}
+      <div class="srcp-head">
+        <div class="srcp-eyebrow">${escapeHTML(modeLabel(m))}</div>
+        <div class="srcp-title">Chọn bộ câu hỏi</div>
       </div>
 
-      <div class="srcp-label">Môn học</div>
-      <div class="srcp-row srcp-subjects">
-        ${subjects.map(sb => chip('', `srcPickSubject('${sb.id.replace(/'/g, "\\'")}')`, _srcPick.subject === sb.id, sb.label)).join('')}
+      <div class="srcp-section">
+        <div class="srcp-label"><span class="srcp-step">1</span>Phạm vi</div>
+        <div class="srcp-scopes">${CONFIG.SCOPES.map(scopeBtn).join('')}</div>
       </div>
 
-      <div class="srcp-summary">${escapeHTML(sourceLabel({ scope: _srcPick.scope, subject: _srcPick.subject }))}</div>
-      <div class="srcp-sheets">Sheet: ${escapeHTML(sheets)}</div>
-      <div class="srcp-actions">
-        <button class="btn btn-outline" onclick="goHome()">← Trang chủ</button>
-        <button class="btn btn-primary" onclick="confirmSourcePick()">Bắt đầu</button>
+      <div class="srcp-section">
+        <div class="srcp-label"><span class="srcp-step">2</span>Môn học</div>
+        <div class="srcp-subjects">
+          ${subjBtn('ALL', 'Tất cả các môn', '✨')}
+          ${CONFIG.SUBJECTS.map(sb => subjBtn(sb, sb, SUBJECT_ICONS[sb] || '📚')).join('')}
+        </div>
+      </div>
+
+      <div class="srcp-footer">
+        <div class="srcp-selected">
+          <div class="srcp-selected-label">Đã chọn</div>
+          <div class="srcp-selected-value">${escapeHTML(sourceLabel({ scope: _srcPick.scope, subject: _srcPick.subject }))}</div>
+          <div class="srcp-sheets">Nguồn: ${sheets.map(escapeHTML).join(' · ')}</div>
+        </div>
+        <div class="srcp-actions">
+          <button type="button" class="btn btn-outline" onclick="goHome()">← Trang chủ</button>
+          <button type="button" class="btn btn-primary" onclick="confirmSourcePick()">Bắt đầu →</button>
+        </div>
       </div>
     </div>`;
 }
