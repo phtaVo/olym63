@@ -52,6 +52,7 @@ const AUDIO = {
   },
 
   playSFX(ok)     { this.play(ok ? this.correct : this.fail); },
+  stopSFX()       { [this.correct, this.fail].forEach(a => { if (a) { a.onended = null; a.pause(); a.currentTime = 0; } }); },
   playCauHoiVD()  { this.stopAll(); this.play(this.cauhoiVD); },
   playCauHoi15s() { this.stopAll(); this.play(this.cauhoi15sVD); },
   playBgKD()      { this.play(this.bgKD); },
@@ -846,6 +847,7 @@ function setupGameUI() {
 function startKhoiDong() {
   const total = Math.min(STATE.questions.length, CONFIG.GAME.KHOI_DONG_COUNT);
   const T = CONFIG.GAME.KHOI_DONG_TIME;
+  STATE.kdReveal = false; STATE.kdDone = false;
   STATE.timeLeft = T;
   updateTimerUI(T, T); updateQCounter(1, total);
   showQuestion(STATE.questions[0]);
@@ -896,6 +898,8 @@ function submitVeDichAnswerNow() {
 }
 
 function handleKhoiDongAnswer() {
+  // Đang hiện đáp án của câu trước → bỏ qua Enter, chờ hết âm thanh (giữ đúng nhịp dù gõ nhanh)
+  if (STATE.kdReveal || STATE.kdDone) return;
   const input = document.getElementById('answer-input');
   const userAnswer = input.value.trim();
   const q = STATE.questions[STATE.currentIndex];
@@ -903,31 +907,49 @@ function handleKhoiDongAnswer() {
 
   const entry = { question: q.question, userAnswer, correctAnswer: q.answer, correct: null, points: 10 };
   STATE.answers.push(entry);
-  input.value = ''; STATE.currentIndex++;
+  input.value = '';
+  STATE.kdReveal = true;
 
+  let ok = false;
   if (userAnswer === '') {
-    AUDIO.playSFX(false); entry.correct = false;
+    entry.correct = false;
     flashQuickFeedback(false, '');
   } else {
-    const simpleCorrect = (userAnswer.trim().toLowerCase() === q.answer.trim().toLowerCase());
-    AUDIO.playSFX(simpleCorrect);
-    if (simpleCorrect) STATE.score += 10;
-    flashQuickFeedback(simpleCorrect, userAnswer);
+    ok = (userAnswer.toLowerCase() === q.answer.trim().toLowerCase());
+    if (ok) STATE.score += 10;
+    flashQuickFeedback(ok, userAnswer);
 
     gradeAnswerAsync(entry, (correct) => {
       entry.correct = correct;
-      if (!simpleCorrect && correct) { STATE.score += 10; updateScoreUI(true); }
-      else if (simpleCorrect && !correct) { STATE.score -= 10; updateScoreUI(false); }
+      if (!ok && correct) { STATE.score += 10; updateScoreUI(true); }
+      else if (ok && !correct) { STATE.score -= 10; updateScoreUI(false); }
     });
   }
-
   updateScoreUI(false);
-  if (STATE.currentIndex >= total) { endKhoiDong(); return; }
-  updateQCounter(STATE.currentIndex + 1, total);
-  showQuestion(STATE.questions[STATE.currentIndex]);
+
+  // Hiện đáp án trong đúng thời lượng âm thanh đúng/sai, hết âm thanh thì ẩn và sang câu tiếp
+  const rp = document.getElementById('reveal-panel');
+  rp.className = 'reveal-panel ' + (ok ? 'kd-correct' : 'kd-wrong');
+  rp.innerHTML =
+    (userAnswer ? `<div class="reveal-row"><span>Bạn trả lời</span><b>${escapeHTML(userAnswer)}</b></div>` : '') +
+    `<div class="reveal-row kd-answer"><span>Đáp án</span><b>${escapeHTML(q.answer)}</b></div>`;
+
+  AUDIO.stopSFX();
+  playUntilEnd(ok ? AUDIO.correct : AUDIO.fail, () => {
+    STATE.kdReveal = false;
+    rp.className = 'reveal-panel hidden'; rp.innerHTML = '';
+    if (STATE.kdDone) return;
+    STATE.currentIndex++;
+    if (STATE.currentIndex >= total) { endKhoiDong(); return; }
+    updateQCounter(STATE.currentIndex + 1, total);
+    showQuestion(STATE.questions[STATE.currentIndex]);
+    const inp = document.getElementById('answer-input'); if (inp && !inp.disabled) inp.focus();
+  }, 1500);
 }
 
 function endKhoiDong() {
+  STATE.kdDone = true; STATE.kdReveal = false;
+  const rp = document.getElementById('reveal-panel'); if (rp) { rp.className = 'reveal-panel hidden'; rp.innerHTML = ''; }
   clearAllTimers(); AUDIO.stopAll();
   document.getElementById('answer-input').disabled = true;
   showFeedback('info', '⏳ Đang chấm điểm...');
