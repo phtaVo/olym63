@@ -153,7 +153,7 @@ const AUTH = (function () {
   function renderHome() {
     const el = document.getElementById('home-screen');
     const olympiaCards = `
-        <div class="section-card" onclick="startGame('khoi_dong')">
+        <div class="section-card" onclick="openSourcePicker('khoi_dong')">
           <div class="section-badge live">Đang mở</div>
           <div class="section-icon">🚀</div>
           <div class="section-num">Phần 01</div>
@@ -174,7 +174,7 @@ const AUTH = (function () {
           <div class="section-name">Tăng<br>Tốc</div>
           <div class="section-desc">${CONFIG.GAME.TANG_TOC_COUNT} câu · hình ảnh/video · tối đa +40đ</div>
         </div>
-        <div class="section-card" onclick="startGame('ve_dich')">
+        <div class="section-card" onclick="openSourcePicker('ve_dich')">
           <div class="section-badge live">Đang mở</div>
           <div class="section-icon">🏆</div>
           <div class="section-num">Phần 04</div>
