@@ -105,7 +105,7 @@ function updateIntroToggleUI() {
 // STATE
 // ============================================================
 const STATE = {
-  mode: null, questions: [], currentIndex: 0, score: 0,
+  mode: null, source: null, questions: [], currentIndex: 0, score: 0,
   timerInterval: null, phaseTimer: null, answers: [], timeLeft: 70,
   starHope: false, starHopeUsed: false,
   vedich: { phase: 'reading', phaseTimeLeft: 0, readTime: 0, answerTime: 0, savedAnswer: null },
@@ -222,13 +222,15 @@ function showIntroScreen(mode, audioEl, onDone) {
 // TẢI CÂU HỎI TỪ GOOGLE SHEET (thay cho SpreadsheetApp phía server)
 // Yêu cầu: Sheet phải để chế độ chia sẻ "Anyone with the link -> Viewer"
 // ============================================================
-function sheetCsvUrl(sheetName) {
-  return `https://docs.google.com/spreadsheets/d/${CONFIG.SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+function sheetCsvUrl(sheetName, headerRows) {
+  // headerRows = 1: ép Google coi hàng 1 là tiêu đề (luôn được xuất ra ở dòng đầu CSV) → dữ liệu chắc chắn bắt đầu từ hàng 2
+  const h = headerRows ? `&headers=${headerRows}` : '';
+  return `https://docs.google.com/spreadsheets/d/${CONFIG.SPREADSHEET_ID}/gviz/tq?tqx=out:csv${h}&sheet=${encodeURIComponent(sheetName)}`;
 }
 
-function fetchSheetRows(sheetName) {
+function fetchSheetRows(sheetName, headerRows) {
   return new Promise((resolve, reject) => {
-    const url = sheetCsvUrl(sheetName);
+    const url = sheetCsvUrl(sheetName, headerRows);
     fetch(url)
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -309,39 +311,76 @@ function findMediaInRow(r, fromIdx) {
   return null;
 }
 
-async function loadKhoiDong() {
+// ---------- Chọn phạm vi (Tổng hợp/Tuần/Tháng/Quý) + môn cho Khởi Động / Về Đích ----------
+// opts = { scope: 'ALL'|'W'|'M'|'Q', subject: 'ALL'|<tên môn> }
+const DEFAULT_SOURCE = { scope: 'ALL', subject: 'ALL' };
+const normKey = s => String(s || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
+
+function scopeSheetNames(mode, scope) {
+  const map = CONFIG.SCOPE_SHEETS[mode];
+  return (!scope || scope === 'ALL') ? Object.values(map) : [map[scope]].filter(Boolean);
+}
+// Cột B có thể ghi đầy đủ "Art/Sports" hoặc chỉ một nửa ("Art"); so khớp không phân biệt hoa/thường
+function subjectMatches(cellValue, subject) {
+  if (!subject || subject === 'ALL') return true;
+  const c = normKey(cellValue), want = normKey(subject);
+  if (!c) return false;
+  return c === want || want.split('/').some(part => part.trim() === c);
+}
+function sourceLabel(src) {
+  src = src || DEFAULT_SOURCE;
+  const sc = (CONFIG.SCOPES.find(x => x.id === src.scope) || CONFIG.SCOPES[0]).label;
+  return src.subject && src.subject !== 'ALL' ? `${sc} · ${src.subject}` : sc;
+}
+// Đọc các sheet của phạm vi đã chọn, bỏ hàng tiêu đề (hàng 1), lọc theo môn ở cột B
+async function fetchScopedRows(mode, src) {
+  src = src || DEFAULT_SOURCE;
+  const names = scopeSheetNames(mode, src.scope);
+  const settled = await Promise.allSettled(names.map(n => fetchSheetRows(n, 1)));
+  const rows = [];
+  let okCount = 0;
+  settled.forEach(r => {
+    if (r.status !== 'fulfilled') { console.warn('Không tải được sheet:', r.reason); return; }
+    okCount++;
+    r.value.slice(1).forEach(row => { if (subjectMatches(cell(row, 1), src.subject)) rows.push(row); });
+  });
+  if (!okCount) throw new Error('Không tải được sheet ' + names.join(', ') + '. Kiểm tra tên sheet và quyền chia sẻ.');
+  return { rows, names };
+}
+
+async function loadKhoiDong(src) {
   try {
-    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.khoi_dong));
-    const questions = rows
-      .filter(r => cell(r, 0) && cell(r, 1))
-      .map(r => ({ question: cell(r, 0), answer: cell(r, 1) }));
-    if (!questions.length) return { success: false, error: 'Sheet KhoiDong chưa có câu hỏi' };
+    const { rows: raw, names } = await fetchScopedRows('khoi_dong', src);
+    const questions = raw
+      .filter(r => cell(r, 2) && cell(r, 3))                         // C = câu hỏi, D = đáp án
+      .map(r => ({ question: cell(r, 2), answer: cell(r, 3), subject: cell(r, 1) }));
+    if (!questions.length) return { success: false, error: `Chưa có câu hỏi Khởi Động cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
     return { success: true, questions: shuffleArray(questions).slice(0, CONFIG.GAME.KHOI_DONG_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
 }
 
-async function loadVeDich() {
+async function loadVeDich(src) {
   try {
-    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.ve_dich));
-    const all = rows
-      .filter(r => cell(r, 0) && cell(r, 1))
+    const { rows: raw, names } = await fetchScopedRows('ve_dich', src);
+    const all = raw
+      .filter(r => cell(r, 2) && cell(r, 3))                         // C = câu hỏi, D = đáp án
       .map(r => {
-        // Link video có thể nằm trong ô câu hỏi (cột A) hoặc ở các cột sau (C trở đi)
-        const sp = splitTextAndUrl(cell(r, 0));
+        // Link video có thể nằm trong ô câu hỏi (cột C) hoặc ở các cột sau điểm (F trở đi)
+        const sp = splitTextAndUrl(cell(r, 2));
         let url = sp.url, type = null;
         if (url) type = guessMediaType(url, []);
-        else { const m = findMediaInRow(r, 2); if (m) { url = m.url; type = m.type; } }
-        const text = sp.text || (type === 'video' ? '🎬 Xem video và trả lời câu hỏi' : (type === 'image' ? '🖼️ Quan sát hình ảnh và trả lời' : cell(r, 0)));
-        return { question: text, answer: cell(r, 1), points: parseInt(cell(r, 2)) || 10,
-                 media: url, mediaType: type };
+        else { const m = findMediaInRow(r, 5); if (m) { url = m.url; type = m.type; } }
+        const text = sp.text || (type === 'video' ? '🎬 Xem video và trả lời câu hỏi' : (type === 'image' ? '🖼️ Quan sát hình ảnh và trả lời' : cell(r, 2)));
+        return { question: text, answer: cell(r, 3), points: parseInt(cell(r, 4)) || 10,   // E = điểm
+                 media: url, mediaType: type, subject: cell(r, 1) };
       });
     const pools = {
       20: shuffleArray(all.filter(q => q.points === 20)),
       30: shuffleArray(all.filter(q => q.points === 30))
     };
-    if (!pools[20].length && !pools[30].length) return { success: false, error: 'Sheet VeDich chưa có câu 20 hoặc 30 điểm' };
+    if (!pools[20].length && !pools[30].length) return { success: false, error: `Chưa có câu Về Đích 20 hoặc 30 điểm cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
     return { success: true, questions: [...pools[20], ...pools[30]], pools };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -655,11 +694,62 @@ CHỈ TRẢ VỀ JSON thuần, không markdown, không giải thích thêm:
   }
 }
 
+
+// ============================================================
+// CHỌN NGUỒN CÂU HỎI (Khởi Động / Về Đích): Tổng hợp · Tuần · Tháng · Quý  +  môn
+// ============================================================
+const _srcPick = { mode: null, scope: 'ALL', subject: 'ALL' };
+
+function openSourcePicker(mode) {
+  _srcPick.mode = mode;
+  _srcPick.scope = (STATE.source && STATE.source.scope) || 'ALL';
+  _srcPick.subject = (STATE.source && STATE.source.subject) || 'ALL';
+  renderSourcePicker();
+  showScreen('src-pick-screen');
+}
+
+function renderSourcePicker() {
+  const m = _srcPick.mode;
+  const sheets = scopeSheetNames(m, _srcPick.scope).join(' + ');
+  const chip = (cls, onclick, active, label) =>
+    `<button class="srcp-chip ${active ? 'active' : ''}" onclick="${onclick}">${escapeHTML(label)}</button>`;
+  const subjects = [{ id: 'ALL', label: 'Tất cả các môn' }].concat(CONFIG.SUBJECTS.map(s => ({ id: s, label: s })));
+  document.getElementById('src-pick-screen').innerHTML = `
+    <div class="srcp-card">
+      <div class="srcp-eyebrow">${escapeHTML(modeLabel(m))}</div>
+      <div class="srcp-title">Chọn bộ câu hỏi</div>
+
+      <div class="srcp-label">Phạm vi</div>
+      <div class="srcp-row">
+        ${CONFIG.SCOPES.map(sc => chip('', `srcPickScope('${sc.id}')`, _srcPick.scope === sc.id, sc.label)).join('')}
+      </div>
+
+      <div class="srcp-label">Môn học</div>
+      <div class="srcp-row srcp-subjects">
+        ${subjects.map(sb => chip('', `srcPickSubject('${sb.id.replace(/'/g, "\\'")}')`, _srcPick.subject === sb.id, sb.label)).join('')}
+      </div>
+
+      <div class="srcp-summary">${escapeHTML(sourceLabel({ scope: _srcPick.scope, subject: _srcPick.subject }))}</div>
+      <div class="srcp-sheets">Sheet: ${escapeHTML(sheets)}</div>
+      <div class="srcp-actions">
+        <button class="btn btn-outline" onclick="goHome()">← Trang chủ</button>
+        <button class="btn btn-primary" onclick="confirmSourcePick()">Bắt đầu</button>
+      </div>
+    </div>`;
+}
+function srcPickScope(id) { _srcPick.scope = id; renderSourcePicker(); }
+function srcPickSubject(id) { _srcPick.subject = id; renderSourcePicker(); }
+function confirmSourcePick() {
+  startGame(_srcPick.mode, { scope: _srcPick.scope, subject: _srcPick.subject });
+}
+
 // ============================================================
 // START GAME
 // ============================================================
-function startGame(mode) {
+function startGame(mode, source) {
   STATE.runId++; clearAllTimers(); clearMedia();
+  // Khởi Động / Về Đích: nhớ phạm vi + môn đã chọn (để "Chơi lại" dùng lại đúng lựa chọn)
+  if (mode === 'khoi_dong' || mode === 've_dich') STATE.source = source || STATE.source || { ...DEFAULT_SOURCE };
   STATE.mode = mode; STATE.score = 0; STATE.answers = []; STATE.vdPool = null;
   STATE.starHope = false; STATE.starHopeUsed = false; STATE.currentIndex = 0;
   AUDIO.stopAll(); showScreen('loading-overlay');
@@ -667,7 +757,7 @@ function startGame(mode) {
   AUDIO.init(CONFIG.AUDIO_URLS);
 
   const loaders = { khoi_dong: loadKhoiDong, ve_dich: loadVeDich, vcnv: loadVcnv, tang_toc: loadTangToc };
-  loaders[mode]().then(onQuestionsLoaded).catch(err => onLoadError(err));
+  loaders[mode](STATE.source).then(onQuestionsLoaded).catch(err => onLoadError(err));
 }
 
 function onQuestionsLoaded(result) {
@@ -1502,7 +1592,7 @@ function displayResults() {
   showScreen('result-screen');
 }
 
-function restartGame() { startGame(STATE.mode); }
+function restartGame() { startGame(STATE.mode, STATE.source); }
 
 // ============================================================
 // TIMERS
