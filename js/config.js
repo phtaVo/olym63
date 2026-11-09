@@ -7,11 +7,33 @@ const CONFIG = {
 
   // Tên 2 sheet (tab) trong file Google Sheet
   SHEET_NAMES: {
-    khoi_dong: 'KhoiDong',
+    khoi_dong: 'KhoiDong',   // (không còn dùng cho Khởi Động / Về Đích — xem SCOPE_SHEETS bên dưới)
     vcnv: 'VCNV',
     tang_toc: 'TangToc',
     ve_dich: 'VeDich'
   },
+
+  // ==================== KHỞI ĐỘNG / VỀ ĐÍCH: CHỌN THEO PHẠM VI + MÔN ====================
+  // Quy ước tên sheet: [W|M|Q] + [KD|VD]   (W = Tuần, M = Tháng, Q = Quý)
+  //   Khởi Động: WKD, MKD, QKD      Về Đích: WVD, MVD, QVD
+  // "Tổng hợp" = gộp tất cả các sheet của phần thi đó (W + M + Q).
+  // Bố cục cột (hàng 1 là tiêu đề, dữ liệu bắt đầu từ hàng 2):
+  //   Khởi Động: B = môn (subject) · C = câu hỏi · D = đáp án
+  //   Về Đích:   B = môn (subject) · C = câu hỏi · D = đáp án · E = điểm (10/20/30)
+  // Khi lọc theo môn: lấy các hàng có cột B trùng với môn được chọn (đọc từ B2 trở xuống).
+  SCOPE_SHEETS: {
+    khoi_dong: { W: 'WKD', M: 'MKD', Q: 'QKD' },
+    ve_dich:   { W: 'WVD', M: 'MVD', Q: 'QVD' }
+  },
+  SCOPES: [
+    { id: 'ALL', label: 'Tổng hợp' },
+    { id: 'W',   label: 'Tuần' },
+    { id: 'M',   label: 'Tháng' },
+    { id: 'Q',   label: 'Quý' }
+  ],
+  SUBJECTS: ['Art/Sports', 'Biology', 'Chemistry', 'English', 'General/Social',
+             'Geography', 'History', 'Literature', 'Logic/IQ', 'Math', 'Physics'],
+
 
   // ==================== THÔNG SỐ CÁC PHẦN THI (sửa nhanh tại đây) ====================
   // Khoá API Google (Drive API) để phát video Drive ổn định — xem hướng dẫn gửi kèm.
