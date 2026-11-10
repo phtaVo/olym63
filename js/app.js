@@ -181,11 +181,12 @@ function showToast(msg) {
 let _introProgressTimer = null;
 const INTRO_CONFIG = {
   khoi_dong: { title: 'Khởi Động', subtitle: 'Phần Thi Khởi Động' },
+  xuat_phat: { title: 'Xuất Phát', subtitle: 'ĐĐVQ · Phần Thi Xuất Phát' },
   ve_dich:   { title: 'Về Đích',   subtitle: 'Phần Thi Về Đích'   },
   vcnv:      { title: 'Vượt Chướng Ngại Vật', subtitle: 'Phần Thi Vượt Chướng Ngại Vật' },
   tang_toc:  { title: 'Tăng Tốc',  subtitle: 'Phần Thi Tăng Tốc'  }
 };
-const MODE_LABELS = { khoi_dong: 'Khởi Động', vcnv: 'Vượt Chướng Ngại Vật', tang_toc: 'Tăng Tốc', ve_dich: 'Về Đích' };
+const MODE_LABELS = { khoi_dong: 'Khởi Động', xuat_phat: 'Xuất Phát', vcnv: 'Vượt Chướng Ngại Vật', tang_toc: 'Tăng Tốc', ve_dich: 'Về Đích' };
 function modeLabel(m) { return MODE_LABELS[m] || m; }
 
 function showIntroScreen(mode, audioEl, onDone) {
@@ -223,15 +224,15 @@ function showIntroScreen(mode, audioEl, onDone) {
 // TẢI CÂU HỎI TỪ GOOGLE SHEET (thay cho SpreadsheetApp phía server)
 // Yêu cầu: Sheet phải để chế độ chia sẻ "Anyone with the link -> Viewer"
 // ============================================================
-function sheetCsvUrl(sheetName, headerRows) {
+function sheetCsvUrl(sheetName, headerRows, spreadsheetId) {
   // headerRows = 1: ép Google coi hàng 1 là tiêu đề (luôn được xuất ra ở dòng đầu CSV) → dữ liệu chắc chắn bắt đầu từ hàng 2
   const h = headerRows ? `&headers=${headerRows}` : '';
-  return `https://docs.google.com/spreadsheets/d/${CONFIG.SPREADSHEET_ID}/gviz/tq?tqx=out:csv${h}&sheet=${encodeURIComponent(sheetName)}`;
+  return `https://docs.google.com/spreadsheets/d/${spreadsheetId || CONFIG.SPREADSHEET_ID}/gviz/tq?tqx=out:csv${h}&sheet=${encodeURIComponent(sheetName)}`;
 }
 
-function fetchSheetRows(sheetName, headerRows) {
+function fetchSheetRows(sheetName, headerRows, spreadsheetId) {
   return new Promise((resolve, reject) => {
-    const url = sheetCsvUrl(sheetName, headerRows);
+    const url = sheetCsvUrl(sheetName, headerRows, spreadsheetId);
     fetch(url)
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -357,6 +358,20 @@ async function loadKhoiDong(src) {
       .map(r => ({ question: cell(r, 2), answer: cell(r, 3), subject: cell(r, 1) }));
     if (!questions.length) return { success: false, error: `Chưa có câu hỏi Khởi Động cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
     return { success: true, questions: shuffleArray(questions).slice(0, CONFIG.GAME.KHOI_DONG_COUNT) };
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
+}
+
+// ĐĐVQ · Xuất Phát: sheet XP của file ĐĐVQ, A = câu hỏi, B = đáp án (không có hàng tiêu đề)
+async function loadXuatPhat() {
+  try {
+    const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.xuat_phat, 0, CONFIG.DDVQ_SPREADSHEET_ID));
+    const questions = rows
+      .filter(r => cell(r, 0) && cell(r, 1))
+      .map(r => ({ question: cell(r, 0), answer: cell(r, 1) }));
+    if (!questions.length) return { success: false, error: 'Sheet XP (ĐĐVQ) chưa có câu hỏi' };
+    return { success: true, questions: shuffleArray(questions).slice(0, CONFIG.GAME.XUAT_PHAT_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -779,7 +794,7 @@ function startGame(mode, source) {
 
   AUDIO.init(CONFIG.AUDIO_URLS);
 
-  const loaders = { khoi_dong: loadKhoiDong, ve_dich: loadVeDich, vcnv: loadVcnv, tang_toc: loadTangToc };
+  const loaders = { xuat_phat: loadXuatPhat, khoi_dong: loadKhoiDong, ve_dich: loadVeDich, vcnv: loadVcnv, tang_toc: loadTangToc };
   loaders[mode](STATE.source).then(onQuestionsLoaded).catch(err => onLoadError(err));
 }
 
@@ -791,7 +806,7 @@ function onQuestionsLoaded(result) {
   STATE.questions = result.questions; STATE.currentIndex = 0; STATE.score = 0; STATE.answers = [];
   STATE.vdPool = result.pools || null;
   // Cảnh báo khi ngân hàng câu hỏi trong sheet ít hơn số câu cần random
-  const want = { khoi_dong: CONFIG.GAME.KHOI_DONG_COUNT, vcnv: CONFIG.GAME.VCNV_COUNT, tang_toc: CONFIG.GAME.TANG_TOC_COUNT }[STATE.mode];
+  const want = { xuat_phat: CONFIG.GAME.XUAT_PHAT_COUNT, khoi_dong: CONFIG.GAME.KHOI_DONG_COUNT, vcnv: CONFIG.GAME.VCNV_COUNT, tang_toc: CONFIG.GAME.TANG_TOC_COUNT }[STATE.mode];
   if (want && result.questions.length < want) {
     console.warn(`[${STATE.mode}] Sheet chỉ đọc được ${result.questions.length} câu hợp lệ, cần ${want}.`);
     showToast(`⚠️ Sheet chỉ có ${result.questions.length} câu hợp lệ (cần ${want}). Kiểm tra lại sheet.`);
@@ -800,7 +815,7 @@ function onQuestionsLoaded(result) {
 
   if (!introEnabled) { beginMode(); return; }
 
-  const introAudio = STATE.mode === 'khoi_dong' ? AUDIO.introKD : (STATE.mode === 've_dich' ? AUDIO.introVD : null);
+  const introAudio = (STATE.mode === 'khoi_dong' || STATE.mode === 'xuat_phat') ? AUDIO.introKD : (STATE.mode === 've_dich' ? AUDIO.introVD : null);
   showIntroScreen(STATE.mode, introAudio, beginMode);
 }
 
@@ -808,7 +823,7 @@ function onQuestionsLoaded(result) {
 function beginMode() {
   if (STATE.mode === 've_dich') { showVeDichPicker(); return; }
   showScreen('game-screen');
-  if (STATE.mode === 'khoi_dong') startKhoiDong();
+  if (STATE.mode === 'khoi_dong' || STATE.mode === 'xuat_phat') startKhoiDong();
   else if (STATE.mode === 'vcnv') startVcnv();
   else if (STATE.mode === 'tang_toc') startTangToc();
 }
@@ -844,9 +859,16 @@ function setupGameUI() {
 // ============================================================
 // KHỞI ĐỘNG
 // ============================================================
+// Khởi Động (Olympia) và Xuất Phát (ĐĐVQ) dùng chung luồng chơi: chỉ khác số câu và tổng thời gian
+function kdParams() {
+  return STATE.mode === 'xuat_phat'
+    ? { count: CONFIG.GAME.XUAT_PHAT_COUNT, time: CONFIG.GAME.XUAT_PHAT_TIME }
+    : { count: CONFIG.GAME.KHOI_DONG_COUNT, time: CONFIG.GAME.KHOI_DONG_TIME };
+}
+
 function startKhoiDong() {
-  const total = Math.min(STATE.questions.length, CONFIG.GAME.KHOI_DONG_COUNT);
-  const T = CONFIG.GAME.KHOI_DONG_TIME;
+  const total = Math.min(STATE.questions.length, kdParams().count);
+  const T = kdParams().time;
   STATE.kdDone = false; hideKdHint();
   STATE.timeLeft = T;
   updateTimerUI(T, T); updateQCounter(1, total);
@@ -866,7 +888,7 @@ function startKhoiDong() {
 function onInputKeydown(e) {
   if (e.key !== 'Enter') return;
   e.preventDefault();
-  if (STATE.mode === 'khoi_dong') handleKhoiDongAnswer();
+  if (STATE.mode === 'khoi_dong' || STATE.mode === 'xuat_phat') handleKhoiDongAnswer();
   else if (STATE.mode === 've_dich') submitVeDichAnswerNow();
   else if (STATE.mode === 'vcnv') submitVcnv(false);
   else if (STATE.mode === 'tang_toc') submitTtAnswerNow();
@@ -917,7 +939,7 @@ function handleKhoiDongAnswer() {
   const input = document.getElementById('answer-input');
   const userAnswer = input.value.trim();
   const q = STATE.questions[STATE.currentIndex];
-  const total = Math.min(STATE.questions.length, CONFIG.GAME.KHOI_DONG_COUNT);
+  const total = Math.min(STATE.questions.length, kdParams().count);
 
   const entry = { question: q.question, userAnswer, correctAnswer: q.answer, correct: null, points: 10 };
   STATE.answers.push(entry);
@@ -1560,7 +1582,7 @@ function showResults() {
     let newScore = 0;
     for (const a of STATE.answers) {
       if (a.correct) {
-        if (STATE.mode === 'khoi_dong') { newScore += 10; }
+        if (STATE.mode === 'khoi_dong' || STATE.mode === 'xuat_phat') { newScore += 10; }
         else if (STATE.mode === 'vcnv') { newScore += CONFIG.GAME.VCNV_POINTS; }
         else if (STATE.mode === 'tang_toc') { newScore += ttPoints(a.time); }
         else { let pts = a.points || 10; if (a.usedStar) pts *= 2; newScore += pts; }
@@ -1570,7 +1592,8 @@ function showResults() {
       }
     }
     STATE.score = newScore;
-    if (typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
+    // Xuất Phát (ĐĐVQ) chưa có bảng xếp hạng trên Worker nên chưa gửi điểm
+    if (STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
   }).catch(() => displayResults());
 }
