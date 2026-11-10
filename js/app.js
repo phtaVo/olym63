@@ -897,7 +897,7 @@ function submitVeDichAnswerNow() {
   setTimeout(() => input.classList.remove('flash-saved'), 300);
 }
 
-// Dòng chữ nhỏ phía trên ô trả lời: hiện đáp án của câu vừa trả lời trong đúng thời lượng âm thanh đúng/sai
+// Dòng chữ nhỏ phía trên ô trả lời: đáp án của câu vừa trả lời, hiện 3 giây
 let _kdHintToken = 0;
 function kdHintEl() {
   let el = document.getElementById('kd-answer-hint');
@@ -940,15 +940,15 @@ function handleKhoiDongAnswer() {
   }
   updateScoreUI(false);
 
-  // Âm thanh + đáp án nhỏ phía trên ô nhập; KHÔNG chờ — câu kế tiếp hiện ngay
+  // Âm thanh đúng/sai + đáp án chữ nhỏ phía trên ô nhập (hiện 3 giây rồi ẩn); câu kế tiếp hiện ngay, không chờ
+  AUDIO.playSFX(ok);
   const hint = kdHintEl();
   if (hint) {
     const token = ++_kdHintToken;
     hint.className = 'kd-answer-hint ' + (ok ? 'ok' : 'bad');
-    hint.innerHTML = `${ok ? '✅' : '❌'} Đáp án câu trước: <b>${escapeHTML(q.answer)}</b>`;
-    AUDIO.stopSFX();
-    playUntilEnd(ok ? AUDIO.correct : AUDIO.fail, () => { if (token === _kdHintToken) hideKdHint(); }, 1500);
-  } else AUDIO.playSFX(ok);
+    hint.innerHTML = `Đáp án: <b>${escapeHTML(q.answer)}</b>`;
+    setTimeout(() => { if (token === _kdHintToken) hideKdHint(); }, 3000);
+  }
 
   if (STATE.currentIndex >= total) { endKhoiDong(); return; }
   updateQCounter(STATE.currentIndex + 1, total);
