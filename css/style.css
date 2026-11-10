@@ -1137,11 +1137,13 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
 .vdp-actions { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
 .vdp-actions .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* Khởi Động: bảng đáp án hiện sau mỗi lần Enter */
-.reveal-panel.kd-correct { border-color: rgba(0,120,40,0.45); background: rgba(0,120,40,0.07); }
-.reveal-panel.kd-wrong { border-color: rgba(200,30,30,0.40); background: rgba(200,30,30,0.06); }
-.reveal-panel.kd-correct .reveal-row b { color: var(--green); }
-.reveal-panel .reveal-row.kd-answer b { font-size: 30px; }
+/* Khởi Động: đáp án câu trước (chữ nhỏ phía trên ô trả lời) */
+.kd-answer-hint { align-self: flex-start; width: 100%; margin-bottom: -6px; padding: 0 6px; font-size: 13.5px; font-weight: 600; color: var(--text-muted); animation: kdHintIn 0.18s ease; }
+.kd-answer-hint.hidden { display: none; }
+.kd-answer-hint.ok b { color: var(--green); }
+.kd-answer-hint.bad b { color: #C0262D; }
+.kd-answer-hint b { font-weight: 800; }
+@keyframes kdHintIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 /* ==================== CHỌN BỘ CÂU HỎI (phạm vi + môn) ==================== */
 #src-pick-screen { padding: 24px 16px; background: var(--bg); z-index: 20; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; justify-content: flex-start; }
