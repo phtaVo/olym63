@@ -5,12 +5,16 @@ const CONFIG = {
   // ID của Google Sheet chứa câu hỏi (lấy từ URL sheet, đoạn giữa /d/ và /edit)
   SPREADSHEET_ID: '16X-QIXWX-zmt2gVNh94qvYlWDWYRMcwSui5rbybpqjM',
 
+  // ID Google Sheet của ĐĐVQ (tab XP = Xuất Phát). Sheet phải để "Anyone with the link → Viewer"
+  DDVQ_SPREADSHEET_ID: '1OZ3F_tk8DsroicGPx8mWuutI6y7N0RqlXdhkpUK99fI',
+
   // Tên 2 sheet (tab) trong file Google Sheet
   SHEET_NAMES: {
     khoi_dong: 'KhoiDong',   // (không còn dùng cho Khởi Động / Về Đích — xem SCOPE_SHEETS bên dưới)
     vcnv: 'VCNV',
     tang_toc: 'TangToc',
-    ve_dich: 'VeDich'
+    ve_dich: 'VeDich',
+    xuat_phat: 'XP'          // ĐĐVQ · Xuất Phát: A = câu hỏi, B = đáp án, dữ liệu từ hàng 1
   },
 
   // ==================== KHỞI ĐỘNG / VỀ ĐÍCH: CHỌN THEO PHẠM VI + MÔN ====================
@@ -43,6 +47,8 @@ const CONFIG = {
   GAME: {
     KHOI_DONG_COUNT: 18,          // số câu random ở Khởi Động
     KHOI_DONG_TIME: 70,           // tổng thời gian (giây)
+    XUAT_PHAT_COUNT: 10,          // ĐĐVQ · Xuất Phát: số câu random
+    XUAT_PHAT_TIME: 60,           // ĐĐVQ · Xuất Phát: tổng thời gian (giây)
     VCNV_COUNT: 5,                // số chướng ngại vật random
     VCNV_TIME: 60,                // thời gian cho MỖI chướng ngại vật (giây)
     VCNV_POINTS: 10,              // điểm mỗi chướng ngại vật đúng
