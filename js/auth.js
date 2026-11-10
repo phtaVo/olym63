@@ -182,12 +182,12 @@ const AUTH = (function () {
           <div class="section-desc">3 câu · chọn gói 20/30đ · Ngôi sao HV</div>
         </div>`;
     const ddvqCards = `
-        <div class="section-card locked" onclick="showComingSoon('Xuất Phát')">
-          <div class="section-badge">Sắp ra mắt</div>
+        <div class="section-card" onclick="startGame('xuat_phat')">
+          <div class="section-badge live">Đang mở</div>
           <div class="section-icon">🏁</div>
           <div class="section-num">ĐĐVQ · Phần 01</div>
           <div class="section-name">Xuất<br>Phát</div>
-          <div class="section-desc">Đang được phát triển</div>
+          <div class="section-desc">${CONFIG.GAME.XUAT_PHAT_TIME} giây · ${CONFIG.GAME.XUAT_PHAT_COUNT} câu · +10đ/câu</div>
         </div>
         <div class="section-card locked" onclick="showComingSoon('Vinh Quang')">
           <div class="section-badge">Sắp ra mắt</div>
