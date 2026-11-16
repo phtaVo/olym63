@@ -350,28 +350,28 @@ async function fetchScopedRows(mode, src) {
   return { rows, names };
 }
 
-async function loadKhoiDong(src) {
+async function loadKhoiDong(src, all) {   // all = true: trả cả bộ câu hỏi (dùng cho thống kê)
   try {
     const { rows: raw, names } = await fetchScopedRows('khoi_dong', src);
     const questions = raw
       .filter(r => cell(r, 2) && cell(r, 3))                         // C = câu hỏi, D = đáp án
       .map(r => ({ question: cell(r, 2), answer: cell(r, 3), subject: cell(r, 1) }));
     if (!questions.length) return { success: false, error: `Chưa có câu hỏi Khởi Động cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
-    return { success: true, questions: shuffleArray(questions).slice(0, CONFIG.GAME.KHOI_DONG_COUNT) };
+    return { success: true, questions: shuffleArray(questions).slice(0, all ? undefined : CONFIG.GAME.KHOI_DONG_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
 }
 
 // ĐĐVQ · Xuất Phát: sheet XP của file ĐĐVQ, A = câu hỏi, B = đáp án (không có hàng tiêu đề)
-async function loadXuatPhat() {
+async function loadXuatPhat(all) {
   try {
     const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.xuat_phat, 0, CONFIG.DDVQ_SPREADSHEET_ID));
     const questions = rows
       .filter(r => cell(r, 0) && cell(r, 1))
       .map(r => ({ question: cell(r, 0), answer: cell(r, 1) }));
     if (!questions.length) return { success: false, error: 'Sheet XP (ĐĐVQ) chưa có câu hỏi' };
-    return { success: true, questions: shuffleArray(questions).slice(0, CONFIG.GAME.XUAT_PHAT_COUNT) };
+    return { success: true, questions: shuffleArray(questions).slice(0, all ? undefined : CONFIG.GAME.XUAT_PHAT_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -404,7 +404,7 @@ async function loadVeDich(src) {
 }
 
 // VCNV: A = số ký tự, B = các từ khóa, C = link ảnh, D = đáp án
-async function loadVcnv() {
+async function loadVcnv(all) {
   try {
     const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.vcnv));
     const qs = rows
@@ -414,14 +414,14 @@ async function loadVcnv() {
         question: `Chướng ngại vật gồm có ${q.chars} kí tự — Các từ khóa: ${q.keywords}`
       }));
     if (!qs.length) return { success: false, error: 'Sheet VCNV chưa có câu hỏi' };
-    return { success: true, questions: shuffleArray(qs).slice(0, CONFIG.GAME.VCNV_COUNT) };
+    return { success: true, questions: shuffleArray(qs).slice(0, all ? undefined : CONFIG.GAME.VCNV_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
 }
 
 // Tăng Tốc: A = câu hỏi (link ảnh/video hoặc chữ), B = đáp án
-async function loadTangToc() {
+async function loadTangToc(all) {
   try {
     const rows = dataRows(await fetchSheetRows(CONFIG.SHEET_NAMES.tang_toc));
     console.log('[TangToc] đọc được', rows.length, 'hàng:', rows.map(r => [cell(r, 0).slice(0, 50), cell(r, 1)]));
@@ -445,7 +445,7 @@ async function loadTangToc() {
     });
     console.log('[TangToc] số câu hợp lệ:', qs.length);
     if (!qs.length) return { success: false, error: 'Sheet TangToc chưa có câu hỏi' };
-    return { success: true, questions: shuffleArray(qs).slice(0, CONFIG.GAME.TANG_TOC_COUNT) };
+    return { success: true, questions: shuffleArray(qs).slice(0, all ? undefined : CONFIG.GAME.TANG_TOC_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -1592,6 +1592,8 @@ function showResults() {
       }
     }
     STATE.score = newScore;
+    // Thống kê hồ sơ: mỗi lượt chỉ ghi nhận 1 lần
+    if (STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} }
     // Xuất Phát (ĐĐVQ) chưa có bảng xếp hạng trên Worker nên chưa gửi điểm
     if (STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
