@@ -1232,3 +1232,17 @@ body:has(#main-tabbar:not(.hidden)) .home-content { padding-bottom: 90px; }
 }
 
 .media-loading { font-weight: 700; color: var(--gold-dark); padding: 8px 14px; border-radius: 10px; background: rgba(200,134,10,0.08); border: 1px solid rgba(200,134,10,0.2); }
+
+/* ===== Hồ sơ: tiến độ luyện tập ===== */
+.stat-total { float: right; font-size: 13px; font-weight: 800; color: var(--gold, #C8960C); }
+.stat-row { padding: 11px 0; border-bottom: 1px solid var(--border); }
+.stat-row:last-of-type { border-bottom: none; }
+.stat-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 7px; }
+.stat-name { font-weight: 800; font-size: 14.5px; color: var(--text); }
+.stat-played { font-weight: 700; font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+.stat-bar { height: 8px; border-radius: 99px; background: var(--bg2); overflow: hidden; }
+.stat-bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #E8B923, #C8960C); transition: width .5s ease; }
+.stat-sub { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
+.stat-sub b { color: var(--text); }
+.stat-soon { opacity: .6; }
+.stat-soon .stat-head { margin-bottom: 0; }
