@@ -357,7 +357,11 @@ async function loadKhoiDong(src, all) {   // all = true: trả cả bộ câu h�
       .filter(r => cell(r, 2) && cell(r, 3))                         // C = câu hỏi, D = đáp án
       .map(r => ({ question: cell(r, 2), answer: cell(r, 3), subject: cell(r, 1) }));
     if (!questions.length) return { success: false, error: `Chưa có câu hỏi Khởi Động cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
-    return { success: true, questions: shuffleArray(questions).slice(0, all ? undefined : CONFIG.GAME.KHOI_DONG_COUNT) };
+    if (all) return { success: true, questions: shuffleArray(questions) };
+    // Nhóm "thích ứng" (đã đồng ý nghiên cứu): chọn câu theo mức nắm môn; còn lại: ngẫu nhiên như cũ
+    let picked = null;
+    try { picked = await ADAPT.pick(questions, CONFIG.GAME.KHOI_DONG_COUNT); } catch (e) {}
+    return { success: true, questions: picked || shuffleArray(questions).slice(0, CONFIG.GAME.KHOI_DONG_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
   }
@@ -1593,7 +1597,7 @@ function showResults() {
     }
     STATE.score = newScore;
     // Thống kê hồ sơ: mỗi lượt chỉ ghi nhận 1 lần
-    if (STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} }
+    if (STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} if (STATE.mode === 'khoi_dong' || STATE.mode === 've_dich') { try { ADAPT.update(STATE.answers, STATE.questions); } catch (e) {} } }
     // Xuất Phát (ĐĐVQ) chưa có bảng xếp hạng trên Worker nên chưa gửi điểm
     if (STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
