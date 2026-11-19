@@ -1593,7 +1593,7 @@ function showResults() {
     }
     STATE.score = newScore;
     // Thống kê hồ sơ: mỗi lượt chỉ ghi nhận 1 lần
-    if (STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} }
+    if (STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} }
     // Xuất Phát (ĐĐVQ) chưa có bảng xếp hạng trên Worker nên chưa gửi điểm
     if (STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
