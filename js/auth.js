@@ -78,6 +78,7 @@ const AUTH = (function () {
     renderSidenavUser();
     showScreen('home-screen');
     renderHome();
+    try { RESLOG.init(); } catch (e) {}
   }
 
   function renderSidenavUser() {
