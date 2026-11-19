@@ -59,6 +59,8 @@ const CONFIG = {
   // ==================== TÀI KHOẢN / BẢNG XẾP HẠNG (qua Worker riêng) ====================
   // URL của Worker "olympia-accounts-api" — xem hướng dẫn deploy tại
   // worker-accounts/README.md. Sau khi deploy xong, dán URL vào đây.
+  // Nghiên cứu: giữ false cho tới khi có mẫu đồng ý + được nhà trường cho phép
+  RESEARCH_ENABLED: false,
   ACCOUNTS_API_URL: 'https://olympia-accounts-api.voducphat-learncode-tk01.workers.dev',
 
   // ==================== GEMINI (qua Worker proxy) ====================
