@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olym63 · Phân tích nghiên cứu</title>
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#1a73e8;--blue-bg:#e8f0fe;--red:#d93025;--yellow:#f9ab00;--green:#188038;--purple:#9334e6;--teal:#129eaf;--orange:#e8710a;
+--bg:#f8f9fa;--card:#fff;--line:#dadce0;--text:#202124;--muted:#5f6368;--hover:#f1f3f4}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+button{font:inherit;cursor:pointer}
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 16px;position:sticky;top:0;z-index:5}
+.logo{display:flex;align-items:center;gap:10px;font-size:18px;color:var(--muted)}
+.logo b{color:var(--text);font-weight:500}.dot{width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:14px 0 0 var(--red),28px 0 0 var(--yellow),42px 0 0 var(--green);margin-right:46px}
+.spacer{flex:1}
+.chip{border:1px solid var(--line);border-radius:16px;padding:4px 12px;color:var(--muted);background:#fff}
+.switch{display:flex;align-items:center;gap:8px;color:var(--muted);cursor:pointer;user-select:none}
+.switch i{width:34px;height:14px;border-radius:7px;background:#bdc1c6;position:relative;transition:.15s}
+.switch i:after{content:"";position:absolute;top:-3px;left:-2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0005;transition:.15s}
+.switch.on i{background:#a8c7fa}.switch.on i:after{left:16px;background:var(--blue)}
+.btn{border:1px solid var(--line);background:#fff;color:var(--blue);border-radius:4px;padding:6px 14px;font-weight:500}
+.btn:hover{background:var(--blue-bg)}
+.layout{display:flex;height:calc(100% - 56px)}
+.side{width:280px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
+.side h3{margin:0;padding:14px 16px 6px;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.side input{margin:6px 12px;padding:8px 12px;border:1px solid var(--line);border-radius:20px;font:inherit;outline:none}
+.side input:focus{border-color:var(--blue)}
+.list{overflow:auto;flex:1;padding:4px 8px 16px}
+.item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:0 20px 20px 0;cursor:pointer;color:var(--text)}
+.item:hover{background:var(--hover)}.item.active{background:var(--blue-bg);color:#174ea6;font-weight:500}
+.item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item small{color:var(--muted)}
+.badge{font-size:11px;border-radius:10px;padding:1px 8px;font-weight:500}
+.badge.adaptive{background:#e6f4ea;color:var(--green)}.badge.random{background:#fef7e0;color:#b06000}.badge.none{background:var(--hover);color:var(--muted)}
+.main{flex:1;overflow:auto;padding:20px 24px 60px}
+.wrap{max-width:980px;margin:0 auto}
+h1{font-size:22px;font-weight:400;margin:0 0 4px}.sub{color:var(--muted);margin-bottom:18px}
+.cell{display:flex;margin-bottom:14px}
+.gutter{width:44px;flex-shrink:0;color:var(--muted);font:12px "Roboto Mono",monospace;padding:12px 8px 0 0;text-align:right}
+.body{flex:1;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;min-width:0}
+.body.note{border-left:4px solid var(--blue)}
+.ch{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);font-weight:500}
+.ch small{color:var(--muted);font-weight:400}
+.cb{padding:14px 16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.kpi .v{font-size:26px;font-weight:400;color:var(--blue)}.kpi .l{color:var(--muted);font-size:12px;margin-top:2px}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:12px;cursor:default}th.s{cursor:pointer}th.s:hover{color:var(--blue)}
+tr.row{cursor:pointer}tr.row:hover td{background:var(--hover)}
+.muted{color:var(--muted)}.empty{color:var(--muted);padding:18px;text-align:center}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)}
+.legend span:before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;background:var(--c)}
+.warn{background:#fef7e0;border:1px solid #fde293;color:#7a5200;border-radius:8px;padding:10px 14px;margin-bottom:14px}
+ul.ins{margin:0;padding-left:20px;line-height:1.7}
+svg text{font-family:Roboto,Arial,sans-serif}
+.msg{display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:12px;color:var(--muted)}
+@media(max-width:800px){.side{display:none}.gutter{display:none}.main{padding:14px 10px}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><span class="dot"></span><span><b>Olym63</b> · Phân tích nghiên cứu</span></div>
+  <div class="spacer"></div>
+  <div class="switch" id="sw-names" title="Mặc định chỉ hiện mã ẩn danh"><i></i><span>Hiện họ tên</span></div>
+  <button class="btn" id="btn-refresh">Làm mới</button>
+  <a class="chip" href="./" style="text-decoration:none">← Về Olym63</a>
+</div>
+<div id="app" class="msg">Đang tải…</div>
+
+<script src="js/config.js"></script>
+<script>
+(function(){
+'use strict';
+// ====================== tiện ích ======================
+const $=(s,r)=> (r||document).querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const base=()=>((typeof CONFIG!=='undefined'&&CONFIG.ACCOUNTS_API_URL)||'').replace(/\/+$/,'');
+const token=()=>{try{return localStorage.getItem('olympia_token')}catch(e){return null}};
+async function api(p){const r=await fetch(base()+p,{headers:{Authorization:'Bearer '+token()}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||('HTTP '+r.status));return d}
+const pct=x=>x==null||isNaN(x)?'—':Math.round(x*100)+'%';
+const COLORS=['#1a73e8','#d93025','#f9ab00','#188038','#9334e6','#129eaf','#e8710a','#5f6368','#c2185b','#7cb342','#00897b'];
+// BKT (tham số GIẢ ĐỊNH, giống bộ chọn câu): L0=0,3; T=S=G=0,1
+const P={L0:.3,T:.1,S:.1,G:.1};
+const bkt=(pL,y)=>{const post=y?pL*(1-P.S)/(pL*(1-P.S)+(1-pL)*P.G):pL*P.S/(pL*P.S+(1-pL)*(1-P.G));return post+(1-post)*P.T};
+
+// ====================== biểu đồ SVG ======================
+function barChart(labels,values,opt){opt=opt||{};const W=640,H=opt.h||200,l=34,r=8,t=10,b=34;const max=opt.max||Math.max(1e-9,...values);
+  const n=values.length,bw=(W-l-r)/Math.max(n,1);let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">`;
+  for(let i=0;i<=4;i++){const y=t+(H-t-b)*(1-i/4);s+=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="#e8eaed"/><text x="${l-6}" y="${y+4}" font-size="10" fill="#5f6368" text-anchor="end">${opt.fmt?opt.fmt(max*i/4):Math.round(max*i/4)}</text>`}
+  values.forEach((v,i)=>{const h=(H-t-b)*Math.min(v/max,1),x=l+i*bw+bw*.18,y=H-b-h;const c=(opt.colors&&opt.colors[i])||opt.color||'#1a73e8';
+    s+=`<rect x="${x}" y="${y}" width="${bw*.64}" height="${h}" rx="2" fill="${c}"><title>${esc(labels[i])}: ${opt.fmt?opt.fmt(v):v}</title></rect>`;
+    if(n<=16||i%Math.ceil(n/16)===0)s+=`<text x="${x+bw*.32}" y="${H-b+14}" font-size="10" fill="#5f6368" text-anchor="middle">${esc(String(labels[i]).slice(0,10))}</text>`});
+  return s+'</svg>'}
+function lineChart(series,opt){opt=opt||{};const W=640,H=230,l=34,r=10,t=10,b=26;let xmax=1;series.forEach(se=>se.pts.forEach(p=>{if(p.x>xmax)xmax=p.x}));
+  const X=x=>l+(W-l-r)*(x/xmax),Y=y=>t+(H-t-b)*(1-y);let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">`;
+  for(let i=0;i<=4;i++){const v=i/4,y=Y(v);s+=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="#e8eaed"/><text x="${l-6}" y="${y+4}" font-size="10" fill="#5f6368" text-anchor="end">${Math.round(v*100)}%</text>`}
+  s+=`<text x="${(l+W-r)/2}" y="${H-4}" font-size="10" fill="#5f6368" text-anchor="middle">${esc(opt.xlabel||'')}</text>`;
+  series.forEach(se=>{if(!se.pts.length)return;const d=se.pts.map((p,i)=>(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join(' ');
+    s+=`<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2" stroke-linejoin="round"/>`;const q=se.pts[se.pts.length-1];s+=`<circle cx="${X(q.x)}" cy="${Y(q.y)}" r="3.5" fill="${se.color}"><title>${esc(se.name)}: ${pct(q.y)}</title></circle>`});
+  return s+'</svg>'}
+const legend=items=>'<div class="legend">'+items.map(i=>`<span style="--c:${i.color}">${esc(i.name)}</span>`).join('')+'</div>';
+
+// ====================== trạng thái ======================
+const S={me:null,learners:[],tests:[],summary:null,sel:null,names:false,q:'',sort:{k:'last_ts',d:-1},detail:{}};
+const code=l=>'HS-'+l.learner_id.slice(0,4).toUpperCase();
+const label=l=>S.names&&l.full_name?l.full_name:code(l);
+const testOf=(id,ph)=>{const t=S.tests.find(x=>x.learner_id===id&&x.phase===ph);return t?t.n_correct/t.n_items:null};
+const fmtDate=s=>s?s.slice(0,10):'—';
+
+function cell(n,title,sub,html,note){return `<div class="cell"><div class="gutter">[${n}]</div><div class="body${note?' note':''}"><div class="ch">${title}${sub?` <small>${sub}</small>`:''}</div><div class="cb">${html}</div></div></div>`}
+
+// ====================== màn hình: tổng quan ======================
+function renderOverview(){
+  const L=S.learners,tot=L.reduce((a,x)=>a+x.n,0),sum=S.summary||{};
+  const accAll=tot?L.reduce((a,x)=>a+(x.acc||0)*x.n,0)/tot:null;
+  let h=`<h1>Tổng quan nghiên cứu</h1><div class="sub">Dữ liệu từ học sinh đã đồng ý tham gia. Số liệu mô tả, chưa phải kết luận.</div>`;
+  if(!L.length){return h+cell(1,'Chưa có dữ liệu','','<div class="empty">Chưa có học sinh nào đồng ý tham gia, hoặc chưa có lượt luyện tập nào.</div>')}
+  h+=cell(1,'Tóm tắt','',`<div class="kpis"><div class="kpi"><div class="v">${L.length}</div><div class="l">học sinh tham gia</div></div><div class="kpi"><div class="v">${tot}</div><div class="l">lượt trả lời</div></div><div class="kpi"><div class="v">${pct(accAll)}</div><div class="l">tỉ lệ đúng chung</div></div><div class="kpi"><div class="v">${S.tests.length}</div><div class="l">bài kiểm tra đã nộp</div></div></div>`);
+  // theo nhóm
+  const gs=['adaptive','random'].map(g=>{const d=L.filter(x=>x.group_code===g),n=d.reduce((a,x)=>a+x.n,0);return{g,people:d.length,n,acc:n?d.reduce((a,x)=>a+(x.acc||0)*x.n,0)/n:null}});
+  h+=cell(2,'So sánh hai nhóm khi luyện tập','',`<table><tr><th>Nhóm</th><th>Học sinh</th><th>Lượt</th><th>Tỉ lệ đúng</th></tr>${gs.map(x=>`<tr><td><span class="badge ${x.g}">${x.g}</span></td><td>${x.people}</td><td>${x.n}</td><td>${pct(x.acc)}</td></tr>`).join('')}</table>${barChart(gs.map(x=>x.g),gs.map(x=>x.acc||0),{max:1,fmt:pct,colors:['#188038','#f9ab00'],h:160})}<div class="muted" style="margin-top:6px">Lưu ý: tỉ lệ đúng khi luyện chưa phải tiến bộ; nhóm thích ứng gặp câu vừa sức hơn nên có thể thấp hơn. Cần điểm trước/sau và <code>analyze.py</code> để kết luận.</div>`,true);
+  // theo ngày
+  const days=(sum.per_day||[]).slice().reverse();
+  h+=cell(3,'Số lượt luyện theo ngày','14 ngày gần nhất có dữ liệu',days.length?barChart(days.map(d=>d.day.slice(5)),days.map(d=>d.attempts),{h:180}):'<div class="empty">Chưa có dữ liệu.</div>');
+  // kiểm tra
+  const ts=sum.tests||[];
+  h+=cell(4,'Bài kiểm tra trước/sau','điểm trung bình theo nhóm',ts.length?`<table><tr><th>Nhóm</th><th>Bài</th><th>n</th><th>Điểm TB</th></tr>${ts.map(t=>`<tr><td>${esc(t.group_code)}</td><td>${t.phase==='pre'?'đầu vào':'đầu ra'}</td><td>${t.n}</td><td>${pct(t.mean_score)}</td></tr>`).join('')}</table>`:'<div class="empty">Chưa có bài kiểm tra nào được nộp.</div>');
+  // bảng học sinh
+  const rows=L.filter(x=>!S.q||label(x).toLowerCase().includes(S.q.toLowerCase())).map(x=>({...x,pre:testOf(x.learner_id,'pre'),post:testOf(x.learner_id,'post')}));
+  const k=S.sort.k,d=S.sort.d;rows.sort((a,b)=>((a[k]??-1)>(b[k]??-1)?1:-1)*d);
+  const th=(k,t)=>`<th class="s" data-sort="${k}">${t}${S.sort.k===k?(S.sort.d>0?' ▲':' ▼'):''}</th>`;
+  h+=cell(5,'Danh sách học sinh','bấm vào dòng để xem chi tiết',`<table><tr>${th('full_name','Học sinh')}${th('group_code','Nhóm')}${th('n','Lượt')}${th('acc','Đúng')}${th('pre','Điểm vào')}${th('post','Điểm ra')}${th('last_ts','Gần nhất')}</tr>${rows.map(x=>`<tr class="row" data-id="${x.learner_id}"><td>${esc(label(x))}${S.names?` <span class="muted">${esc([x.class,x.school].filter(Boolean).join(' · '))}</span>`:''}</td><td><span class="badge ${x.group_code}">${x.group_code}</span></td><td>${x.n}</td><td>${pct(x.acc)}</td><td>${pct(x.pre)}</td><td>${pct(x.post)}</td><td>${fmtDate(x.last_ts)}</td></tr>`).join('')}</table>`);
+  return h;
+}
+
+// ====================== màn hình: một học sinh ======================
+function analyzeLearner(att){
+  const bySub={},pL={},traj={};let idx=0;const days={};
+  att.forEach(a=>{idx++;const s=a.subject||'(chưa rõ môn)';const b=bySub[s]=bySub[s]||{n:0,c:0};b.n++;b.c+=a.correct;
+    pL[s]=bkt(pL[s]==null?P.L0:pL[s],a.correct);(traj[s]=traj[s]||[]).push({x:idx,y:pL[s]});
+    const d=a.ts.slice(0,10);days[d]=(days[d]||0)+1});
+  return{bySub,pL,traj,days,total:att.length}}
+function renderLearner(l,att){
+  const A=analyzeLearner(att),subs=Object.keys(A.bySub).sort((a,b)=>A.bySub[b].n-A.bySub[a].n),dkeys=Object.keys(A.days).sort();
+  const acc=A.total?att.reduce((a,x)=>a+x.correct,0)/A.total:null;
+  let h=`<h1>${esc(label(l))} <span class="badge ${l.group_code}">${l.group_code}</span></h1><div class="sub">${S.names?esc([l.class,l.school].filter(Boolean).join(' · '))+' · ':''}đồng ý tham gia ngày ${fmtDate(l.consent_at)} · <a href="#" id="back" style="color:var(--blue)">← Tổng quan</a></div>`;
+  h+=cell(1,'Tóm tắt','',`<div class="kpis"><div class="kpi"><div class="v">${A.total}</div><div class="l">lượt trả lời</div></div><div class="kpi"><div class="v">${pct(acc)}</div><div class="l">tỉ lệ đúng</div></div><div class="kpi"><div class="v">${dkeys.length}</div><div class="l">ngày có luyện tập</div></div><div class="kpi"><div class="v">${pct(testOf(l.learner_id,'pre'))}</div><div class="l">điểm đầu vào</div></div><div class="kpi"><div class="v">${pct(testOf(l.learner_id,'post'))}</div><div class="l">điểm đầu ra</div></div></div>`);
+  if(!A.total)return h+cell(2,'Chưa có dữ liệu luyện tập','','<div class="empty">Học sinh này chưa có lượt luyện tập nào được ghi.</div>');
+  const top=subs.filter(s=>A.bySub[s].n>=3).slice(0,8);
+  h+=cell(2,'Mức nắm từng môn theo thời gian (BKT)','xác suất đã nắm, cập nhật sau mỗi câu',
+    `${lineChart(top.map((s,i)=>({name:s,color:COLORS[i%COLORS.length],pts:A.traj[s]})),{xlabel:'thứ tự lượt trả lời'})}${legend(top.map((s,i)=>({name:s+' ('+pct(A.pL[s])+')',color:COLORS[i%COLORS.length]})))}<div class="muted" style="margin-top:8px">Tham số BKT là <b>giả định</b> (L0=0,3; T=S=G=0,1), chưa hiệu chuẩn bằng dữ liệu thật; chỉ hiển thị môn có ≥3 lượt.</div>`,true);
+  h+=cell(3,'Độ chính xác theo môn','',`<table><tr><th>Môn</th><th>Lượt</th><th>Đúng</th><th>Mức nắm (BKT)</th></tr>${subs.map(s=>`<tr><td>${esc(s)}</td><td>${A.bySub[s].n}</td><td>${pct(A.bySub[s].c/A.bySub[s].n)}</td><td>${pct(A.pL[s])}</td></tr>`).join('')}</table>`);
+  h+=cell(4,'Hoạt động theo ngày','',barChart(dkeys.map(d=>d.slice(5)),dkeys.map(d=>A.days[d]),{h:170}));
+  // nhận xét mô tả tự động
+  const ins=[];const rank=subs.filter(s=>A.bySub[s].n>=5).sort((a,b)=>A.pL[a]-A.pL[b]);
+  if(rank.length>=2){ins.push(`Môn có mức nắm thấp nhất (≥5 lượt): <b>${esc(rank[0])}</b> (${pct(A.pL[rank[0]])}); cao nhất: <b>${esc(rank[rank.length-1])}</b> (${pct(A.pL[rank[rank.length-1]])}).`)}
+  if(A.total>=20){const h1=att.slice(0,Math.floor(A.total/2)),h2=att.slice(Math.floor(A.total/2));const a1=h1.reduce((a,x)=>a+x.correct,0)/h1.length,a2=h2.reduce((a,x)=>a+x.correct,0)/h2.length;
+    ins.push(`Tỉ lệ đúng nửa đầu: ${pct(a1)}, nửa sau: ${pct(a2)} (${a2>=a1?'tăng':'giảm'} ${Math.abs(Math.round((a2-a1)*100))} điểm %). Chỉ mang tính mô tả.`)}
+  const pre=testOf(l.learner_id,'pre'),post=testOf(l.learner_id,'post');if(pre!=null&&post!=null)ins.push(`Điểm kiểm tra: ${pct(pre)} → ${pct(post)}.`);
+  h+=cell(5,'Nhận xét mô tả','tự động, không phải chẩn đoán',ins.length?`<ul class="ins">${ins.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<div class="empty">Chưa đủ dữ liệu để nhận xét.</div>',true);
+  return h}
+
+// ====================== khung trang ======================
+function drawSide(){
+  const L=S.learners.filter(x=>!S.q||label(x).toLowerCase().includes(S.q.toLowerCase()));
+  $('#side-list').innerHTML=`<div class="item ${S.sel==null?'active':''}" data-id="">📊 <span class="nm">Tổng quan</span></div><h3 style="padding-left:10px">Học sinh (${S.learners.length})</h3>`+
+    L.map(x=>`<div class="item ${S.sel===x.learner_id?'active':''}" data-id="${x.learner_id}">👤 <span class="nm">${esc(label(x))}</span><small>${x.n}</small><span class="badge ${x.group_code}">${x.group_code[0]}</span></div>`).join('')}
+async function drawMain(){
+  const m=$('#main-body');
+  if(S.sel==null){m.innerHTML=renderOverview();return}
+  const l=S.learners.find(x=>x.learner_id===S.sel);if(!l){S.sel=null;return drawMain()}
+  if(!S.detail[S.sel]){m.innerHTML='<div class="empty">Đang tải…</div>';try{S.detail[S.sel]=(await api('/admin/research/learner?id='+encodeURIComponent(S.sel))).attempts}catch(e){m.innerHTML=`<div class="warn">Không tải được: ${esc(e.message)}</div>`;return}}
+  m.innerHTML=renderLearner(l,S.detail[S.sel])}
+function shell(){
+  $('#app').className='layout';$('#app').innerHTML=`<aside class="side"><input id="q" placeholder="Tìm học sinh…"><div class="list" id="side-list"></div></aside><main class="main"><div class="wrap" id="main-body"></div></main>`;
+  $('#q').oninput=e=>{S.q=e.target.value;drawSide();if(S.sel==null)drawMain()};
+  $('#side-list').onclick=e=>{const it=e.target.closest('.item');if(!it)return;S.sel=it.dataset.id||null;drawSide();drawMain();$('.main').scrollTop=0};
+  $('#main-body').onclick=e=>{const th=e.target.closest('th[data-sort]');if(th){const k=th.dataset.sort;S.sort=S.sort.k===k?{k,d:-S.sort.d}:{k,d:-1};return drawMain()}
+    const tr=e.target.closest('tr.row');if(tr){S.sel=tr.dataset.id;drawSide();drawMain();$('.main').scrollTop=0;return}
+    if(e.target.id==='back'){e.preventDefault();S.sel=null;drawSide();drawMain()}}}
+async function load(){
+  try{const [ls,sm]=await Promise.all([api('/admin/research/learners'),api('/admin/research/summary')]);S.learners=ls.learners||[];S.tests=ls.tests||[];S.summary=sm;S.detail={};
+    if(!$('#side-list'))shell();drawSide();drawMain()}
+  catch(e){$('#app').className='msg';$('#app').innerHTML=`<div class="warn">Không tải được dữ liệu: ${esc(e.message)}</div>`}}
+async function boot(){
+  if(!base()){$('#app').innerHTML='Chưa cấu hình ACCOUNTS_API_URL.';return}
+  if(!token()){$('#app').innerHTML='<div>Bạn chưa đăng nhập.</div><a class="btn" href="./" style="text-decoration:none">Đăng nhập ở Olym63</a>';return}
+  try{S.me=(await api('/me')).user}catch(e){$('#app').innerHTML='<div>Phiên đăng nhập đã hết hạn.</div><a class="btn" href="./" style="text-decoration:none">Đăng nhập lại</a>';return}
+  if(S.me.role!=='admin'){$('#app').innerHTML='<div>Trang này chỉ dành cho quản trị viên.</div><a class="btn" href="./" style="text-decoration:none">← Về Olym63</a>';return}
+  $('#sw-names').onclick=e=>{S.names=!S.names;$('#sw-names').classList.toggle('on',S.names);drawSide();drawMain()};
+  $('#btn-refresh').onclick=load;load()}
+boot();
+})();
+</script>
+</body>
+</html>
