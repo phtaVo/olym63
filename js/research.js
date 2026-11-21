@@ -149,12 +149,16 @@ const RESLOG = (() => {
     if (status.consented) {
       el.innerHTML = `<div class="profile-card-title">🔬 Tham gia nghiên cứu</div>
         <div class="profile-info-note" style="margin-bottom:10px">Bạn đang tham gia. Hệ thống ghi mã câu hỏi, đúng/sai và thời điểm làm bài (ẩn danh). Bạn có thể rút lui bất cứ lúc nào.</div>
+        ${status.test_open && status.test_open.pre && !(status.test_done && status.test_done.pre) ? '<button class="btn btn-primary" id="rp-pre" style="width:100%;margin-bottom:8px">📝 Làm bài kiểm tra đầu vào</button>' : ''}
+        ${status.test_open && status.test_open.post && !(status.test_done && status.test_done.post) ? '<button class="btn btn-primary" id="rp-post" style="width:100%;margin-bottom:8px">📝 Làm bài kiểm tra đầu ra</button>' : ''}
         <button class="btn btn-outline" id="rp-out" style="width:100%;margin-bottom:8px">Rút lui (giữ dữ liệu đã ghi)</button>
         <button class="btn btn-outline" id="rp-del" style="width:100%">Rút lui và xóa dữ liệu của tôi</button>`;
       const run = async (del) => {
         if (!confirm(del ? 'Rút lui và XÓA toàn bộ dữ liệu nghiên cứu đã ghi của bạn? Không thể khôi phục.' : 'Rút lui khỏi nghiên cứu? Dữ liệu đã ghi vẫn được giữ.')) return;
         try { await withdraw(del); renderProfileCard(); } catch (e) { alert('Chưa thực hiện được: ' + e.message); }
       };
+      const bp = el.querySelector('#rp-pre'), bq = el.querySelector('#rp-post');
+      if (bp) bp.onclick = () => runTest('pre'); if (bq) bq.onclick = () => runTest('post');
       el.querySelector('#rp-out').onclick = () => run(false);
       el.querySelector('#rp-del').onclick = () => run(true);
     } else {
@@ -165,6 +169,140 @@ const RESLOG = (() => {
     }
   }
 
+
+  // ================= BÀI KIỂM TRA TRƯỚC / SAU =================
+  // Đề cố định (qid lưu ở D1, nội dung lấy từ Google Sheets). Làm không giới hạn thời gian, không báo đúng/sai.
+  // Chấm bằng so khớp chuẩn hóa như lớp chấm nội bộ của web (exactMatch / simpleCompare), KHÔNG dùng AI.
+  async function loadPoolMap() {
+    const r = await loadKhoiDong({ scope: 'ALL', subject: 'ALL' }, true);
+    if (!r.success) throw new Error(r.error || 'Không tải được ngân hàng câu hỏi.');
+    const map = new Map();
+    for (let i = 0; i < r.questions.length; i += 400) {
+      const part = r.questions.slice(i, i + 400);
+      const ids = await Promise.all(part.map(q => makeQid(q.question, q.answer)));
+      part.forEach((q, k) => { if (!map.has(ids[k])) map.set(ids[k], q); });
+    }
+    return { map, questions: r.questions };
+  }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  async function runTest(phase) {
+    const label = phase === 'pre' ? 'đầu vào' : 'đầu ra';
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay show'; ov.id = 'research-test';
+    ov.innerHTML = '<div class="modal-box" style="max-width:560px;text-align:left"><div class="modal-sub" id="rt-body">Đang chuẩn bị bài kiểm tra…</div></div>';
+    document.body.appendChild(ov);
+    const body = () => ov.querySelector('#rt-body');
+    try {
+      const form = await api('/research/test?phase=' + phase);
+      const { map } = await loadPoolMap();
+      const items = form.qids.map(id => ({ qid: id, q: map.get(id) }));
+      if (items.some(i => !i.q)) throw new Error('Một số câu của đề không còn trong ngân hàng câu hỏi. Hãy báo quản trị viên.');
+      for (let i = items.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [items[i], items[j]] = [items[j], items[i]]; }
+      const result = []; let idx = 0;
+      const show = () => {
+        const it = items[idx];
+        body().innerHTML = `<div class="modal-title" style="font-size:18px">Bài kiểm tra ${label} · Câu ${idx + 1}/${items.length}</div>
+          <div style="margin:12px 0;font-size:16px;line-height:1.5">${esc(it.q.question)}</div>
+          <input type="text" id="rt-ans" class="answer-input" placeholder="Nhập câu trả lời…" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+            <span style="font-size:12px;opacity:.7">Không giới hạn thời gian. Hệ thống không báo đúng/sai trong lúc làm bài.</span>
+            <button class="btn btn-primary" id="rt-next">${idx === items.length - 1 ? 'Nộp bài' : 'Câu tiếp'}</button>
+          </div>`;
+        const inp = body().querySelector('#rt-ans'); inp.focus();
+        const next = () => {
+          const u = inp.value || '', c = it.q.answer || '';
+          const ok = !!u.trim() && (exactMatch(u, c) || simpleCompare(u, c));
+          result.push({ qid: it.qid, correct: ok ? 1 : 0 }); idx++;
+          if (idx < items.length) show(); else submit();
+        };
+        body().querySelector('#rt-next').onclick = next;
+        inp.onkeydown = e => { if (e.key === 'Enter') next(); };
+      };
+      const submit = async () => {
+        body().innerHTML = 'Đang nộp bài…';
+        try {
+          await api('/research/test', { method: 'POST', body: { phase, items: result } });
+          status.test_done = Object.assign({}, status.test_done, { [phase]: true });
+          body().innerHTML = '<div class="modal-title" style="font-size:20px">Đã nộp bài ✅</div><div style="margin:12px 0">Cảm ơn bạn đã tham gia. Kết quả được ghi nhận cho nghiên cứu.</div><button class="btn btn-primary" id="rt-close">Đóng</button>';
+          body().querySelector('#rt-close').onclick = () => { ov.remove(); renderProfileCard(); };
+        } catch (e) {
+          body().innerHTML = `<div style="color:#c00;margin-bottom:12px">Chưa nộp được: ${esc(e.message)}</div><button class="btn btn-primary" id="rt-retry">Thử nộp lại</button>`;
+          body().querySelector('#rt-retry').onclick = submit;
+        }
+      };
+      show();
+    } catch (e) {
+      body().innerHTML = `<div style="color:#c00;margin-bottom:12px">${esc(e.message)}</div><button class="btn btn-outline" id="rt-x">Đóng</button>`;
+      body().querySelector('#rt-x').onclick = () => ov.remove();
+    }
+  }
+
+  // ================= QUẢN TRỊ NGHIÊN CỨU (chỉ admin) =================
+  async function adminCsv(path, name) {
+    const res = await fetch(base() + path, { headers: { Authorization: 'Bearer ' + token() } });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || ('HTTP ' + res.status)); }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(await res.blob()); a.download = name; a.click();
+  }
+  async function adminBuildForms(nPer) {
+    const { questions } = await loadPoolMap();
+    const bySub = {};
+    const seen = new Set();
+    for (const q of questions) { const id = await makeQid(q.question, q.answer); if (seen.has(id)) continue; seen.add(id); q._id = id; (bySub[q.subject || '_'] = bySub[q.subject || '_'] || []).push(q); }
+    for (const k in bySub) { const a = bySub[k]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } }
+    const keys = Object.keys(bySub), taken = [];
+    let guard = 0;
+    while (taken.length < nPer * 2 && guard++ < 10000) { const k = keys[taken.length % keys.length]; if (bySub[k].length) taken.push(bySub[k].pop()._id); }
+    const A = taken.filter((_, i) => i % 2 === 0), B = taken.filter((_, i) => i % 2 === 1);
+    return api('/admin/research/form', { method: 'POST', body: { A, B } });
+  }
+  function fmtSummary(s) {
+    const L = [];
+    L.push('Người đã đồng ý: ' + ((s.learners || []).map(r => `${r.group_code}=${r.n}`).join(', ') || 'chưa có'));
+    L.push('Luyện tập: ' + ((s.practice || []).map(r => `${r.group_code}: ${r.learners} người, ${r.attempts} lượt, đúng ${Math.round(r.accuracy * 100)}%`).join(' | ') || 'chưa có'));
+    L.push('Số lượt theo ngày: ' + ((s.per_day || []).map(r => `${r.day.slice(5)}:${r.attempts}`).join(', ') || 'chưa có'));
+    if (s.tests_note) L.push(s.tests_note);
+    else {
+      L.push('Đề kiểm tra: ' + ((s.forms || []).map(r => `${r.form_id}=${r.n_items} câu`).join(', ') || 'chưa tạo'));
+      L.push('Mở: đầu vào=' + ((s.config || {}).open_pre === '1' ? 'có' : 'không') + ', đầu ra=' + ((s.config || {}).open_post === '1' ? 'có' : 'không'));
+      L.push('Điểm kiểm tra: ' + ((s.tests || []).map(r => `${r.group_code}/${r.phase}: n=${r.n}, TB ${Math.round(r.mean_score * 100)}%`).join(' | ') || 'chưa có'));
+    }
+    return L.join('\n');
+  }
+  function renderAdminCard() {
+    const el = document.getElementById('admin-research-card');
+    if (!el || !enabled()) { if (el) el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.innerHTML = `<div class="profile-card-title">🔬 Nghiên cứu (admin)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <button class="btn btn-outline btn-sm" data-a="sum">Tổng quan</button>
+        <button class="btn btn-outline btn-sm" data-a="forms">Tạo 2 đề kiểm tra</button>
+        <button class="btn btn-outline btn-sm" data-a="open_pre">Mở/đóng bài đầu vào</button>
+        <button class="btn btn-outline btn-sm" data-a="open_post">Mở/đóng bài đầu ra</button>
+        <button class="btn btn-outline btn-sm" data-a="csv_a">Tải CSV nhật ký</button>
+        <button class="btn btn-outline btn-sm" data-a="csv_t">Tải CSV điểm</button>
+      </div>
+      <pre id="admin-research-out" style="white-space:pre-wrap;font-size:12px;margin:0"></pre>`;
+    const out = el.querySelector('#admin-research-out');
+    const say = t => { out.textContent = t; };
+    el.onclick = async (e) => {
+      const a = e.target && e.target.dataset && e.target.dataset.a; if (!a) return;
+      try {
+        if (a === 'sum') say(fmtSummary(await api('/admin/research/summary')));
+        else if (a === 'forms') {
+          const n = parseInt(prompt('Số câu mỗi đề (A và B), khuyến nghị 15:', '15'), 10); if (!n || n < 5) return;
+          if (!confirm('Tạo lại 2 đề kiểm tra? (Không đổi được sau khi đã có học sinh làm bài.)')) return;
+          say('Đang tạo đề…'); const r = await adminBuildForms(n); say(`Đã tạo đề A (${r.A} câu) và B (${r.B} câu).`);
+        } else if (a === 'open_pre' || a === 'open_post') {
+          const s = await api('/admin/research/summary'); const cur = (s.config || {})[a] === '1';
+          await api('/admin/research/config', { method: 'POST', body: { [a]: !cur } });
+          say((a === 'open_pre' ? 'Bài đầu vào: ' : 'Bài đầu ra: ') + (!cur ? 'ĐÃ MỞ' : 'ĐÃ ĐÓNG'));
+        } else if (a === 'csv_a') await adminCsv('/admin/research/export', 'attempts.csv');
+        else if (a === 'csv_t') await adminCsv('/admin/research/export?table=test', 'tests.csv');
+      } catch (err) { say('Lỗi: ' + err.message); }
+    };
+  }
+
   window.addEventListener('online', () => { flush(); });
-  return { init, renderProfileCard, recordRound, flush, withdraw, makeQid, norm, getStatus: () => status };
+  return { init, renderProfileCard, renderAdminCard, runTest, recordRound, flush, withdraw, makeQid, norm, getStatus: () => status };
 })();
