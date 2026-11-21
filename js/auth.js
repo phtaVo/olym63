@@ -318,6 +318,7 @@ const AUTH = (function () {
         </div>
 
         <div class="profile-card" id="profile-stats-card"></div>
+        <div class="profile-card" id="profile-research-card" style="display:none"></div>
 
         <div class="profile-card">
           <label class="profile-field-label">Tên người dùng (có thể đổi)</label>
@@ -350,6 +351,7 @@ const AUTH = (function () {
         <button class="btn btn-outline profile-logout-btn" onclick="AUTH.confirmLogout()">Đăng xuất</button>
       </div>`;
     if (typeof STATS !== 'undefined') STATS.render();
+    try { RESLOG.renderProfileCard(); } catch (e) {}
   }
 
   async function saveUsername() {
