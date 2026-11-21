@@ -81,7 +81,7 @@ const RESLOG = (() => {
       try {
         const r = await api('/research/consent', { method: 'POST', body: { agree: true, version: CONSENT_VERSION } });
         status = { consented: true, group_code: r.group_code };
-        ov.remove(); flush();
+        ov.remove(); flush(); renderProfileCard();
       } catch (e) { ov.querySelector('#rc-err').textContent = 'Chưa gửi được: ' + e.message; }
     };
   }
@@ -89,7 +89,7 @@ const RESLOG = (() => {
   async function init() {
     if (!enabled() || !token()) return;
     try {
-      status = await api('/research/status');
+      status = await api('/research/status'); renderProfileCard();
       if (!status.consented) {
         let last = 0; try { last = Number(localStorage.getItem(dismissKey())) || 0; } catch (e) {}
         if (Date.now() - last > 3 * 24 * 3600 * 1000) showConsent();   // hỏi lại sau 3 ngày nếu "Để sau"
@@ -140,6 +140,31 @@ const RESLOG = (() => {
     writeQ([]);
   }
 
+  // Thẻ "Nghiên cứu" trong Hồ sơ: xem trạng thái, tham gia, rút lui (giữ hoặc xóa dữ liệu đã ghi)
+  function renderProfileCard() {
+    const el = document.getElementById('profile-research-card');
+    if (!el || !enabled()) { if (el) el.style.display = 'none'; return; }
+    if (!status) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    if (status.consented) {
+      el.innerHTML = `<div class="profile-card-title">🔬 Tham gia nghiên cứu</div>
+        <div class="profile-info-note" style="margin-bottom:10px">Bạn đang tham gia. Hệ thống ghi mã câu hỏi, đúng/sai và thời điểm làm bài (ẩn danh). Bạn có thể rút lui bất cứ lúc nào.</div>
+        <button class="btn btn-outline" id="rp-out" style="width:100%;margin-bottom:8px">Rút lui (giữ dữ liệu đã ghi)</button>
+        <button class="btn btn-outline" id="rp-del" style="width:100%">Rút lui và xóa dữ liệu của tôi</button>`;
+      const run = async (del) => {
+        if (!confirm(del ? 'Rút lui và XÓA toàn bộ dữ liệu nghiên cứu đã ghi của bạn? Không thể khôi phục.' : 'Rút lui khỏi nghiên cứu? Dữ liệu đã ghi vẫn được giữ.')) return;
+        try { await withdraw(del); renderProfileCard(); } catch (e) { alert('Chưa thực hiện được: ' + e.message); }
+      };
+      el.querySelector('#rp-out').onclick = () => run(false);
+      el.querySelector('#rp-del').onclick = () => run(true);
+    } else {
+      el.innerHTML = `<div class="profile-card-title">🔬 Tham gia nghiên cứu</div>
+        <div class="profile-info-note" style="margin-bottom:10px">Bạn chưa tham gia. Không tham gia vẫn dùng Olym63 bình thường.</div>
+        <button class="btn btn-primary" id="rp-join" style="width:100%">Tìm hiểu và tham gia</button>`;
+      el.querySelector('#rp-join').onclick = () => { try { localStorage.removeItem(dismissKey()); } catch (e) {} showConsent(); };
+    }
+  }
+
   window.addEventListener('online', () => { flush(); });
-  return { init, recordRound, flush, withdraw, makeQid, norm, getStatus: () => status };
+  return { init, renderProfileCard, recordRound, flush, withdraw, makeQid, norm, getStatus: () => status };
 })();
