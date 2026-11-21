@@ -144,7 +144,7 @@ function playUntilEnd(el, onDone, fallbackMs) {
 // ============================================================
 // SCREENS
 // ============================================================
-const TABBAR_SCREENS = ['home-screen'];
+const TABBAR_SCREENS = ['home-screen', 'nb-screen'];
 function showScreen(id) {
   if (typeof AUTH !== 'undefined' && AUTH.closeIslandModal) AUTH.closeIslandModal();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -805,7 +805,9 @@ function confirmSourcePick() {
 function startGame(mode, source) {
   STATE.runId++; clearAllTimers(); clearMedia();
   // Khởi Động / Về Đích: nhớ phạm vi + môn đã chọn (để "Chơi lại" dùng lại đúng lựa chọn)
-  if (mode === 'khoi_dong' || mode === 've_dich') STATE.source = source || STATE.source || { ...DEFAULT_SOURCE };
+  // Đề do AI tạo trong "Sổ nghiên cứu": không đụng tới STATE.source, không ghi nhật ký/xếp hạng
+  STATE.custom = (source && source.custom) ? source : null;
+  if (!STATE.custom && (mode === 'khoi_dong' || mode === 've_dich')) STATE.source = source || STATE.source || { ...DEFAULT_SOURCE };
   STATE.mode = mode; STATE.score = 0; STATE.answers = []; STATE.vdPool = null;
   STATE.starHope = false; STATE.starHopeUsed = false; STATE.currentIndex = 0;
   AUDIO.stopAll(); showScreen('loading-overlay');
@@ -813,7 +815,7 @@ function startGame(mode, source) {
   AUDIO.init(CONFIG.AUDIO_URLS);
 
   const loaders = { xuat_phat: loadXuatPhat, khoi_dong: loadKhoiDong, ve_dich: loadVeDich, vcnv: loadVcnv, tang_toc: loadTangToc };
-  loaders[mode](STATE.source).then(onQuestionsLoaded).catch(err => onLoadError(err));
+  (STATE.custom ? Promise.resolve(NB.buildPlay(mode, STATE.custom.custom)) : loaders[mode](STATE.source)).then(onQuestionsLoaded).catch(err => onLoadError(err));
 }
 
 function onQuestionsLoaded(result) {
@@ -825,7 +827,7 @@ function onQuestionsLoaded(result) {
   STATE.vdPool = result.pools || null;
   // Cảnh báo khi ngân hàng câu hỏi trong sheet ít hơn số câu cần random
   const want = { xuat_phat: CONFIG.GAME.XUAT_PHAT_COUNT, khoi_dong: CONFIG.GAME.KHOI_DONG_COUNT, vcnv: CONFIG.GAME.VCNV_COUNT, tang_toc: CONFIG.GAME.TANG_TOC_COUNT }[STATE.mode];
-  if (want && result.questions.length < want) {
+  if (want && !STATE.custom && result.questions.length < want) {
     console.warn(`[${STATE.mode}] Sheet chỉ đọc được ${result.questions.length} câu hợp lệ, cần ${want}.`);
     showToast(`⚠️ Sheet chỉ có ${result.questions.length} câu hợp lệ (cần ${want}). Kiểm tra lại sheet.`);
   }
@@ -1611,9 +1613,9 @@ function showResults() {
     }
     STATE.score = newScore;
     // Thống kê hồ sơ: mỗi lượt chỉ ghi nhận 1 lần
-    if (STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} if (STATE.mode === 'khoi_dong' || STATE.mode === 've_dich') { try { ADAPT.update(STATE.answers, STATE.questions); } catch (e) {} } }
+    if (!STATE.custom && STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { NB.saveRound(STATE.mode, STATE.answers, STATE.questions); } catch (e) {} try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} if (STATE.mode === 'khoi_dong' || STATE.mode === 've_dich') { try { ADAPT.update(STATE.answers, STATE.questions); } catch (e) {} } }
     // Xuất Phát (ĐĐVQ) chưa có bảng xếp hạng trên Worker nên chưa gửi điểm
-    if (STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
+    if (!STATE.custom && STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
   }).catch(() => displayResults());
 }
@@ -1642,6 +1644,7 @@ function displayResults() {
       <button class="btn btn-primary" onclick="restartGame()">Chơi lại</button>
       <button class="btn btn-outline" onclick="goHome()">Trang chủ</button>
       <button class="btn btn-research" onclick="openResearch()">🔎 Nghiên cứu</button>
+      ${STATE.custom ? `<button class="btn btn-outline" onclick="NB.back('${STATE.custom.fromNb || ''}')">📓 Về sổ nghiên cứu</button>` : `<button class="btn btn-outline" onclick="NB.fromRound()">📓 Mở trong Sổ nghiên cứu</button>`}
     </div>
   `;
 
@@ -1686,7 +1689,7 @@ function displayResults() {
   showScreen('result-screen');
 }
 
-function restartGame() { startGame(STATE.mode, STATE.source); }
+function restartGame() { startGame(STATE.mode, STATE.custom || STATE.source); }
 
 // ============================================================
 // TIMERS
