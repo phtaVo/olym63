@@ -318,6 +318,7 @@ const AUTH = (function () {
         </div>
 
         <div class="profile-card" id="profile-stats-card"></div>
+        <div class="profile-card" id="profile-weak-card"></div>
         <div class="profile-card" id="profile-research-card" style="display:none"></div>
 
         <div class="profile-card">
@@ -351,6 +352,7 @@ const AUTH = (function () {
         <button class="btn btn-outline profile-logout-btn" onclick="AUTH.confirmLogout()">Đăng xuất</button>
       </div>`;
     if (typeof STATS !== 'undefined') STATS.render();
+    try { ADAPT.renderWeakCard(); } catch (e) {}
     try { RESLOG.renderProfileCard(); } catch (e) {}
   }
 
