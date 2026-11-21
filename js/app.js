@@ -332,7 +332,8 @@ function subjectMatches(cellValue, subject) {
 function sourceLabel(src) {
   src = src || DEFAULT_SOURCE;
   const sc = (CONFIG.SCOPES.find(x => x.id === src.scope) || CONFIG.SCOPES[0]).label;
-  return src.subject && src.subject !== 'ALL' ? `${sc} · ${src.subject}` : sc;
+  const base = src.subject && src.subject !== 'ALL' ? `${sc} · ${src.subject}` : sc;
+  return src.weak ? base + ' · 🎯 môn yếu' : base;
 }
 // Đọc các sheet của phạm vi đã chọn, bỏ hàng tiêu đề (hàng 1), lọc theo môn ở cột B
 async function fetchScopedRows(mode, src) {
@@ -360,7 +361,7 @@ async function loadKhoiDong(src, all) {   // all = true: trả cả bộ câu h�
     if (all) return { success: true, questions: shuffleArray(questions) };
     // Nhóm "thích ứng" (đã đồng ý nghiên cứu): chọn câu theo mức nắm môn; còn lại: ngẫu nhiên như cũ
     let picked = null;
-    try { picked = await ADAPT.pick(questions, CONFIG.GAME.KHOI_DONG_COUNT); } catch (e) {}
+    try { picked = await ADAPT.pick(questions, CONFIG.GAME.KHOI_DONG_COUNT, { force: !!(src && src.weak) }); } catch (e) {}
     return { success: true, questions: picked || shuffleArray(questions).slice(0, CONFIG.GAME.KHOI_DONG_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -401,6 +402,10 @@ async function loadVeDich(src) {
       30: shuffleArray(all.filter(q => q.points === 30))
     };
     if (!pools[20].length && !pools[30].length) return { success: false, error: `Chưa có câu Về Đích 20 hoặc 30 điểm cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
+    if (src && src.weak) {   // luyện môn yếu: sắp lại thứ tự câu theo mức nắm môn
+      try { pools[20] = (await ADAPT.order(pools[20], { force: true })) || pools[20]; } catch (e) {}
+      try { pools[30] = (await ADAPT.order(pools[30], { force: true })) || pools[30]; } catch (e) {}
+    }
     return { success: true, questions: [...pools[20], ...pools[30]], pools };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -718,12 +723,13 @@ CHỈ TRẢ VỀ JSON thuần, không markdown, không giải thích thêm:
 // ============================================================
 // CHỌN NGUỒN CÂU HỎI (Khởi Động / Về Đích): Tổng hợp · Tuần · Tháng · Quý  +  môn
 // ============================================================
-const _srcPick = { mode: null, scope: 'ALL', subject: 'ALL' };
+const _srcPick = { mode: null, scope: 'ALL', subject: 'ALL', weak: false };
 
 function openSourcePicker(mode) {
   _srcPick.mode = mode;
   _srcPick.scope = (STATE.source && STATE.source.scope) || 'ALL';
   _srcPick.subject = (STATE.source && STATE.source.subject) || 'ALL';
+  _srcPick.weak = !!(STATE.source && STATE.source.weak);
   renderSourcePicker();
   showScreen('src-pick-screen');
 }
@@ -766,10 +772,12 @@ function renderSourcePicker() {
         </div>
       </div>
 
+      ${(typeof ADAPT !== 'undefined' && (_srcPick.mode === 'khoi_dong' || _srcPick.mode === 've_dich')) ? ADAPT.toggleHtml(_srcPick.weak, _srcPick.subject) : ''}
+
       <div class="srcp-footer">
         <div class="srcp-selected">
           <div class="srcp-selected-label">Đã chọn</div>
-          <div class="srcp-selected-value">${escapeHTML(sourceLabel({ scope: _srcPick.scope, subject: _srcPick.subject }))}</div>
+          <div class="srcp-selected-value">${escapeHTML(sourceLabel({ scope: _srcPick.scope, subject: _srcPick.subject, weak: _srcPick.weak && (typeof ADAPT !== 'undefined') && ADAPT.access().free }))}</div>
           <div class="srcp-sheets">Nguồn: ${sheets.map(escapeHTML).join(' · ')}</div>
         </div>
         <div class="srcp-actions">
@@ -781,8 +789,14 @@ function renderSourcePicker() {
 }
 function srcPickScope(id) { _srcPick.scope = id; renderSourcePicker(); }
 function srcPickSubject(id) { _srcPick.subject = id; renderSourcePicker(); }
+function srcPickWeak() { _srcPick.weak = !_srcPick.weak; renderSourcePicker(); }
+// Nút "Luyện môn yếu" trong hồ sơ: vào thẳng Khởi Động, tất cả môn, ưu tiên môn yếu
+function startWeakPractice() {
+  try { AUTH.closeIslandModal(); } catch (e) {}
+  startGame('khoi_dong', { scope: 'ALL', subject: 'ALL', weak: true });
+}
 function confirmSourcePick() {
-  startGame(_srcPick.mode, { scope: _srcPick.scope, subject: _srcPick.subject });
+  startGame(_srcPick.mode, { scope: _srcPick.scope, subject: _srcPick.subject, weak: !!_srcPick.weak });
 }
 
 // ============================================================
