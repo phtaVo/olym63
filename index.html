@@ -53,6 +53,9 @@
   <button class="tabbar-btn" data-screen="home-screen" onclick="AUTH.gotoHome()" title="Trang chủ">
     <span class="tabbar-icon">🏠</span>
   </button>
+  <button class="tabbar-btn" data-screen="nb-screen" onclick="NB.open()" title="Sổ nghiên cứu">
+    <span class="tabbar-icon">📓</span>
+  </button>
   <button class="tabbar-btn" data-screen="leaderboard-screen" onclick="AUTH.openLeaderboard()" title="Bảng xếp hạng">
     <span class="tabbar-icon">🏆</span>
   </button>
@@ -176,6 +179,9 @@
 <!-- ==================== RESEARCH SCREEN (🔎 Nghiên cứu) ==================== -->
 <div id="research-screen" class="screen hidden"></div>
 
+<!-- ==================== SỔ NGHIÊN CỨU (kiểu NotebookLM) ==================== -->
+<div id="nb-screen" class="screen hidden"></div>
+
 <!-- ==================== BẢNG XẾP HẠNG (cửa sổ nổi) ==================== -->
 <div class="modal-overlay island-modal-overlay" id="leaderboard-modal-overlay" onclick="AUTH.closeIslandModal(event)">
   <div class="island-modal-box" id="leaderboard-screen" onclick="event.stopPropagation()"></div>
@@ -270,7 +276,8 @@
 <script src="js/stats.js?v=1"></script>
 <script src="js/research.js?v=5"></script>
 <script src="js/adaptive.js?v=2"></script>
-<script src="js/app.js?v=19"></script>
+<script src="js/notebook.js?v=1"></script>
+<script src="js/app.js?v=20"></script>
 <!-- Module Solo: thi đấu nhóm real-time (mời, Giành chuông) -->
 <script src="js/solo.js?v=1"></script>
 </body>
