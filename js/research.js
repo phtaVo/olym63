@@ -93,7 +93,10 @@ const RESLOG = (() => {
       if (!status.consented) {
         let last = 0; try { last = Number(localStorage.getItem(dismissKey())) || 0; } catch (e) {}
         if (Date.now() - last > 3 * 24 * 3600 * 1000) showConsent();   // hỏi lại sau 3 ngày nếu "Để sau"
-      } else flush();
+      } else {
+        flush();
+        try { if (typeof ADAPT !== 'undefined') await ADAPT.rebuild(async () => (await api('/research/my-attempts')).rows); } catch (e) {}
+      }
     } catch (e) { /* offline hoặc Worker cũ: bỏ qua */ }
   }
 
@@ -282,6 +285,7 @@ const RESLOG = (() => {
         <button class="btn btn-outline btn-sm" data-a="forms">Tạo 2 đề kiểm tra</button>
         <button class="btn btn-outline btn-sm" data-a="open_pre">Mở/đóng bài đầu vào</button>
         <button class="btn btn-outline btn-sm" data-a="open_post">Mở/đóng bài đầu ra</button>
+        <button class="btn btn-outline btn-sm" data-a="unlock">🔓 Mở nút "môn yếu" cho nhóm đối chứng</button>
         <button class="btn btn-outline btn-sm" data-a="csv_a">Tải CSV nhật ký</button>
         <button class="btn btn-outline btn-sm" data-a="csv_t">Tải CSV điểm</button>
       </div>
@@ -301,6 +305,11 @@ const RESLOG = (() => {
           const s = await api('/admin/research/summary'); const cur = (s.config || {})[a] === '1';
           await api('/admin/research/config', { method: 'POST', body: { [a]: !cur } });
           say((a === 'open_pre' ? 'Bài đầu vào: ' : 'Bài đầu ra: ') + (!cur ? 'ĐÃ MỞ' : 'ĐÃ ĐÓNG'));
+        } else if (a === 'unlock') {
+          const s = await api('/admin/research/summary'); const cur = (s.config || {}).unlock_all === '1';
+          if (!cur && !confirm('Mở nút "môn yếu" cho MỌI học sinh? Chỉ làm SAU KHI kết thúc thu thập dữ liệu thực nghiệm, vì sẽ làm nhiễu so sánh hai nhóm.')) return;
+          await api('/admin/research/config', { method: 'POST', body: { unlock_all: !cur } });
+          say('Nút "môn yếu" cho nhóm đối chứng: ' + (!cur ? 'ĐÃ MỞ' : 'ĐÃ KHÓA'));
         } else if (a === 'csv_a') await adminCsv('/admin/research/export', 'attempts.csv');
         else if (a === 'csv_t') await adminCsv('/admin/research/export?table=test', 'tests.csv');
       } catch (err) { say('Lỗi: ' + err.message); }
