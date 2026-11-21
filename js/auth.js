@@ -444,7 +444,9 @@ const AUTH = (function () {
           <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
         </div>
       </div>
+      <div class="profile-card" id="admin-research-card" style="display:none;margin:0 14px 10px"></div>
       <div class="admin-body" id="admin-body"><div class="lb-loading">Đang tải...</div></div>`;
+    try { RESLOG.renderAdminCard(); } catch (e) {}
   }
   async function loadAdminUsers() {
     const body = document.getElementById('admin-body');
