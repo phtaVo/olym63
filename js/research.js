@@ -102,11 +102,13 @@ const RESLOG = (() => {
     if (!enabled() || !status || !status.consented || !answers || !answers.length) return;
     const roundId = uuid(), now = Date.now();
     const rows = [];
+    const subj = {};
+    try { if (typeof STATE !== 'undefined' && STATE.questions) STATE.questions.forEach(q => { if (q && q.question) subj[q.question] = q.subject; }); } catch (e) {}
     for (let i = 0; i < answers.length; i++) {
       const a = answers[i];
       if (a.correct !== true && a.correct !== false) continue;     // chưa chấm xong thì bỏ
       rows.push({
-        id: uuid(), qid: await makeQid(a.question, a.correctAnswer),
+        id: uuid(), qid: await makeQid(a.question, a.correctAnswer), subject: subj[a.question] || undefined,
         ts: new Date(now - (answers.length - i)).toISOString(),   // giữ thứ tự trong ván (chưa có giờ riêng từng câu)
         correct: a.correct ? 1 : 0, skipped: a.userAnswer ? 0 : 1
       });
@@ -275,6 +277,7 @@ const RESLOG = (() => {
     el.style.display = '';
     el.innerHTML = `<div class="profile-card-title">🔬 Nghiên cứu (admin)</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <button class="btn btn-primary btn-sm" data-a="page">📊 Mở trang phân tích</button>
         <button class="btn btn-outline btn-sm" data-a="sum">Tổng quan</button>
         <button class="btn btn-outline btn-sm" data-a="forms">Tạo 2 đề kiểm tra</button>
         <button class="btn btn-outline btn-sm" data-a="open_pre">Mở/đóng bài đầu vào</button>
@@ -288,7 +291,8 @@ const RESLOG = (() => {
     el.onclick = async (e) => {
       const a = e.target && e.target.dataset && e.target.dataset.a; if (!a) return;
       try {
-        if (a === 'sum') say(fmtSummary(await api('/admin/research/summary')));
+        if (a === 'page') window.open('analytics.html', '_blank');
+        else if (a === 'sum') say(fmtSummary(await api('/admin/research/summary')));
         else if (a === 'forms') {
           const n = parseInt(prompt('Số câu mỗi đề (A và B), khuyến nghị 15:', '15'), 10); if (!n || n < 5) return;
           if (!confirm('Tạo lại 2 đề kiểm tra? (Không đổi được sau khi đã có học sinh làm bài.)')) return;
