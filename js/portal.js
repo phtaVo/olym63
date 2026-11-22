@@ -209,7 +209,7 @@ const PORTAL = (() => {
           <div class="sec-head rv"><h2>Các cuộc thi tri thức trên truyền hình</h2><p>Liên kết nhanh tới thông tin mới nhất của từng chương trình. Các nút "Tin mới nhất" luôn mở kết quả tin tức hiện tại, nên không bị lỗi thời.</p></div>
           <div class="grid4">${comp.map((c, i) => `
             <div class="pc dcor glass static rv ${c.st[0] === 'gray' ? 'soon' : ''}" style="--d:${i * .07}s">
-              <img class="corner" src="assets/deco/${['cotco','bitexco','ship','lac'][i%4]}.webp?v=1" alt="" aria-hidden="true">
+              <img class="corner" loading="lazy" src="assets/deco/${['cotco','bitexco','ship','lac'][i%4]}.webp?v=2" alt="" aria-hidden="true">
               <div class="ico">${IC(c.ic)}</div><span class="chip ${c.st[0]}" style="align-self:flex-start">${c.st[1]}</span>
               <h3>${c.n}</h3><p>${c.d}</p>
               <div class="row"><a class="lnk" href="${gnews(c.q)}" target="_blank" rel="noopener noreferrer">Tin mới nhất ${IC('external')}</a><a class="lnk" href="${wiki(c.q)}" target="_blank" rel="noopener noreferrer">Tìm hiểu ${IC('external')}</a>${c.site ? `<a class="lnk" href="${c.site}" target="_blank" rel="noopener noreferrer">Trang chính thức ${IC('external')}</a>` : ''}</div>
@@ -254,7 +254,7 @@ const PORTAL = (() => {
   function renderPractice() {
     const el = $('home-screen'); const G = CONFIG.GAME; const on = (typeof introEnabled !== 'undefined') ? introEnabled : true;
     const card = (o, i) => `<button class="pc dcor glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
-        ${o.deco?`<img class="corner" src="assets/deco/${o.deco}.webp?v=1" alt="" aria-hidden="true">`:''}<div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
+        ${o.deco?`<img class="corner" loading="lazy" src="assets/deco/${o.deco}.webp?v=2" alt="" aria-hidden="true">`:''}<div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
         ${o.lock ? '<span class="chip gray" style="position:absolute;right:18px;top:18px">Sắp ra mắt</span>' : `<span class="go">${IC('arrow')}</span>`}</button>`;
     const sets = {
       olympia: [
@@ -371,7 +371,7 @@ const PORTAL = (() => {
     if (k === 'support') return support();
     if (k === 'store') return storePage();
     const p = PAGES[k];
-    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><img class="pdeco" src="assets/deco/${k==='report'?'compass':'ship'}.webp?v=1" alt="" aria-hidden="true"><span class="chip gray">Sắp ra mắt</span></div>
+    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><img class="pdeco" loading="lazy" src="assets/deco/${k==='report'?'compass':'ship'}.webp?v=2" alt="" aria-hidden="true"><span class="chip gray">Sắp ra mắt</span></div>
       ${k === 'store' ? `<div class="practice-top rv"><div class="search">${IC('search')}<input placeholder="Tìm tài liệu, bộ câu hỏi…" disabled></div><div class="seg">${['Tất cả', 'PDF', 'Word', 'Excel', 'Bộ câu hỏi'].map((x, i) => `<button class="${i ? '' : 'on'}" disabled>${x}</button>`).join('')}</div></div>` : ''}
       <div class="glass rv empty"><div class="ico">${IC(p.ic)}</div><h3>Đang được xây dựng</h3><p>Chức năng này đã có chỗ sẵn trong hệ thống và sẽ được mở khi hoàn thiện.</p>${p.btn ? `<button class="pbtn p" onclick="${p.btn[1]}">${p.btn[0]}</button>` : ''}</div>
       <div class="sec" style="margin-top:46px"><div class="sec-head rv"><h2 style="font-size:24px">Dự kiến sẽ có</h2></div><div class="grid2">${p.feats.map((f, i) => `<div class="pc glass static rv soon" style="--d:${i * .06}s;flex-direction:row;align-items:center;gap:14px"><div class="ico" style="margin:0">${IC('check')}</div><p style="font-size:15px;color:var(--text)">${f}</p></div>`).join('')}</div></div></div>`;

@@ -1,7 +1,7 @@
 /* Trang trí bằng hình ảnh: bố cục, hiệu ứng cuộn, di chuột, bấm. */
 const DECO = (() => {
   const $ = id => document.getElementById(id);
-  const SRC = k => 'assets/deco/' + k + '.webp?v=1';
+  const SRC = k => 'assets/deco/' + k + '.webp?v=2';
   const FACT = {
     khuevan: ['Khuê Văn Các', 'Gác trong Văn Miếu – Quốc Tử Giám, Hà Nội, xây năm 1805 và là một biểu tượng của Thủ đô.'],
     benthanh: ['Chợ Bến Thành', 'Biểu tượng của TP. Hồ Chí Minh. Tòa nhà chợ hiện nay khánh thành năm 1914.'],
@@ -22,12 +22,13 @@ const DECO = (() => {
     greek: ['Chữ Hy Lạp cổ', 'Bảng chữ cái Hy Lạp góp phần hình thành nhiều hệ chữ viết về sau, trong đó có chữ Latin.'],
     pisa: ['Tháp nghiêng Pisa', 'Ở Ý, khởi công năm 1173 và bắt đầu nghiêng ngay khi xây do nền đất yếu.'],
     colosseum: ['Đấu trường Colosseum', 'Ở Rome, khánh thành năm 80 sau Công nguyên, từng chứa hàng chục nghìn khán giả.'],
+    book: ['Trang sách cổ', 'Chi tiết một họa phẩm cổ châu Âu: bàn tay lật giở những trang sách chép tay.'],
     bust: ['Tượng bán thân Hy Lạp', 'Điêu khắc Hy Lạp cổ đại đề cao vẻ đẹp cân đối và trí tuệ của con người.']
   };
-  const TOTAL = 12; let found = new Set();
+  const TOTAL = 14; let found = new Set();
   try { found = new Set(JSON.parse(localStorage.getItem('olym63_deco') || '[]')); } catch (e) {}
   const img = (k, cls, extra) => `<img class="dd ${cls || ''}" data-k="${k}" src="${SRC(k)}" alt="${FACT[k] ? FACT[k][0] : ''}" loading="lazy" decoding="async" ${extra || ''}>`;
-  const item = (k, st, cls) => `<button class="dc ${cls || ''}" data-k="${k}" style="${st}" aria-label="${FACT[k] ? FACT[k][0] : k}"><span class="in"><img src="${SRC(k)}" alt="" decoding="async"></span></button>`;
+  const item = (k, st, cls, eager) => `<button class="dc ${cls || ''}" data-k="${k}" style="${st}" aria-label="${FACT[k] ? FACT[k][0] : k}"><span class="in"><img src="${SRC(k)}" alt="" decoding="async" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'}></span></button>`;
 
   // ---------- Sân khấu hero ----------
   function stage() {
@@ -38,8 +39,9 @@ const DECO = (() => {
       ${item('pyramid', '--l:48%;--b:2%;--w:56%;--z:.3;--sp:.03', 'back')}
       ${item('eiffel', '--l:3%;--b:10%;--w:21%;--z:.55;--sp:.06', 'mid')}
       ${item('bigben', '--l:78%;--b:9%;--w:17%;--z:.5;--sp:.05', 'mid')}
-      ${item('khuevan', '--l:23%;--b:1%;--w:54%;--z:.9;--sp:.02', 'front')}
-      ${item('compass', '--l:4%;--t:2%;--w:22%;--z:1.3;--sp:.1', 'compass')}
+      ${item('khuevan', '--l:22%;--b:3%;--w:56%;--z:.9;--sp:.02', 'front', 1)}
+      ${item('compass', '--l:4%;--t:2%;--w:22%;--z:1.3;--sp:.1', 'compass', 1)}
+      ${item('book', '--l:-2%;--b:-3%;--w:36%;--z:1.2;--sp:.07', 'book')}
       ${item('ship', '--l:70%;--t:1%;--w:27%;--z:1.1;--sp:.09', 'ship')}
       ${item('lac', '--l:34%;--t:6%;--w:26%;--z:1.5;--sp:.12', 'lac')}
       <img class="orn tl" src="${SRC('ornament')}" alt="" aria-hidden="true"><img class="orn br" src="${SRC('ornament')}" alt="" aria-hidden="true">
@@ -81,6 +83,26 @@ const DECO = (() => {
       document.body.appendChild(s); setTimeout(() => s.remove(), 900);
     }
   }
+
+  // ---------- Rải ảnh nền các trang ----------
+  const SCATTER = {
+    'portal-screen': [['pisa','r',-30,23,130,.1],['ceiling','l',-60,31,240,.08],['napoleon','r',-20,44,170,.14],['book','l',-50,57,220,.12],['compass','r',-20,64,140,.16],['bust','l',-40,76,170,.1],['ship','r',-50,86,230,.1]],
+    'home-screen': [['bust','r',-40,12,180,.1],['ceiling','l',-60,38,240,.08],['compass','r',-20,60,150,.15],['colosseum','l',-70,82,240,.07]],
+    'store-screen': [['book','r',-50,14,220,.1],['benthanh','l',-30,42,150,.1],['ornament','r',-20,72,170,.08]],
+    'report-screen': [['compass','r',-20,16,170,.12],['pisa','l',-30,56,130,.1]],
+    'community-screen': [['ship','r',-40,20,240,.1],['colosseum','l',-70,60,240,.07]],
+    'support-screen': [['book','l',-50,20,220,.1],['bigben','r',-10,50,120,.08],['lac','r',-20,82,170,.12]]
+  };
+  function sprinkle(id) {
+    const root = $(id); if (!root) return; const pg = root.querySelector('.page'); if (!pg || pg.querySelector(':scope > .dec-layer')) return;
+    const L = SCATTER[id]; if (!L) return; const lay = document.createElement('div'); lay.className = 'dec-layer'; lay.setAttribute('aria-hidden', 'false');
+    lay.innerHTML = L.map(([k, side, off, top, w, sp, wm]) => wm ? `<img class="wm" src="${SRC(k)}" alt="" loading="lazy" style="${side === 'l' ? 'left' : 'right'}:${off}px;top:${top}%">` :
+      `<button class="dc fl ${side}" data-k="${k}" tabindex="-1" style="--w:${w}px;--t:${top}%;--sp:${sp};--z:0;${side === 'l' ? 'left' : 'right'}:${-Math.round(w * .62)}px" aria-label="${FACT[k] ? FACT[k][0] : k}"><span class="in"><img src="${SRC(k)}" alt="" loading="lazy" decoding="async"></span></button>`).join('');
+    pg.prepend(lay); onScroll();
+  }
+  function watch() {
+    Object.keys(SCATTER).forEach(id => { const el = $(id); if (!el || el._dw) return; el._dw = 1; let q = 0; new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; sprinkle(id); }); }).observe(el, { childList: true }); sprinkle(id); });
+  }
   let bound = false, tick = false;
   function bind() {
     if (bound) return; bound = true;
@@ -110,6 +132,6 @@ const DECO = (() => {
     if (sk && tr) { const r = sk.getBoundingClientRect(), view = tr.parentElement.clientWidth, over = Math.max(0, tr.scrollWidth - view); const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height * .6))); tr.style.transform = `translate3d(${(-p * over).toFixed(1)}px,0,0)`; tr.style.setProperty('--p', p.toFixed(3)); }
     document.querySelectorAll('.curt').forEach(c => { const y = scrollY || (document.querySelector('#portal-screen') || {}).scrollTop || 0; });
   }
-  function init(root) { bind(); frame(); onScroll(); }
+  function init(root) { bind(); watch(); frame(); onScroll(); }
   return { stage, curtains, skyline, counter, img, init, frame, FACT, SRC, found: () => found.size };
 })();
