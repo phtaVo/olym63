@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Olym63 · Nội dung được chia sẻ</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f7fc;--card:rgba(255,255,255,.78);--card-b:rgba(255,255,255,.9);--text:#1f2430;--mut:#5f6675;--line:#e3e7ef;--acc:#1a73e8;--acc-s:#e8f0fe;--ok:#34a853;--bad:#d93025;--sh:0 8px 30px rgba(30,50,90,.09)}
+@media (prefers-color-scheme:dark){:root{--bg:#10131a;--card:rgba(30,34,46,.78);--card-b:rgba(255,255,255,.08);--text:#eceef4;--mut:#a3a9b8;--line:#2b3040;--acc:#8ab4f8;--acc-s:rgba(138,180,248,.14);--sh:0 8px 30px rgba(0,0,0,.4)}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(900px 500px at 8% -5%,rgba(26,115,232,.16),transparent),radial-gradient(800px 500px at 100% 0,rgba(234,67,53,.1),transparent),var(--bg);min-height:100vh}
+header{position:sticky;top:10px;z-index:5;margin:10px auto 0;width:min(980px,calc(100vw - 20px));display:flex;align-items:center;gap:12px;padding:8px 10px 8px 12px;border-radius:999px;background:var(--card);backdrop-filter:blur(22px) saturate(1.7);-webkit-backdrop-filter:blur(22px) saturate(1.7);border:1px solid var(--card-b);box-shadow:var(--sh)}
+header img{width:38px;height:38px;border-radius:50%;background:#fff}
+header b{font:700 18px 'Inter Tight',sans-serif;flex:1}
+a.btn,button.btn{font:600 14px Inter,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--text);padding:9px 16px;border-radius:999px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:transform .15s,border-color .2s}
+.btn:hover{border-color:var(--acc);transform:translateY(-1px)} .btn.p{background:var(--acc);color:#fff;border-color:transparent} body:not([data-x]) .btn.p{color:#fff} @media (prefers-color-scheme:dark){.btn.p{color:#10131a}}
+main{width:min(980px,calc(100vw - 24px));margin:22px auto 60px}
+h1{font:800 clamp(26px,4vw,38px)/1.2 'Inter Tight',sans-serif;letter-spacing:-.02em;margin:10px 0 4px}
+.meta{color:var(--mut);font-size:14px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--card-b);box-shadow:var(--sh);border-radius:26px;padding:24px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 0}
+.note{color:var(--mut);font-size:13.5px}
+.doc{background:#fff;color:#202124;border-radius:18px;padding:28px 32px;font:16px/1.75 "Times New Roman",Georgia,serif;border:1px solid var(--line)}
+.doc h1{font:700 24px Georgia,serif;text-align:center;color:#1f3864;margin:0 0 12px}.doc h2{font:700 19px Georgia,serif;color:#1f3864;margin:22px 0 8px}.doc h3{font:700 16.5px Georgia,serif;color:#2f5496}
+.doc table{border-collapse:collapse;width:100%;margin:12px 0}.doc td,.doc th{border:1px solid #bdc1c6;padding:6px 10px}.doc th{background:#e8f0fe}.doc a{color:#1155cc}
+.fc{height:280px;perspective:1000px;margin:6px 0 16px;cursor:pointer}.fc>div{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}.fc.f>div{transform:rotateY(180deg)}
+.fc .s{position:absolute;inset:0;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;border-radius:26px;background:var(--card);border:1px solid var(--line);font:600 22px/1.5 'Inter Tight',sans-serif;overflow:auto}.fc .s.b{transform:rotateY(180deg);background:var(--acc);color:#fff;border:0}@media (prefers-color-scheme:dark){.fc .s.b{color:#10131a}}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+details{margin:4px 0 4px 18px;border-left:2px solid var(--line);padding-left:12px}details>summary{cursor:pointer;font-weight:600;padding:5px 0;list-style:none}details>summary::before{content:'+';display:inline-block;width:18px;color:var(--acc);font-weight:700}details[open]>summary::before{content:'–'}
+.leaf{margin:4px 0 4px 18px;padding:5px 0 5px 12px;border-left:2px solid var(--line);font-weight:600}.nd{font-weight:400;color:var(--mut);font-size:14.5px;margin:0 0 4px}.nx{font-size:13px;color:var(--acc)}
+.tag{display:inline-block;font:600 11.5px Inter;padding:2px 8px;border-radius:99px;background:var(--acc-s);color:var(--acc);margin-left:6px;vertical-align:1px}
+.root{font:700 20px 'Inter Tight',sans-serif;margin-bottom:6px}
+.mq{padding:16px 2px;border-bottom:1px solid var(--line)}.mq .t{margin-bottom:8px}
+.mo{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;margin:6px 0;padding:11px 14px;border:1px solid var(--line);border-radius:16px;background:transparent;color:var(--text);font:500 15px/1.5 Inter;cursor:pointer;transition:all .15s}.mo b{flex:none;width:26px;height:26px;border-radius:50%;background:var(--acc-s);display:grid;place-items:center;font-size:12.5px}
+.mo:hover:not(:disabled){border-color:var(--acc)}.mo.sel{border-color:var(--acc);background:var(--acc-s)}.mo.ok{border-color:var(--ok);background:rgba(52,168,83,.13)}.mo.ok b{background:var(--ok);color:#fff}.mo.bad{border-color:var(--bad);background:rgba(217,48,37,.1)}.mo.bad b{background:var(--bad);color:#fff}.mo:disabled{cursor:default}
+.mx{margin-top:8px;padding:12px 14px;border-radius:14px;background:var(--acc-s);font-size:14.5px}.mx p{margin:4px 0}
+.score{display:flex;gap:14px;align-items:center;padding:14px 18px;border-radius:18px;background:var(--acc-s);margin-bottom:8px}.score b{font:800 32px 'Inter Tight';color:var(--acc)}
+.qa{border-bottom:1px solid var(--line);padding:12px 0}.qa button{margin-top:6px}
+.lk{padding:12px 0;border-bottom:1px solid var(--line)}.lk a{color:var(--acc)}
+.warn{margin-top:24px;font-size:13px;color:var(--mut);text-align:center}
+.cite{display:none}
+#err{text-align:center;padding:60px 20px}
+</style>
+</head>
+<body>
+<header><img src="assets/logo.png?v=2" alt="" onerror="this.style.display='none'"><b>Olym63</b><a class="btn p" href="./">Mở Olym63</a></header>
+<main id="app"><div class="note" style="text-align:center;padding:60px">Đang tải nội dung…</div></main>
+<script src="js/config.js"></script>
+<script src="js/docgen.js"></script>
+<script>
+const $ = id => document.getElementById(id), E = s => DOCGEN.esc(s), L = 'ABCD';
+const LV = { NB: 'Nhận biết', TH: 'Thông hiểu', VD: 'Vận dụng', VDC: 'Vận dụng cao' };
+const TYPE = { summary: 'Tóm tắt', doc: 'Tài liệu', note: 'Ghi chú', flash: 'Flashcard', mind: 'Sơ đồ tư duy', tree: 'Cây tri thức', mcq: 'Đề trắc nghiệm', quiz: 'Bài thi', links: 'Tài liệu tham khảo' };
+let D = null;
+async function load() {
+  const h = location.hash.slice(1), m = h.match(/^([sd])=(.+)$/);
+  if (!m) return fail('Liên kết không hợp lệ.');
+  try {
+    if (m[1] === 'd') D = await DOCGEN.unpack(m[2]);
+    else {
+      const base = ((typeof CONFIG !== 'undefined' && CONFIG.ACCOUNTS_API_URL) || '').replace(/\/+$/, ''); if (!base) throw new Error('Chưa cấu hình máy chủ.');
+      const r = await fetch(base + '/share/' + encodeURIComponent(m[2])); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Không mở được liên kết.'); D = d;
+    }
+    render();
+  } catch (e) { fail(e.message || 'Không mở được nội dung.'); }
+}
+function fail(m) { $('app').innerHTML = `<div class="card" id="err"><h1>Không mở được</h1><p class="note">${E(m)}</p><a class="btn p" href="./">Về Olym63</a></div>`; }
+function render() {
+  document.title = D.title + ' · Olym63';
+  const t = D.type, d = D.data; let body = '';
+  if (t === 'summary' || t === 'note' || t === 'doc') body = docBody(d.text || ''), window._txt = d.text || '';
+  else if (t === 'flash') return flash(d);
+  else if (t === 'mind' || t === 'tree') body = tree(d);
+  else if (t === 'mcq') return mcq();
+  else if (t === 'quiz') body = qa(d);
+  else if (t === 'links') body = links(d);
+  shell(body);
+}
+function shell(body, bar) { $('app').innerHTML = `<h1>${E(D.title)}</h1><div class="meta">${TYPE[D.type] || ''}${D.created ? ' · ' + new Date(D.created).toLocaleDateString('vi-VN') : ''} · Chia sẻ từ Sổ nghiên cứu Olym63</div><div class="card">${body}${bar || ''}</div><div class="warn">Nội dung do AI tạo từ tài liệu của người chia sẻ, có thể sai. Hãy đối chiếu với nguồn gốc.</div>`; }
+function docBody(t) { const txt = String(t); window._doc = 1; return `<div class="doc">${DOCGEN.md(txt)}</div><div class="bar"><button class="btn p" onclick="dl()">Tải .docx</button><button class="btn" onclick="gd()">Mở Google Docs</button><button class="btn" onclick="DOCGEN.printPdf(D.title,window._txt)">In / PDF</button><button class="btn" onclick="cp()">Sao chép</button></div>`; }
+async function dl() { try { DOCGEN.download(await DOCGEN.toDocx(D.title, window._txt || mcqMd(1)), DOCGEN.fname(D.title) + '.docx'); } catch (e) { alert('Không tạo được file Word: ' + e.message); } }
+async function gd() { try { await DOCGEN.toGoogleDocs(window._txt); alert('Đã mở Google Docs mới. Nhấn Ctrl+V để dán, định dạng được giữ nguyên.'); } catch (e) { window.open('https://docs.new', '_blank'); } }
+function cp() { DOCGEN.copyRich(window._txt).then(() => alert('Đã sao chép.'), () => navigator.clipboard.writeText(window._txt)); }
+// flashcard
+let fi = 0, order = [];
+function flash(d) { order = d.map((_, i) => i); fi = 0; paintFlash(d); }
+function paintFlash(d) { const c = d[order[fi]]; shell(`<div class="note" style="margin-bottom:8px">Thẻ ${fi + 1}/${d.length} · bấm vào thẻ để lật</div><div class="fc" id="fc" onclick="this.classList.toggle('f')"><div><div class="s">${E(c.front)}</div><div class="s b">${E(c.back)}</div></div></div><div class="row"><button class="btn" onclick="fnav(-1)">Trước</button><button class="btn" onclick="fshuf()">Trộn thẻ</button><button class="btn p" onclick="fnav(1)">Tiếp</button></div>`); window._fd = d; }
+function fnav(k) { fi = (fi + k + order.length) % order.length; paintFlash(window._fd); }
+function fshuf() { order.sort(() => Math.random() - .5); fi = 0; paintFlash(window._fd); }
+// cây / sơ đồ
+function tree(root) {
+  const K = { core: 'Trọng tâm', sup: 'Bổ trợ', ext: 'Mở rộng' };
+  const node = (n, d) => { const meta = `${n.k && K[n.k] ? `<span class="tag">${K[n.k]}</span>` : ''}${n.d ? `<p class="nd">${E(n.d)}</p>` : ''}${n.x ? `<div class="nx">${E(n.x)}</div>` : ''}`;
+    return (n.c && n.c.length) ? `<details ${d < 2 ? 'open' : ''}><summary>${E(n.t)}${meta ? '' : ''}</summary>${meta}${n.c.map(x => node(x, d + 1)).join('')}</details>` : `<div class="leaf">${E(n.t)}${meta}</div>`; };
+  return `<div class="bar" style="margin:0 0 12px"><button class="btn" onclick="document.querySelectorAll('details').forEach(x=>x.open=true)">Mở tất cả</button><button class="btn" onclick="document.querySelectorAll('details').forEach(x=>x.open=false)">Thu gọn</button><button class="btn" onclick="window.print()">In</button></div><div class="root">${E(root.t)}</div>${root.d ? `<p class="nd">${E(root.d)}</p>` : ''}${(root.c || []).map(x => node(x, 1)).join('')}`;
+}
+// trắc nghiệm
+let ans = {}, done = false;
+function mcq() { ans = {}; done = false; paintMcq(); }
+function paintMcq(keep) {
+  const items = D.data.items, N = items.length, sc = items.filter((x, i) => ans[i] === x.a).length, y = scrollY;
+  shell(`${done ? `<div class="score"><b>${sc}/${N}</b><span class="note">${Math.round(sc / N * 100)}% đúng</span></div>` : `<div class="note">Mức ${E(D.data.level || 'Trung bình')} · ${N} câu · đã chọn ${Object.keys(ans).length}/${N}. Chọn đáp án rồi bấm Nộp bài để xem giải thích.</div>`}
+    ${items.map((x, i) => `<div class="mq"><div class="t"><b>Câu ${i + 1}.</b> ${E(x.q)}${x.lv ? `<span class="tag">${LV[x.lv]}</span>` : ''}</div>${x.o.map((o, j) => `<button class="mo ${ans[i] === j ? 'sel' : ''} ${done ? (j === x.a ? 'ok' : (ans[i] === j ? 'bad' : '')) : ''}" ${done ? 'disabled' : ''} onclick="pick(${i},${j})"><b>${L[j]}</b><span>${E(o)}</span></button>`).join('')}
+      ${done ? `<div class="mx"><b>Đáp án đúng: ${L[x.a]}.</b>${ans[i] === undefined ? ' <i>(bạn chưa chọn)</i>' : ''}<p>${E(x.e || '')}</p>${x.k ? `<p><b>Cần nhớ:</b> ${E(x.k)}</p>` : ''}</div>` : ''}</div>`).join('')}`,
+    `<div class="bar">${done ? '<button class="btn p" onclick="mcq()">Làm lại</button>' : '<button class="btn p" onclick="submitM()">Nộp bài</button>'}<button class="btn" onclick="mdl(0)">Tải đề (.docx)</button><button class="btn" onclick="mdl(1)">Tải đề + đáp án</button></div>`);
+  if (keep) scrollTo(0, y);
+}
+function pick(i, j) { if (done) return; ans[i] = j; paintMcq(1); }
+function submitM() { const N = D.data.items.length, g = Object.keys(ans).length; if (g < N && !confirm(`Bạn mới chọn ${g}/${N} câu. Vẫn nộp bài?`)) return; done = true; paintMcq(); scrollTo(0, 0); }
+function mcqMd(w) { const it = D.data.items; let t = `# ${D.title}\n\nMức độ: ${D.data.level || 'Trung bình'} · Số câu: ${it.length}\n\n`; it.forEach((x, i) => t += `**Câu ${i + 1}.** ${x.q}\n\n` + x.o.map((o, j) => `${L[j]}. ${o}`).join('\n\n') + '\n\n'); if (w) { t += `## Bảng đáp án\n\n| Câu | Đáp án |\n|---|---|\n` + it.map((x, i) => `| ${i + 1} | ${L[x.a]} |`).join('\n') + '\n\n## Giải thích\n\n'; it.forEach((x, i) => t += `**Câu ${i + 1}. ${L[x.a]}.** ${x.e || ''}\n\n`); } return t; }
+async function mdl(w) { try { DOCGEN.download(await DOCGEN.toDocx(D.title, mcqMd(w)), DOCGEN.fname(D.title) + (w ? '-dap-an' : '') + '.docx'); } catch (e) { alert('Không tạo được file Word: ' + e.message); } }
+function rv(b) { const x = document.createElement('b'); x.style.color = 'var(--acc)'; x.textContent = 'Đáp án: ' + b.dataset.a; b.replaceWith(x); }
+function qa(d) { return `<div class="note">Bấm "Xem đáp án" để kiểm tra.</div>` + d.items.map((x, i) => `<div class="qa"><b>${i + 1}.</b> ${E(x.q)}${x.pts ? ` <span class="tag">${x.pts} điểm</span>` : ''}<br><button class="btn" data-a="${E(x.a)}" onclick="rv(this)">Xem đáp án</button></div>`).join(''); }
+const SU = u => (/^https?:\/\//i.test(String(u)) ? u : '#');
+function links(d) { return d.map(it => `<div class="lk"><b>${E(it.term)}</b>${(it.wiki || []).map(w => `<div><a href="${E(SU(w.url))}" target="_blank" rel="noopener noreferrer">${E(w.title)}</a> <span class="note">· ${E((w.snippet || '').slice(0, 110))}</span></div>`).join('')}<div class="note"><a href="${E(SU(it.g))}" target="_blank" rel="noopener noreferrer">Google</a> · <a href="${E(SU(it.sc))}" target="_blank" rel="noopener noreferrer">Scholar</a> · <a href="${E(SU(it.yt))}" target="_blank" rel="noopener noreferrer">YouTube</a></div></div>`).join(''); }
+window.addEventListener('hashchange', load); load();
+</script>
+</body>
+</html>
