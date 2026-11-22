@@ -167,8 +167,8 @@ function renderLearner(l,att){
 // ====================== khung trang ======================
 function drawSide(){
   const L=S.learners.filter(x=>!S.q||label(x).toLowerCase().includes(S.q.toLowerCase()));
-  $('#side-list').innerHTML=`<div class="item ${S.sel==null?'active':''}" data-id="">📊 <span class="nm">Tổng quan</span></div><h3 style="padding-left:10px">Học sinh (${S.learners.length})</h3>`+
-    L.map(x=>`<div class="item ${S.sel===x.learner_id?'active':''}" data-id="${x.learner_id}">👤 <span class="nm">${esc(label(x))}</span><small>${x.n}</small><span class="badge ${x.group_code}">${x.group_code[0]}</span></div>`).join('')}
+  $('#side-list').innerHTML=`<div class="item ${S.sel==null?'active':''}" data-id=""><span class="nm">Tổng quan</span></div><h3 style="padding-left:10px">Học sinh (${S.learners.length})</h3>`+
+    L.map(x=>`<div class="item ${S.sel===x.learner_id?'active':''}" data-id="${x.learner_id}"><span class="nm">${esc(label(x))}</span><small>${x.n}</small><span class="badge ${x.group_code}">${x.group_code[0]}</span></div>`).join('')}
 async function drawMain(){
   const m=$('#main-body');
   if(S.sel==null){m.innerHTML=renderOverview();return}
