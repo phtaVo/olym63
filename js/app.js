@@ -731,8 +731,8 @@ function openSourcePicker(mode) {
 }
 
 const SUBJECT_ICONS = {
-  'Art/Sports': 'Ar', 'Biology': 'Bi', 'Chemistry': 'Ch', 'English': 'En', 'General/Social': 'GS',
-  'Geography': 'Ge', 'History': 'Hi', 'Literature': 'Li', 'Logic/IQ': 'IQ', 'Math': 'Ma', 'Physics': 'Ph'
+  'Art/Sports': '🎨', 'Biology': '🧬', 'Chemistry': '⚗️', 'English': '🔤', 'General/Social': '🌏',
+  'Geography': '🗺️', 'History': '🏛️', 'Literature': '📖', 'Logic/IQ': '🧠', 'Math': '📐', 'Physics': '⚛️'
 };
 const SCOPE_HINTS = { ALL: 'Tuần + Tháng + Quý', W: 'Đề theo tuần', M: 'Đề theo tháng', Q: 'Đề theo quý' };
 
