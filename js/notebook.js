@@ -10,7 +10,7 @@
 // ============================================================
 const NB = (() => {
   const MAX_SRC_CHARS = 90000, MAX_SRCS = 12, MAX_ROUNDS = 8;
-  const CHAT_BUDGET = 9000, TOOL_BUDGET = 22000, FULL_IF_UNDER = 14000;
+  const CHAT_BUDGET = 9000, TOOL_BUDGET = 22000, MIND_BUDGET = 30000, FULL_IF_UNDER = 14000;
   const $ = id => document.getElementById(id);
   const uid = () => { const u = (typeof AUTH !== 'undefined' && AUTH.getCurrentUser) ? AUTH.getCurrentUser() : null; return u ? String(u.id != null ? u.id : u.username) : 'guest'; };
   const K = () => 'olym63_nb1_' + uid(), KR = () => 'olym63_nbround_' + uid(), KQ = () => 'olym63_nbq_' + uid();
@@ -18,7 +18,7 @@ const NB = (() => {
   const rid = () => Math.random().toString(36).slice(2, 10);
   const toast = m => { try { showToast(m); } catch (e) { alert(m); } };
   const KIND_IC = { round: 'target', file: 'file', yt: 'youtube', text: 'text', wiki: 'globe', image: 'image' };
-  const ART_IC = { summary: 'text', flash: 'cards', mind: 'mind', tree: 'tree', quiz: 'quiz', links: 'link', note: 'note' };
+  const ART_IC = { summary: 'text', flash: 'cards', mind: 'mind', tree: 'tree', quiz: 'quiz', mcq: 'quiz', doc: 'file', links: 'link', note: 'note' };
 
   let db = null, cur = null, pane = 'chat', busy = false, pend = [], col = { l: false, r: false }, _idx = {};
   const loadDb = () => { if (db) return db; try { db = JSON.parse(localStorage.getItem(K())) || { nbs: [] }; } catch (e) { db = { nbs: [] }; } return db; };
@@ -299,15 +299,16 @@ const NB = (() => {
         <div class="nb-col glass ${col.l ? 'mini' : ''}" data-p="src"><h3><span class="t" style="flex:1">Nguồn</span>${col.l ? '' : `<button class="nb-x" title="Thêm nguồn" onclick="NB.addDialog()">${IC('plus')}</button>`}<button class="nb-x" title="Thu gọn / mở rộng" onclick="NB.colToggle('l')">${IC('panel')}</button></h3>
           <div class="nb-scroll" id="nb-srcs">${nb.sources.length ? nb.sources.map((s, i) => `<div class="nb-src" id="nbs-${i + 1}"><input class="nb-chk" type="checkbox" ${s.on ? 'checked' : ''} onchange="NB.toggleSrc('${s.id}')" title="Dùng nguồn này khi trả lời"><div class="t" style="cursor:pointer" onclick="NB.preview('${s.id}')"><b style="font-weight:600">${i + 1}.</b> ${esc(s.name)}<small>${s.kind === 'image' ? 'Hình ảnh · ' : ''}${Math.round(s.text.length / 100) / 10}k ký tự</small></div>${s.thumb ? `<img class="th" src="${s.thumb}" alt="">` : `<span class="kind">${IC(KIND_IC[s.kind] || 'file')}</span>`}<button class="nb-x" title="Xóa nguồn" onclick="NB.delSrc('${s.id}')">${IC('close')}</button></div>`).join('') : `<div class="nb-note" style="padding:12px">Chưa có nguồn. Bấm dấu + để thêm ván đã chơi, tệp, ảnh, link YouTube, Wikipedia…</div>`}</div></div>
         <div class="nb-col glass show" data-p="chat"><h3><span class="t" style="flex:1">Hỏi đáp</span><span class="nb-note" style="font-weight:400">${on} nguồn đang bật</span></h3>
-          <div class="nb-msgs" id="nb-msgs">${nb.chat.map(msgHtml).join('') || `<div class="nb-note" style="text-align:center;padding:60px 10px">${nb.sources.length ? 'Hỏi bất cứ điều gì về nguồn của bạn, hoặc yêu cầu "tạo flashcard", "tạo bài thi Khởi Động 10 câu"…' : 'Thêm nguồn ở cột bên trái để bắt đầu.'}</div>`}</div>
+          <div class="nb-msgs" id="nb-msgs">${nb.chat.map(msgHtml).join('') || `<div class="nb-note" style="text-align:center;padding:60px 10px">${nb.sources.length ? 'Hỏi bất cứ điều gì về nguồn của bạn, hoặc yêu cầu trực tiếp: "tạo đề trắc nghiệm 20 câu mức nâng cao", "tạo bài thi Khởi Động 12 câu", "soạn tài liệu Word ôn tập"…' : 'Thêm nguồn ở cột bên trái để bắt đầu.'}</div>`}</div>
           <div class="nb-chips">${chips.map(c => `<button class="nb-chip" onclick="NB.ask(this.textContent)">${esc(c)}</button>`).join('')}</div>
+          <div class="nb-depth"><span>Độ chi tiết</span>${[['ngan', 'Ngắn'], ['chitiet', 'Chi tiết'], ['sau', 'Chuyên sâu']].map(x => `<button data-d="${x[0]}" class="${getDepth() === x[0] ? 'on' : ''}" onclick="NB.depth('${x[0]}')">${x[1]}</button>`).join('')}</div>
           <div class="nb-att" id="nb-att"></div>
           <div class="nb-inp"><button class="nb-x" title="Đính kèm hình ảnh" onclick="document.getElementById('nb-imgin').click()" style="width:38px;height:38px">${IC('paperclip')}</button><input type="file" id="nb-imgin" accept="image/*" multiple hidden onchange="NB.attach(this.files);this.value=''">
-            <textarea id="nb-in" rows="1" placeholder="Đặt câu hỏi, dán hoặc đính kèm hình ảnh…" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();NB.ask()}" onpaste="NB.paste(event)"></textarea>
+            <textarea id="nb-in" rows="1" placeholder="Đặt câu hỏi, hoặc yêu cầu: tạo đề trắc nghiệm 20 câu, sơ đồ tư duy, tài liệu Word…" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();NB.ask()}" onpaste="NB.paste(event)"></textarea>
             <button class="pbtn p" onclick="NB.ask()" style="width:42px;height:42px;padding:0">${IC('send')}</button></div></div>
         <div class="nb-col glass ${col.r ? 'mini' : ''}" data-p="studio"><h3><button class="nb-x" title="Thu gọn / mở rộng" onclick="NB.colToggle('r')">${IC('panel')}</button><span class="t">Studio</span></h3>
           <div class="nb-tools">
-            ${[['summary', 'text', 'Tóm tắt'], ['flash', 'cards', 'Flashcard'], ['mind', 'mind', 'Sơ đồ tư duy'], ['tree', 'tree', 'Cây tri thức'], ['kd', 'bolt', 'Thi Khởi Động'], ['vd', 'trophy', 'Thi Về Đích'], ['xp', 'flag', 'Thi Xuất Phát'], ['links', 'link', 'Tìm tài liệu'], ['note', 'note', 'Ghi chú mới']].map(t => `<button class="nb-tool" onclick="NB.tool('${t[0]}')">${IC(t[1])} ${t[2]}</button>`).join('')}
+            ${[['summary', 'text', 'Tóm tắt'], ['flash', 'cards', 'Flashcard'], ['mind', 'mind', 'Sơ đồ tư duy'], ['tree', 'tree', 'Cây tri thức'], ['mcq', 'quiz', 'Đề trắc nghiệm'], ['doc', 'file', 'Tài liệu Word'], ['kd', 'bolt', 'Thi Khởi Động'], ['vd', 'trophy', 'Thi Về Đích'], ['xp', 'flag', 'Thi Xuất Phát'], ['links', 'link', 'Tìm tài liệu'], ['note', 'note', 'Ghi chú mới']].map(t => `<button class="nb-tool" onclick="NB.tool('${t[0]}')">${IC(t[1])} ${t[2]}</button>`).join('')}
             <button class="nb-tool" disabled title="Chưa có luật chơi Vinh Quang trong web">${IC('crown')} Vinh Quang</button></div>
           <div class="nb-sub">Đã tạo</div>
           <div class="nb-scroll">${nb.arts.length ? nb.arts.map(a => `<div class="nb-art" onclick="NB.openArt('${a.id}')"><span class="kind">${IC(ART_IC[a.type] || 'file')}</span><span style="flex:1;min-width:0">${esc(a.title)}<br><small class="nb-note">${new Date(a.ts).toLocaleString('vi-VN')}</small></span><button class="nb-x" onclick="event.stopPropagation();NB.delArt('${a.id}')">${IC('trash')}</button></div>`).join('') : '<div class="nb-note" style="padding:10px">Kết quả AI tạo ra sẽ hiện ở đây.</div>'}</div></div>
@@ -337,7 +338,7 @@ const NB = (() => {
   function preview(id) { const s = cur.sources.find(x => x.id === id); if (!s) return; modal(`<h2>${IC(KIND_IC[s.kind] || 'file')} ${esc(s.name)}</h2>${s.url ? `<div class="nb-note" style="margin-bottom:8px"><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Mở trang gốc</a></div>` : ''}${s.thumb ? `<img src="${s.thumb}" style="border-radius:12px;margin-bottom:10px">` : ''}<div style="white-space:pre-wrap;line-height:1.65;font-size:14px;max-height:56vh;overflow:auto">${esc(s.text.slice(0, 12000))}${s.text.length > 12000 ? '\n…' : ''}</div>${closeBtn()}`); }
 
   // ============================================================ hộp thoại
-  function modal(html) { closeModal(); const d = document.createElement('div'); d.className = 'nb-ov'; d.id = 'nb-ov'; d.innerHTML = `<div class="nb-box">${html}</div>`; d.addEventListener('mousedown', e => { if (e.target === d) closeModal(); }); document.body.appendChild(d); return d; }
+  function modal(html, cls) { closeModal(); const d = document.createElement('div'); d.className = 'nb-ov'; d.id = 'nb-ov'; d.innerHTML = `<div class="nb-box ${cls || ''}">${html}</div>`; d.addEventListener('mousedown', e => { if (e.target === d) closeModal(); }); document.body.appendChild(d); return d; }
   function closeModal() { const d = $('nb-ov'); if (d) d.remove(); }
   const closeBtn = () => `<div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`;
   function askModal(title, label, cb, val) {
@@ -353,7 +354,7 @@ const NB = (() => {
     if (tab) addTab = tab; if (!cur) return; const rs = rounds();
     const T = [['file', 'upload', 'Tệp & ảnh'], ['yt', 'youtube', 'YouTube'], ['text', 'text', 'Dán văn bản'], ['wiki', 'globe', 'Wikipedia'], ['round', 'target', 'Ván đã chơi']];
     let body = '';
-    if (addTab === 'file') body = `<label class="drop" id="nb-drop">${IC('upload')}<b>Kéo thả hoặc bấm để chọn tệp</b><div class="nb-note">Word (.docx), PDF, TXT và hình ảnh (.png, .jpg, .webp). PDF scan và hình ảnh được Gemini đọc chữ (tốn thêm lượt AI).</div><input type="file" id="nb-f" multiple accept=".docx,.pdf,.txt,.md,image/*" hidden onchange="NB.addFiles(this.files)"></label>`;
+    if (addTab === 'file') body = `<div class="drop" id="nb-drop" role="button" tabindex="0" onclick="document.getElementById('nb-f').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('nb-f').click()}"><span class="drop-ic">${IC('upload')}</span><b>Kéo thả hoặc bấm để chọn tệp</b><span class="nb-note">Word (.docx), PDF, TXT và hình ảnh (.png, .jpg, .webp).<br>PDF scan và hình ảnh được Gemini đọc chữ (tốn thêm lượt AI).</span></div><input type="file" id="nb-f" multiple accept=".docx,.pdf,.txt,.md,image/*" hidden onchange="NB.addFiles(this.files)">`;
     if (addTab === 'yt') body = `<input type="text" id="nb-yt" placeholder="https://www.youtube.com/watch?v=…"><div class="nb-note">Gemini sẽ xem video công khai và ghi lại nội dung (tốn 3 lượt AI). Có thể không được với video dài hoặc riêng tư; khi đó hãy dán bản chép lời vào mục "Dán văn bản".</div><div style="margin-top:12px"><button class="pbtn p" onclick="NB.addYt()">Thêm video</button></div>`;
     if (addTab === 'text') body = `<input type="text" id="nb-tn" placeholder="Tên nguồn (tùy chọn)"><textarea id="nb-tt" placeholder="Dán nội dung bài học, ghi chú…"></textarea><button class="pbtn p" onclick="NB.addText()">Thêm</button>`;
     if (addTab === 'wiki') { const kp = cur.sources.length ? keyPhrases(cur, 5) : []; body = `<div style="display:flex;gap:8px"><input type="text" id="nb-wq" placeholder="Từ khóa (vd: Quang hợp)" value="${esc(cur.sources.length ? cur.title : '')}" onkeydown="if(event.key==='Enter')NB.wikiFind()"><button class="pbtn p" onclick="NB.wikiFind()" style="height:46px;margin-top:4px">Tìm</button></div>${kp.length ? `<div class="nb-note" style="margin:4px 0 8px">Gợi ý từ nội dung nguồn: ${kp.map(k => `<a href="#" onclick="document.getElementById('nb-wq').value='${esc(k)}';NB.wikiFind();return false" style="color:var(--accent)">${esc(k)}</a>`).join(' · ')}</div>` : ''}<div id="nb-wr"></div>`; }
@@ -424,6 +425,8 @@ const NB = (() => {
         else if (a.type === 'mind' || a.type === 'tree') b = 'gốc "' + d.t + '", nhánh: ' + (d.c || []).map(x => x.t).join(', ');
         else if (a.type === 'quiz') b = `(${(MODE_NAME[d.mode] || d.mode)}) ` + d.items.slice(0, 14).map((x, i) => `Câu ${i + 1}: ${x.q} → ${x.a}`).join(' | ');
         else if (a.type === 'links') b = d.map(x => x.term).join(', ');
+        else if (a.type === 'mcq') b = `(${d.items.length} câu, mức ${d.level || 'Trung bình'}${d.last ? ', lần làm gần nhất ' + d.last.score + '/' + d.last.n : ''}) ` + d.items.slice(0, 14).map((x, i) => `Câu ${i + 1}: ${x.q} → ${'ABCD'[x.a]}. ${x.o[x.a]}`).join(' | ');
+        else if (a.type === 'doc') b = String(d.text || '').slice(0, 320);
         L.push(`- [${a.type}] ${a.title}: ${b}`);
       });
     }
@@ -434,14 +437,39 @@ const NB = (() => {
 
   // ============================================================ hỏi đáp
   const noDia = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+  const LVQ = { 'Cơ bản': 'Cơ bản', 'Trung bình': 'Trung bình', 'Nâng cao': 'Khó (kiểu Olympia)', 'Hỗn hợp': 'Trung bình' };
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   function intent(q) {
-    const s = noDia(q); if (!/^\W*(?:(?:hay|vui long|giup|cho|minh|toi|em|ban|nhe)\s+){0,3}(?:tao|lam|xay dung|soan|ve)\b/.test(s)) return null;
-    if (/flashcard|the ghi nho/.test(s)) return { t: 'flash' };
-    if (/so do tu duy|mindmap|mind map/.test(s)) return { t: 'mind' };
-    if (/cay tri thuc/.test(s)) return { t: 'tree' };
-    if (/\b(bai thi|de thi|bai kiem tra|de kiem tra|de|bai)\b/.test(s) && /khoi dong|ve dich|xuat phat/.test(s)) { const m = s.match(/(\d+)\s*cau/); return { t: /khoi dong/.test(s) ? 'kd' : /ve dich/.test(s) ? 'vd' : 'xp', n: m ? +m[1] : null }; }
-    if (/tom tat (toan bo|tai lieu|nguon|het)/.test(s)) return { t: 'summary' };
+    const s = noDia(q);
+    if (!/^\W*(?:(?:hay|vui long|giup|cho|minh|toi|em|ban|nhe|can|muon|xin)\s+){0,4}(?:tao|lam|xay dung|soan|bien soan|viet|xuat|ve|lap|ra)\b/.test(s)) return null;
+    const m = s.match(/(\d+)\s*(?:cau|cau hoi)\b/), n = m ? +m[1] : null;
+    const d = /nang cao|\bkho\b|kieu olympia/.test(s) ? 'Nâng cao' : /co ban|don gian/.test(s) ? 'Cơ bản' : /hon hop/.test(s) ? 'Hỗn hợp' : /trung binh/.test(s) ? 'Trung bình' : null;
+    const fm = q.match(/(?:về|chủ đề|tập trung(?: vào)?|liên quan(?: đến)?)\s+(.{3,120}?)\s*[.?!]?\s*$/i), focus = fm ? fm[1].replace(/^(phần|chương|bài)\s+/i, '$&') : '';
+    const fresh = /\b(moi|khac|lai|them)\b/.test(s);
+    const base = { n, d, focus, fresh };
+    if (/\b(bai thi|de thi|phan thi|bai|de)\b/.test(s) && /khoi dong|ve dich|xuat phat/.test(s)) return { ...base, t: /khoi dong/.test(s) ? 'kd' : /ve dich/.test(s) ? 'vd' : 'xp' };
+    if (/trac nghiem|bai kiem tra|de kiem tra|bai thi|de thi|bo cau hoi|cau hoi on tap/.test(s)) return { ...base, t: 'mcq' };
+    if (/flashcard|the ghi nho/.test(s)) return { ...base, t: 'flash' };
+    if (/so do tu duy|mindmap|mind map/.test(s)) return { ...base, t: 'mind' };
+    if (/cay tri thuc/.test(s)) return { ...base, t: 'tree' };
+    if (/tai lieu|file word|\bword\b|docx|google doc|bao cao|de cuong|giao an|bang tong hop|bang so sanh|ghi chu on tap|cheat ?sheet|so tay/.test(s)) {
+      const kind = /de cuong/.test(s) ? 'đề cương ôn tập' : /bao cao/.test(s) ? 'báo cáo' : /giao an/.test(s) ? 'giáo án' : /so sanh/.test(s) ? 'bảng so sánh' : /so tay|cheat/.test(s) ? 'sổ tay ngắn gọn' : 'tài liệu học tập';
+      return { ...base, t: 'doc', title: '', kind };
+    }
+    if (/^\W*(?:\w+\s+){0,4}tom tat/.test(s)) return { ...base, t: 'summary' };
     return null;
+  }
+  const getDepth = () => { try { return localStorage.getItem('olym63_nb_depth') || 'chitiet'; } catch (e) { return 'chitiet'; } };
+  function depth(d) { try { localStorage.setItem('olym63_nb_depth', d); } catch (e) {} document.querySelectorAll('.nb-depth button').forEach(b => b.classList.toggle('on', b.dataset.d === d)); }
+  const T_NAME = { mcq: 'đề trắc nghiệm', kd: 'bài thi Khởi Động', vd: 'bài thi Về Đích', xp: 'bài thi Xuất Phát', flash: 'flashcard', mind: 'sơ đồ tư duy', tree: 'cây tri thức', summary: 'bản tóm tắt', doc: 'tài liệu' };
+  async function runIntent(nb, it) {
+    const T = it.t; if (!T_NAME[T]) return false; const p = { focus: String(it.focus || '').slice(0, 200), title: String(it.title || '').slice(0, 120), kind: it.kind || '' };
+    if (QMODE[T]) { p.n = clamp(+it.n || QMODE[T][2], 3, 30); p.d = LVQ[it.d] || 'Trung bình'; p.w = true; }
+    else if (T === 'mcq') { p.n = clamp(+it.n || 10, 3, 40); p.d = LEVELS_OK.includes(it.d) ? it.d : 'Trung bình'; }
+    const key = makeKey(T, p, nb), ex = !it.fresh && nb.arts.find(a => a.key === key);
+    const a = ex || await runBusy('Đang tạo ' + T_NAME[T] + '…', () => create(T, p));
+    pushMsg({ r: 'a', plain: 1, t: `${ex ? 'Sổ đã có sẵn' : 'Đã tạo'} **${a.title}** từ các nguồn đang bật${p.n ? ` (${p.n} câu${p.d ? ', mức ' + p.d : ''})` : ''}. Bạn có thể mở xem, mở ở tab mới hoặc chia sẻ link cho bạn bè cùng học.`, acts: [{ l: 'Mở', a: 'art', id: a.id }, { l: 'Mở tab mới', a: 'tab', id: a.id }, { l: 'Chia sẻ link', a: 'share', id: a.id }] });
+    saveDb(); openNb(nb.id); return true;
   }
   async function ask(text) {
     const inp = $('nb-in'); const q = (text || (inp && inp.value) || '').trim(); if ((!q && !pend.length) || busy) return;
@@ -451,31 +479,21 @@ const NB = (() => {
     pushMsg({ r: 'u', t: q || '(hình ảnh)', img: imgs[0] && imgs[0].thumb });
     busy = true; const box = $('nb-msgs'); box.insertAdjacentHTML('beforeend', '<div class="nb-m a" id="nb-wait"><div class="nb-dots"><span></span><span></span><span></span></div></div>'); box.scrollTop = box.scrollHeight;
     try {
-      if (it) {
-        busy = false; $('nb-wait') && $('nb-wait').remove();
-        if (it.t === 'kd' || it.t === 'vd' || it.t === 'xp') { pushMsg({ r: 'a', plain: 1, t: 'Mình mở bảng tạo bài thi cho bạn, hãy chỉnh số câu và độ khó rồi bấm Tạo.' }); saveDb(); quizDialog(it.t, it.n); return; }
-        const a = await runBusy('Đang tạo…', () => create(it.t)); pushMsg({ r: 'a', plain: 1, t: `Đã tạo **${a.title}** từ các nguồn đang bật.`, acts: [{ l: 'Mở ' + a.title, a: 'art', id: a.id }] }); saveDb(); openNb(nb.id); return;
-      }
-      await useAi(imgs.length ? 2 : 1, 'chat');
-      const hist = q.length > 0 ? q : 'hình ảnh';
+      if (it) { busy = false; $('nb-wait') && $('nb-wait').remove(); await runIntent(nb, it); return; }
+      const dp = getDepth();
+      await useAi((imgs.length ? 2 : 1) + (dp === 'sau' ? 1 : 0), 'chat');
       const prevQ = [...nb.chat].reverse().find((m, i) => m.r === 'u' && i > 0);
       const query = (toks(q).length < 7 && prevQ ? prevQ.t + ' ' : '') + q;
-      const ctx = contextFor(nb, query, CHAT_BUDGET);
+      const ctx = contextFor(nb, query, dp === 'sau' ? 15000 : dp === 'chitiet' ? 12000 : CHAT_BUDGET);
       let links = '';
       try { const ws = await wikiRelevant(nb, [q.length > 3 ? q : nb.title], { min: .45, max: 3 }); links = ws.map(w => `- [${w.title}](${w.url}) — ${w.snippet.slice(0, 100)}`).join('\n'); } catch (e) {}
       const srcLinks = nb.sources.filter(s => s.url && s.on).map(s => `- [${s.name}](${s.url})`).join('\n');
-      const prompt = `Bạn là gia sư thân thiện cho học sinh THPT Việt Nam đang ôn thi Đường lên đỉnh Olympia. Trả lời bằng tiếng Việt, rõ ràng, đi thẳng vào vấn đề, dùng Markdown (gạch đầu dòng, bảng khi so sánh).
-QUY TẮC:
-1. Ưu tiên dựa trên TƯ LIỆU bên dưới và ghi trích dẫn dạng [Nguồn n] sau ý tương ứng. Nếu TƯ LIỆU không có thông tin, nói "Nguồn không đề cập", rồi mới bổ sung kiến thức chung và đánh dấu "(ngoài tài liệu)".
-2. Bạn phải NHỚ những gì đã làm trong sổ (mục TRẠNG THÁI SỔ): các flashcard, bài thi, sơ đồ đã tạo và hội thoại trước. Khi học sinh nói "câu 3", "bài vừa tạo", "ở trên", "cái đó"… hãy hiểu theo TRẠNG THÁI SỔ.
-3. LINK: chỉ dùng link có trong TƯ LIỆU hoặc LINK THAM KHẢO, viết đúng dạng [văn bản mô tả](https://đường-dẫn-đầy-đủ). Tuyệt đối không viết "nhấp vào đây" mà không có link thật, không tự bịa URL. Nếu không có link phù hợp thì không nhắc link.
-4. Nếu hợp lý, gợi ý học sinh có thể yêu cầu "tạo flashcard", "tạo sơ đồ", "tạo bài thi Khởi Động" từ nội dung này.
-5. Không bịa số liệu, ngày tháng.
+      const prompt = `${PROMPTS.chat(dp)}
 
 TRẠNG THÁI SỔ:
 ${memory(nb)}
 
-TƯ LIỆU (các đoạn liên quan nhất):
+TƯ LIỆU (các đoạn liên quan nhất, "Nguồn n" là số thứ tự nguồn trong sổ):
 ${ctx || '(không có nguồn, chỉ dựa vào hình ảnh đính kèm)'}
 
 LINK THAM KHẢO:
@@ -483,15 +501,19 @@ ${[srcLinks, links].filter(Boolean).join('\n') || '(không có)'}
 
 CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
       const parts = imgs.map(p => ({ inlineData: { mimeType: 'image/jpeg', data: p.data } })).concat([{ text: prompt }]);
-      const ans = await gem(parts, { maxTokens: 3000, temp: 0.3 });
-      $('nb-wait') && $('nb-wait').remove(); pushMsg({ r: 'a', t: ans || '(Không có phản hồi)' });
+      let ans = await gem(parts, { maxTokens: dp === 'sau' ? 9000 : dp === 'chitiet' ? 5000 : 1800, temp: 0.3 });
+      const mt = String(ans).match(/@@TAO\s*(\{[\s\S]*?\})\s*@@/);
+      ans = String(ans).replace(/@@TAO[\s\S]*?@@/g, '').trim();
+      $('nb-wait') && $('nb-wait').remove();
+      if (mt) { let o = null; try { o = JSON.parse(mt[1]); } catch (e) {} if (o && T_NAME[o.t]) { busy = false; if (ans) pushMsg({ r: 'a', t: ans }); await runIntent(nb, { t: o.t, n: o.n, d: o.d, focus: o.focus, title: o.title, kind: o.kind, fresh: /\b(moi|khac|lai)\b/.test(noDia(q)) }); return; } }
+      pushMsg({ r: 'a', t: ans || '(Không có phản hồi)' });
     } catch (e) { $('nb-wait') && $('nb-wait').remove(); pushMsg({ r: 'a', plain: 1, t: 'Có lỗi: ' + e.message }); }
     busy = false; saveDb();
   }
   function copyMsg(i) { const t = cur.chat[i].t; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Đã sao chép.'), () => toast('Không sao chép được.')); }
   function msgNote(i) { const a = art(cur, 'note', 'Ghi chú', { text: cur.chat[i].t }); toast('Đã lưu vào ghi chú.'); openNb(cur.id, true); }
   async function msgFlash(i) { try { const a = await runBusy('Đang tạo flashcard từ câu trả lời…', () => create('flash', { focus: cur.chat[i].t })); openNb(cur.id, true); openArt(a.id); } catch (e) { toast(e.message); } }
-  function act(a, id) { if (a === 'art') openArt(id); }
+  function act(a, id) { if (a === 'art') openArt(id); else if (a === 'tab') newTab(id); else if (a === 'share') shareDlg(id); }
 
   // ============================================================ Studio
   const QMODE = { kd: ['khoi_dong', 'Khởi Động', 12], vd: ['ve_dich', 'Về Đích', 10], xp: ['xuat_phat', 'Xuất Phát', 10] };
@@ -502,18 +524,63 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
     modal(`<div style="text-align:center;padding:34px"><span class="nb-sp" style="width:30px;height:30px;border-width:3px"></span><div style="margin-top:14px">${esc(msg)}</div></div>`);
     try { return await fn(); } finally { busy = false; closeModal(); }
   }
+  const LEVELS_OK = ['Cơ bản', 'Trung bình', 'Nâng cao', 'Hỗn hợp'];
+  const makeKey = (t, p, nb) => t + '|' + sigOf(nb || cur) + '|' + JSON.stringify({ n: p.n, d: p.d, w: p.w, m: p.m, f: p.focus || '', ti: p.title || '', k: p.kind || '' });
+  const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  // JSON bị cắt giữa chừng (hết token) → cố gắng đóng ngoặc để vẫn dùng được phần đã có
+  function parseJsonLoose(txt) {
+    try { return parseJson(txt); } catch (e) {}
+    let s = String(txt || '').replace(/```(?:json)?/gi, ''); const i = Math.min(...['[', '{'].map(c => { const k = s.indexOf(c); return k < 0 ? 1e9 : k; })); if (i >= 1e9) throw new Error('AI trả về định dạng không đọc được, hãy thử lại.');
+    s = s.slice(i); const st = []; let ins = false, esc2 = false, last = 0;
+    for (let k = 0; k < s.length; k++) { const ch = s[k]; if (ins) { if (esc2) esc2 = false; else if (ch === '\\') esc2 = true; else if (ch === '"') ins = false; continue; } if (ch === '"') ins = true; else if (ch === '{' || ch === '[') st.push(ch); else if (ch === '}' || ch === ']') { st.pop(); if (!st.length) { last = k + 1; break; } } else if (ch === ',') last = k; }
+    let cut = s.slice(0, last || s.length).replace(/,\s*$/, ''); const st2 = []; ins = false; esc2 = false;
+    for (let k = 0; k < cut.length; k++) { const ch = cut[k]; if (ins) { if (esc2) esc2 = false; else if (ch === '\\') esc2 = true; else if (ch === '"') ins = false; continue; } if (ch === '"') ins = true; else if (ch === '{' || ch === '[') st2.push(ch); else if (ch === '}' || ch === ']') st2.pop(); }
+    return JSON.parse(cut + st2.reverse().map(c => c === '{' ? '}' : ']').join(''));
+  }
   async function create(t, p) {
-    const nb = cur; p = p || {}; const key = t + '|' + sigOf(nb) + '|' + JSON.stringify({ n: p.n, d: p.d, w: p.w, m: p.m });
-    await useAi(t === 'links' ? 1 : 3, t);
-    if (t === 'summary') { const C = sampleFor(nb, TOOL_BUDGET); const x = await gem(`Tóm tắt tài liệu sau cho học sinh THPT bằng tiếng Việt: (1) 5–8 ý chính, (2) thuật ngữ và số liệu quan trọng, (3) 3 điểm dễ nhầm. Ghi [Nguồn n] khi trích. Chỉ dùng nội dung trong nguồn.\n\n${C}`, { maxTokens: 2500 }); return art(nb, 'summary', 'Tóm tắt', { text: x }, key); }
-    if (t === 'flash') { const C = p.focus ? contextFor(nb, p.focus, 8000) + '\n\nTRỌNG TÂM:\n' + p.focus.slice(0, 3000) : sampleFor(nb, TOOL_BUDGET); const j = parseJson(await gem(`Tạo 12–15 flashcard ôn tập từ tài liệu. Chỉ dùng nội dung trong nguồn.${p.focus ? ' Tập trung vào TRỌNG TÂM.' : ''} Trả về DUY NHẤT một mảng JSON: [{"front":"câu hỏi hoặc khái niệm","back":"đáp án ngắn gọn"}]\n\n${C}`, { maxTokens: 4500 })); return art(nb, 'flash', 'Flashcard', j.filter(x => x.front && x.back), key); }
+    const nb = cur; p = p || {}; const key = makeKey(t, p, nb);
+    const extra = t === 'mcq' ? 2 * (Math.ceil(clamp(p.n || 10, 3, 40) / 15) - 1) : 0;
+    await useAi((t === 'links' ? 1 : 3) + extra, t);
+    if (t === 'summary') { const C = sampleFor(nb, TOOL_BUDGET, p.focus); const x = await gem(`Tóm tắt tài liệu sau cho học sinh THPT bằng tiếng Việt, trình bày như một tài liệu học tập: (1) 6–10 ý chính có giải thích đầy đủ, (2) thuật ngữ, công thức và số liệu quan trọng (bảng nếu cần), (3) 3–5 điểm dễ nhầm. Ghi [Nguồn n] khi trích. Chỉ dùng nội dung trong nguồn. Không dùng emoji.${p.focus ? ' Trọng tâm: ' + p.focus : ''}\n\n${C}`, { maxTokens: 4500 }); return art(nb, 'summary', 'Tóm tắt', { text: x }, key); }
+    if (t === 'flash') { const C = p.focus ? contextFor(nb, p.focus, 8000) + '\n\nTRỌNG TÂM:\n' + p.focus.slice(0, 3000) : sampleFor(nb, TOOL_BUDGET); const j = parseJsonLoose(await gem(`Tạo 12–20 flashcard ôn tập từ tài liệu, bao quát các mục chính (khái niệm, đặc điểm, công thức, số liệu, mốc thời gian, điểm dễ nhầm). Chỉ dùng nội dung trong nguồn.${p.focus ? ' Tập trung vào TRỌNG TÂM.' : ''} Mặt sau (back) trả lời đầy đủ nhưng gọn, 1–3 câu. Không dùng emoji. Trả về DUY NHẤT một mảng JSON: [{"front":"câu hỏi hoặc khái niệm","back":"đáp án"}]\n\n${C}`, { maxTokens: 6000 })); return art(nb, 'flash', 'Flashcard', j.filter(x => x.front && x.back), key); }
     if (t === 'mind' || t === 'tree') {
-      const C = sampleFor(nb, TOOL_BUDGET), kind = t === 'mind' ? 'sơ đồ tư duy (nhánh chính là các chủ đề lớn, nhánh con là ý chi tiết)' : 'cây tri thức (phân cấp từ khái niệm tổng quát đến cụ thể; mỗi nút có định nghĩa ngắn)';
-      const j = parseJson(await gem(`Xây dựng ${kind} từ tài liệu. Chỉ dùng nội dung trong nguồn. Tối đa 3 cấp, mỗi nút tối đa 7 con, tên nút ≤ 8 từ. Trả về DUY NHẤT một đối tượng JSON: {"t":"tên gốc","d":"mô tả ngắn","c":[{"t":"...","d":"...","c":[...]}]}\n\n${C}`, { maxTokens: 4500 }));
-      return art(nb, t, t === 'mind' ? 'Sơ đồ tư duy' : 'Cây tri thức', j, key);
+      const C = sampleFor(nb, MIND_BUDGET, p.focus);
+      const j = parseJsonLoose(await gem(PROMPTS.mind(t, p.focus) + '\n\nTÀI LIỆU (Nguồn n là số thứ tự nguồn trong sổ):\n' + C, { maxTokens: 14000, temp: 0.2 }));
+      const root = Array.isArray(j) ? { t: nb.title, c: j } : j; if (!root || !root.t) throw new Error('AI chưa dựng được sơ đồ, hãy thử lại.');
+      return art(nb, t, t === 'mind' ? 'Sơ đồ tư duy' : 'Cây tri thức', root, key);
     }
     if (t === 'links') return findLinks(nb, key);
     if (QMODE[t]) return genQuizArt(t, p, key);
+    if (t === 'mcq') return genMcq(nb, p, key);
+    if (t === 'doc') return genDoc(nb, p, key);
+  }
+  // ---- Đề trắc nghiệm (master prompt 2): chia đợt ≤15 câu, không lặp giữa các đợt
+  async function genMcq(nb, p, key) {
+    const n = clamp(p.n || 10, 3, 40), level = LEVELS_OK.includes(p.d) ? p.d : 'Trung bình', C = sampleFor(nb, TOOL_BUDGET, p.focus), items = [];
+    for (let start = 0, guard = 0; items.length < n && guard < 4; guard++) {
+      const want = Math.min(15, n - items.length);
+      const raw = await gem(PROMPTS.mcq(want, level, items.map(x => x.q), items.length + 1, n) + (p.focus ? `\nTRỌNG TÂM do học sinh yêu cầu: ${p.focus}` : '') + '\n\nTƯ LIỆU (Nguồn n là số thứ tự nguồn trong sổ):\n' + C, { maxTokens: 9000, temp: 0.5 });
+      let arr; try { arr = parseJsonLoose(raw); } catch (e) { if (items.length) break; throw e; } if (!Array.isArray(arr)) arr = arr.items || arr.questions || [];
+      arr.forEach(x => {
+        const o = Array.isArray(x.o) ? x.o.map(v => String(v).replace(/^\s*[A-Da-d][.)]\s+/, '').trim()) : null; if (!x.q || !o || o.length < 4 || o.some(v => !v)) return;
+        let a = Number.isInteger(+x.a) && String(x.a).trim() !== '' ? +x.a : 'ABCD'.indexOf(String(x.a || '').trim().charAt(0).toUpperCase()); if (a < 0 || a > 3) return;
+        let oo = o.slice(0, 4), aa = a;
+        if (!oo.some(v => /^(cả|tất cả|không có|các phương án)/i.test(v))) { const ord = shuf([0, 1, 2, 3]); oo = ord.map(i => o[i]); aa = ord.indexOf(a); }
+        if (items.some(y => y.q.slice(0, 60) === String(x.q).slice(0, 60))) return;
+        items.push({ q: String(x.q).trim(), o: oo, a: aa, e: String(x.e || ''), k: String(x.k || ''), tp: String(x.tp || ''), lv: ['NB', 'TH', 'VD', 'VDC'].includes(x.lv) ? x.lv : '', src: String(x.src || '') });
+      });
+      if (items.length >= n) break;
+    }
+    if (!items.length) throw new Error('AI chưa tạo được câu hỏi hợp lệ, hãy thử lại.');
+    return art(nb, 'mcq', 'Đề trắc nghiệm', { items: items.slice(0, n), level, n: Math.min(n, items.length), focus: p.focus || '' }, key);
+  }
+  // ---- Tài liệu (Word / Google Docs)
+  async function genDoc(nb, p, key) {
+    const C = sampleFor(nb, MIND_BUDGET, p.focus);
+    const x = await gem(PROMPTS.doc(p.title, p.kind, p.focus) + '\n\nTƯ LIỆU (Nguồn n là số thứ tự nguồn trong sổ):\n' + C, { maxTokens: 10000, temp: 0.3 });
+    const text = String(x || '').replace(/```(?:markdown|md)?/gi, '').trim(); if (text.length < 80) throw new Error('AI chưa soạn được tài liệu, hãy thử lại.');
+    const m = text.match(/^#\s+(.+)$/m), title = p.title || (m ? m[1].trim() : (p.kind ? p.kind.charAt(0).toUpperCase() + p.kind.slice(1) : 'Tài liệu'));
+    return art(nb, 'doc', title.length > 60 ? title.slice(0, 58) + '…' : title, { text, title }, key);
   }
   async function findLinks(nb, key) {
     const ix = index(nb); const q = [nb.title, ...keyPhrases(nb, 4)].filter(Boolean).slice(0, 5), items = [];
@@ -527,7 +594,9 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
     if (t === 'note') return noteEdit();
     if (!cur.sources.some(s => s.on)) return toast('Hãy thêm nguồn trước.');
     if (QMODE[t]) return quizDialog(t);
-    const key = t + '|' + sigOf(cur) + '|' + JSON.stringify({}), ex = cur.arts.find(a => a.key === key);
+    if (t === 'mcq') return mcqDialog();
+    if (t === 'doc') return docDialog();
+    const key = makeKey(t, {}), ex = cur.arts.find(a => a.key === key);
     if (ex) { const c = await choose('Đã có bản tạo từ cùng nguồn', 'Mở lại bản cũ để không tốn thêm lượt AI, hoặc tạo bản mới.', ['Mở bản cũ', 'Tạo mới']); if (c === 0) return openArt(ex.id); }
     try { const a = await runBusy('Đang tạo…', () => create(t)); openNb(cur.id, true); openArt(a.id); } catch (e) { toast(e.message); }
   }
@@ -545,9 +614,31 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
       <div class="nb-note">Câu hỏi được ưu tiên lấy từ tài liệu của bạn. Đáp án ngắn (1–5 từ) để hệ thống chấm được. Bạn sẽ xem lại và xóa câu sai trước khi chơi. Tốn 3 lượt AI.</div>
       <div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Hủy</button> <button class="pbtn p" onclick="NB.genQuiz('${t}')">Tạo bài thi</button></div>`);
   }
+  function mcqDialog() {
+    modal(`<h2>${IC('quiz')} Tạo đề trắc nghiệm</h2>
+      <label class="nb-note">Số câu (3–40)</label><input type="number" id="nb-qn" min="3" max="40" value="10">
+      <label class="nb-note">Mức độ</label><select id="nb-qd"><option value="Cơ bản">Cơ bản (nhiều câu nhận biết, thông hiểu)</option><option value="Trung bình" selected>Trung bình (25% NB · 30% TH · 30% VD · 15% VDC)</option><option value="Nâng cao">Nâng cao (nhiều vận dụng, vận dụng cao)</option><option value="Hỗn hợp">Hỗn hợp (xếp từ dễ đến khó)</option></select>
+      <label class="nb-note">Trọng tâm (không bắt buộc)</label><input type="text" id="nb-qf" placeholder="Ví dụ: chương 2, quang hợp, các mốc 1945–1954…">
+      <div class="nb-note">Đề được soạn theo chuẩn: đáp án nhiễu hợp lí, có giải thích từng câu, phân loại mức độ nhận thức. Đề trên 15 câu được tạo theo nhiều đợt để không trùng. Tốn 3 lượt AI cho mỗi đợt tối đa 15 câu.</div>
+      <div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Hủy</button> <button class="pbtn p" onclick="NB.make('mcq')">Tạo đề</button></div>`);
+  }
+  function docDialog() {
+    modal(`<h2>${IC('file')} Tạo tài liệu Word / Google Docs</h2>
+      <label class="nb-note">Loại tài liệu</label><select id="nb-dk"><option>đề cương ôn tập</option><option>tài liệu học tập</option><option>báo cáo</option><option>bảng so sánh</option><option>sổ tay ngắn gọn</option><option>giáo án</option></select>
+      <label class="nb-note">Tiêu đề (không bắt buộc)</label><input type="text" id="nb-dt" placeholder="AI sẽ tự đặt tiêu đề nếu bạn để trống">
+      <label class="nb-note">Trọng tâm (không bắt buộc)</label><input type="text" id="nb-df" placeholder="Ví dụ: phần cơ chế và ví dụ minh họa">
+      <div class="nb-note">Tài liệu có đề mục đánh số, bảng, trích nguồn và mục tài liệu tham khảo. Sau khi tạo bạn tải được file .docx, hoặc mở Google Docs để dán vào. Tốn 3 lượt AI.</div>
+      <div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Hủy</button> <button class="pbtn p" onclick="NB.make('doc')">Tạo tài liệu</button></div>`);
+  }
+  async function make(t) {
+    const p = t === 'mcq' ? { n: clamp(parseInt($('nb-qn').value, 10) || 10, 3, 40), d: $('nb-qd').value, focus: $('nb-qf').value.trim() } : { kind: $('nb-dk').value, title: $('nb-dt').value.trim(), focus: $('nb-df').value.trim() };
+    const key = makeKey(t, p), ex = cur.arts.find(a => a.key === key);
+    if (ex) { const c = await choose('Đã có bản giống hệt', 'Mở lại để không tốn thêm lượt AI, hoặc tạo bản mới.', ['Mở bản cũ', 'Tạo mới']); if (c === 0) { closeModal(); return openArt(ex.id); } }
+    try { const a = await runBusy(t === 'mcq' ? 'Đang soạn đề trắc nghiệm…' : 'Đang soạn tài liệu…', () => create(t, p)); openNb(cur.id, true); openArt(a.id); } catch (e) { toast(e.message); }
+  }
   async function genQuiz(t) {
     const p = { n: Math.max(3, Math.min(30, parseInt($('nb-qn').value, 10) || 10)), d: $('nb-qd').value, w: $('nb-qw').checked };
-    const key = t + '|' + sigOf(cur) + '|' + JSON.stringify({ n: p.n, d: p.d, w: p.w, m: p.m }), ex = cur.arts.find(a => a.key === key);
+    const key = makeKey(t, p), ex = cur.arts.find(a => a.key === key);
     if (ex) { const c = await choose('Đã có bài thi giống hệt', 'Mở lại để không tốn thêm lượt AI, hoặc tạo bài mới.', ['Mở bài cũ', 'Tạo mới']); if (c === 0) { closeModal(); return openArt(ex.id); } }
     try { const a = await runBusy('Đang soạn câu hỏi…', () => create(t, p)); openNb(cur.id, true); openArt(a.id); } catch (e) { toast(e.message); }
   }
@@ -566,6 +657,11 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
 
   // ---------- xem kết quả ----------
   function openArt(id) {
+    const a = cur.arts.find(x => x.id === id); if (!a) return;
+    if (a.type === 'mcq') mcqStart(a); else if (a.type === 'doc') docView(a); else if (a.type === 'mind' || a.type === 'tree') treeView(a); else openArt0(id);
+    if (a.type !== 'note') addBar(a);
+  }
+  function openArt0(id) {
     const a = cur.arts.find(x => x.id === id); if (!a) return; const ic = IC(ART_IC[a.type] || 'file');
     if (a.type === 'summary') modal(`<h2>${ic} ${esc(a.title)}</h2><div class="nb-m a" style="max-width:none;margin:0"><div class="bd">${md(a.data.text)}</div></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="pbtn" onclick="NB.ask('Giải thích kỹ hơn phần quan trọng nhất của bản tóm tắt vừa tạo');NB.closeModal()">Hỏi thêm về bản tóm tắt</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`);
     else if (a.type === 'note') noteEdit(a.id);
@@ -579,11 +675,22 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
     const { a, i } = window._fc, c = a.data[i];
     modal(`<h2>${IC('cards')} ${esc(a.title)} <small class="nb-note" style="font-weight:500">${i + 1}/${a.data.length}</small></h2><div class="nb-fc" onclick="this.classList.toggle('f')"><div><div class="s">${esc(c.front)}</div><div class="s b">${esc(c.back)}</div></div></div>
       <div style="display:flex;justify-content:space-between"><button class="pbtn" onclick="NB.fc(-1)">Trước</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button><button class="pbtn p" onclick="NB.fc(1)">Tiếp</button></div>`);
+    addBar(window._fc.a);
   }
   function fc(d) { const f = window._fc; f.i = (f.i + d + f.a.data.length) % f.a.data.length; fcRender(); }
+  const KLAB = { core: 'Trọng tâm', sup: 'Bổ trợ', ext: 'Mở rộng' };
+  function countNodes(n) { return 1 + (n.c || []).reduce((a, x) => a + countNodes(x), 0); }
+  function treeView(a) {
+    modal(`<h2>${IC(ART_IC[a.type])} ${esc(a.title)} <small class="nb-note" style="font-weight:500">${countNodes(a.data)} nút</small></h2>
+      <div class="nb-tbar"><button class="pbtn sm" onclick="_tr.openAll()">Mở tất cả</button><button class="pbtn sm" onclick="_tr.closeAll()">Thu gọn</button><span class="nb-note">Bấm vào nút để xem mô tả, liên hệ chéo và nguồn. Nét đậm: trọng tâm · nét đứt: mở rộng.</span></div>
+      <div class="nb-tree" id="nb-tr"></div><div id="nb-trd" class="nb-tdesc">Bấm vào một nút để xem mô tả.</div>${closeBtn()}`, 'wide');
+    treeDraw(a.data);
+  }
   function treeDraw(root) {
-    const open = new Set(); const NW = 178, NH = 36, GX = 48, GY = 10; let sel = null;
-    (function init(n, d) { n._k = rid(); if (d < 1) open.add(n._k); (n.c || []).forEach(x => init(x, d + 1)); })(root, 0);
+    const open = new Set(); const NW = 220, NH = 38, GX = 52, GY = 10; let sel = null;
+    (function init(n, d) { n._k = n._k || rid(); if (d < 2) open.add(n._k); (n.c || []).forEach(x => init(x, d + 1)); })(root, 0);
+    const walk = (n, f) => { f(n); (n.c || []).forEach(x => walk(x, f)); };
+    window._tr = { openAll() { walk(root, n => { if ((n.c || []).length) open.add(n._k); }); draw(); }, closeAll() { open.clear(); open.add(root._k); draw(); } };
     function draw() {
       let y = 0; const nodes = [], edges = [];
       (function lay(n, d) { const kids = open.has(n._k) ? (n.c || []) : []; let y0;
@@ -593,10 +700,83 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
       const cs = getComputedStyle(document.body), acc = cs.getPropertyValue('--accent').trim() || '#1a73e8', txt = cs.getPropertyValue('--text').trim() || '#222', bg = cs.getPropertyValue('--bg').trim() || '#fff';
       $('nb-tr').innerHTML = `<svg width="${W + 24}" height="${H + 12}" style="display:block;margin:8px">` +
         edges.map(e => { const x1 = e[0] * (NW + GX) + NW, y1 = e[1] + NH / 2, x2 = e[2] * (NW + GX), y2 = e[3] + NH / 2; return `<path d="M${x1} ${y1}C${x1 + GX / 2} ${y1},${x2 - GX / 2} ${y2},${x2} ${y2}" fill="none" stroke="${txt}" stroke-opacity=".25" stroke-width="1.5"/>`; }).join('') +
-        nodes.map((o, i) => { const x = o.d * (NW + GX), has = (o.n.c || []).length, t = String(o.n.t || ''); return `<g data-i="${i}" style="cursor:pointer"><rect x="${x}" y="${o.y}" width="${NW}" height="${NH}" rx="12" fill="${o.d === 0 ? acc : (sel === o.n._k ? acc : bg)}" fill-opacity="${o.d === 0 ? 1 : (sel === o.n._k ? .15 : 1)}" stroke="${acc}" stroke-width="1.5"/><text x="${x + 12}" y="${o.y + 22}" font-size="13" font-weight="600" fill="${o.d === 0 ? '#fff' : txt}" font-family="Inter,sans-serif">${esc(t.length > 22 ? t.slice(0, 21) + '…' : t)}${has ? (open.has(o.n._k) ? '  –' : '  +') : ''}</text><title>${esc(t)}</title></g>`; }).join('') + '</svg>';
-      $('nb-tr').querySelectorAll('g').forEach(g => g.onclick = () => { const o = nodes[+g.dataset.i]; sel = o.n._k; if ((o.n.c || []).length) { open.has(o.n._k) ? open.delete(o.n._k) : open.add(o.n._k); } $('nb-trd').innerHTML = `<b>${esc(o.n.t)}</b>${o.n.d ? ' — ' + esc(o.n.d) : ''}`; draw(); });
+        nodes.map((o, i) => { const x = o.d * (NW + GX), has = (o.n.c || []).length, t = String(o.n.t || ''), k = o.n.k; return `<g data-i="${i}" style="cursor:pointer"><rect x="${x}" y="${o.y}" width="${NW}" height="${NH}" rx="12" fill="${o.d === 0 ? acc : (sel === o.n._k ? acc : bg)}" fill-opacity="${o.d === 0 ? 1 : (sel === o.n._k ? .15 : 1)}" stroke="${acc}" stroke-width="${k === 'core' ? 2.6 : 1.4}" ${k === 'ext' ? 'stroke-dasharray="5 3"' : ''}/><text x="${x + 12}" y="${o.y + 24}" font-size="13" font-weight="600" fill="${o.d === 0 ? '#fff' : txt}" font-family="Inter,sans-serif">${esc(t.length > 26 ? t.slice(0, 25) + '…' : t)}${has ? (open.has(o.n._k) ? '  –' : '  +') : ''}</text><title>${esc(t)}</title></g>`; }).join('') + '</svg>';
+      $('nb-tr').querySelectorAll('g').forEach(g => g.onclick = () => {
+        const o = nodes[+g.dataset.i], n = o.n; sel = n._k; if ((n.c || []).length) { open.has(n._k) ? open.delete(n._k) : open.add(n._k); }
+        const cites = n.s ? String(n.s).match(/\d+/g) || [] : [];
+        $('nb-trd').innerHTML = `<b>${esc(n.t)}</b>${n.k && KLAB[n.k] ? ` <span class="chip gray">${KLAB[n.k]}</span>` : ''}${n.d ? `<p>${esc(n.d)}</p>` : ''}${n.x ? `<p class="nb-note">${esc(n.x)}</p>` : ''}${cites.length ? `<p class="nb-note">Nguồn: ${cites.map(c => `<button class="cite" onclick="NB.closeModal();NB.cite(${+c})">${+c}</button>`).join('')}</p>` : ''}`; draw();
+      });
     }
     draw();
+  }
+  // ---------- đề trắc nghiệm: làm bài, nộp, xem giải thích ----------
+  const LV_NAME = { NB: 'Nhận biết', TH: 'Thông hiểu', VD: 'Vận dụng', VDC: 'Vận dụng cao' };
+  function mcqStart(a) { window._mq = { a, ans: {}, done: false }; mcqPaint(); }
+  function mcqPaint(keepScroll) {
+    const { a, ans, done } = window._mq, d = a.data, N = d.items.length, L = 'ABCD', old = document.querySelector('#nb-ov .nb-box'), top = old ? old.scrollTop : 0;
+    const score = d.items.filter((x, i) => ans[i] === x.a).length, pct = Math.round(score / N * 100), got = Object.keys(ans).length;
+    modal(`<h2>${IC('quiz')} ${esc(a.title)} <small class="nb-note" style="font-weight:500">${N} câu · mức ${esc(d.level || 'Trung bình')}</small></h2>
+      ${done ? `<div class="nb-score"><b>${score}/${N}</b><span>${pct}% đúng</span><i><u style="width:${pct}%"></u></i></div>` : `<div class="nb-note" style="margin-bottom:6px">Đã chọn ${got}/${N} câu. Chọn một đáp án cho mỗi câu rồi bấm Nộp bài để xem đáp án và giải thích. AI có thể sai, hãy đối chiếu với tài liệu.</div>`}
+      ${d.items.map((x, i) => `<div class="mq" id="mq-${i}"><div class="t"><b>Câu ${i + 1}.</b> ${esc(x.q)}${x.lv ? ` <span class="chip gray">${LV_NAME[x.lv]}</span>` : ''}</div>
+        ${x.o.map((o, j) => { const sel = ans[i] === j; return `<button class="mo ${sel ? 'sel' : ''} ${done ? (j === x.a ? 'ok' : (sel ? 'bad' : '')) : ''}" ${done ? 'disabled' : ''} onclick="NB.mq(${i},${j})"><b>${L[j]}</b><span>${esc(o)}</span></button>`; }).join('')}
+        ${done ? `<div class="mx"><b>Đáp án đúng: ${L[x.a]}.</b> ${ans[i] === undefined ? '<i>(bạn chưa chọn)</i>' : ''}<div>${md(x.e || '')}</div>${x.k ? `<div><b>Cần nhớ:</b> ${esc(x.k)}</div>` : ''}<small>${[x.tp, x.src].filter(Boolean).map(esc).join(' · ')}</small></div>` : ''}</div>`).join('')}
+      <div class="nb-end">${done ? `<button class="pbtn" onclick="NB.mqReset()">Làm lại</button>` : `<button class="pbtn p" onclick="NB.mqSubmit()">Nộp bài</button>`}<button class="pbtn" onclick="NB.mqWord(0)">Tải đề (.docx)</button><button class="pbtn" onclick="NB.mqWord(1)">Tải đề + đáp án (.docx)</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`, 'wide');
+    addBar(a); const nb = document.querySelector('#nb-ov .nb-box'); if (nb && keepScroll) nb.scrollTop = top;
+  }
+  function mq(i, j) { const m = window._mq; if (m.done) return; m.ans[i] = j; mcqPaint(true); }
+  function mqSubmit() { const m = window._mq, N = m.a.data.items.length, got = Object.keys(m.ans).length; if (got < N && !confirm(`Bạn mới chọn ${got}/${N} câu. Vẫn nộp bài?`)) return; m.done = true; m.a.data.last = { score: m.a.data.items.filter((x, i) => m.ans[i] === x.a).length, n: N, ts: Date.now() }; saveDb(); mcqPaint(); const b = document.querySelector('#nb-ov .nb-box'); if (b) b.scrollTop = 0; }
+  function mqReset() { mcqStart(window._mq.a); }
+  function mcqMd(a, withAns) {
+    const d = a.data, L = 'ABCD'; let t = `# ${a.title}\n\nMức độ: ${d.level || 'Trung bình'} · Số câu: ${d.items.length}\n\n`;
+    d.items.forEach((x, i) => { t += `**Câu ${i + 1}.** ${x.q}\n\n` + x.o.map((o, j) => `${L[j]}. ${o}`).join('\n\n') + '\n\n'; });
+    if (withAns) {
+      t += `## Bảng đáp án\n\n| Câu | Đáp án | Chủ đề | Mức độ |\n|---|---|---|---|\n` + d.items.map((x, i) => `| ${i + 1} | ${L[x.a]} | ${(x.tp || '').replace(/\|/g, '/')} | ${LV_NAME[x.lv] || ''} |`).join('\n') + '\n\n## Giải thích chi tiết\n\n';
+      d.items.forEach((x, i) => { t += `**Câu ${i + 1}. Đáp án ${L[x.a]}.** ${x.e || ''}${x.k ? ' *Cần nhớ:* ' + x.k : ''}\n\n`; });
+    }
+    return t;
+  }
+  async function mqWord(withAns) { const a = window._mq.a; try { toast('Đang tạo file Word…'); DOCGEN.download(await DOCGEN.toDocx(a.title, mcqMd(a, !!withAns)), DOCGEN.fname(a.title) + (withAns ? '-dap-an' : '') + '.docx'); } catch (e) { toast('Không tạo được file Word: ' + e.message); } }
+  // ---------- tài liệu ----------
+  function docView(a) {
+    modal(`<h2>${IC('file')} ${esc(a.title)}</h2><div class="nb-doc">${DOCGEN.md(a.data.text)}</div>
+      <div class="nb-end"><button class="pbtn p" onclick="NB.docDl('${a.id}')">Tải .docx</button><button class="pbtn" onclick="NB.docG('${a.id}')">Mở Google Docs</button><button class="pbtn" onclick="NB.docPdf('${a.id}')">In / PDF</button><button class="pbtn" onclick="NB.docCopy('${a.id}')">Sao chép</button>${DOCGEN.hasTable(a.data.text) ? `<button class="pbtn" onclick="NB.docCsv('${a.id}')">Bảng .csv</button>` : ''}<button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`, 'wide');
+  }
+  const artOf = id => cur.arts.find(x => x.id === id);
+  async function docDl(id) { const a = artOf(id); try { toast('Đang tạo file Word…'); DOCGEN.download(await DOCGEN.toDocx(a.data.title || a.title, a.data.text, { author: (userName() || 'Olym63') }), DOCGEN.fname(a.data.title || a.title) + '.docx'); } catch (e) { toast('Không tạo được file Word: ' + e.message); } }
+  async function docG(id) { const a = artOf(id); try { await DOCGEN.toGoogleDocs(a.data.text); toast('Đã mở Google Docs mới. Nhấn Ctrl+V (hoặc Cmd+V) để dán, định dạng sẽ được giữ nguyên.'); } catch (e) { window.open('https://docs.new', '_blank', 'noopener'); toast('Hãy sao chép nội dung rồi dán vào Google Docs.'); } }
+  function docPdf(id) { const a = artOf(id); if (!DOCGEN.printPdf(a.title, a.data.text)) toast('Trình duyệt chặn cửa sổ mới, hãy cho phép pop-up.'); }
+  function docCopy(id) { const a = artOf(id); DOCGEN.copyRich(a.data.text).then(() => toast('Đã sao chép (giữ định dạng khi dán vào Word hoặc Google Docs).'), () => (navigator.clipboard ? navigator.clipboard.writeText(a.data.text) : Promise.reject()).then(() => toast('Đã sao chép văn bản.'), () => toast('Không sao chép được.'))); }
+  function docCsv(id) { const a = artOf(id); DOCGEN.download(new Blob(['\ufeff' + DOCGEN.csv(a.data.text)], { type: 'text/csv;charset=utf-8' }), DOCGEN.fname(a.title) + '.csv'); }
+  const userName = () => { try { const u = AUTH.getCurrentUser(); return u && (u.full_name || u.username); } catch (e) { return ''; } };
+  // ---------- mở tab mới + chia sẻ link ----------
+  const payload = a => ({ type: a.type, title: a.title, data: JSON.parse(JSON.stringify(a.data, (k, v) => (k[0] === '_' ? undefined : v))) });
+  const viewUrl = frag => location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '') + 'view.html' + frag;
+  const online = () => { try { return AUTH.backendReady() && AUTH.getCurrentUser(); } catch (e) { return false; } };
+  async function serverShare(a) { const r = await AUTH.apiFetch('/share', { method: 'POST', body: JSON.stringify(payload(a)) }); a.shareId = r.id; saveDb(); return r.id; }
+  async function newTab(id) {
+    const a = artOf(id); if (!a) return; const w = window.open('about:blank', '_blank');
+    if (!w) return toast('Trình duyệt chặn cửa sổ mới, hãy cho phép pop-up cho trang này.');
+    try {
+      let frag; if (a.shareId) frag = '#s=' + a.shareId; else { const pk = await DOCGEN.pack(payload(a)); if (pk.length < 120000) frag = '#d=' + pk; else if (online()) frag = '#s=' + await serverShare(a); else throw new Error('Nội dung quá lớn để mở ở tab mới khi chưa kết nối máy chủ.'); }
+      w.location.href = viewUrl(frag);
+    } catch (e) { w.close(); toast(e.message); }
+  }
+  async function shareDlg(id) {
+    const a = artOf(id); if (!a) return;
+    modal(`<h2>${IC('link')} Chia sẻ để cùng học</h2><div id="nb-sh" class="nb-note"><span class="nb-sp"></span> Đang tạo liên kết…</div>`);
+    try {
+      let link, srv = false;
+      if (online()) { const sid = a.shareId || await serverShare(a); link = viewUrl('#s=' + sid); srv = true; }
+      else link = viewUrl('#d=' + await DOCGEN.pack(payload(a)));
+      $('nb-sh').outerHTML = `<div id="nb-sh"><p class="nb-note">Bất kỳ ai có liên kết đều xem được bản này (không cần đăng nhập). ${srv ? 'Nội dung được lưu trên máy chủ; bạn có thể thu hồi bất cứ lúc nào.' : 'Hiện chưa kết nối máy chủ nên nội dung được nhúng trong chính liên kết (liên kết sẽ dài).'}</p><input type="text" id="nb-shl" readonly value="${esc(link)}" onclick="this.select()"><p class="nb-note">Người xem được: ${a.type === 'mcq' ? 'làm bài trắc nghiệm và xem giải thích' : a.type === 'flash' ? 'lật flashcard' : a.type === 'mind' || a.type === 'tree' ? 'xem sơ đồ dạng cây có thể thu gọn' : 'đọc, tải về Word, in'}. Họ không sửa được sổ của bạn.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px">${srv ? `<button class="pbtn" onclick="NB.unshare('${a.id}')">Thu hồi liên kết</button>` : ''}<button class="pbtn" onclick="window.open(document.getElementById('nb-shl').value,'_blank')">Mở thử</button><button class="pbtn p" onclick="NB.copyLink()">Sao chép liên kết</button></div></div>`;
+    } catch (e) { $('nb-sh').innerHTML = esc('Không tạo được liên kết: ' + e.message); }
+  }
+  function copyLink() { const i = $('nb-shl'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(() => toast('Đã sao chép liên kết.'), () => { document.execCommand('copy'); toast('Đã sao chép liên kết.'); }); }
+  async function unshare(id) { const a = artOf(id); if (!a || !a.shareId) return closeModal(); try { await AUTH.apiFetch('/share/' + a.shareId, { method: 'DELETE' }); delete a.shareId; saveDb(); closeModal(); toast('Đã thu hồi liên kết.'); } catch (e) { toast(e.message); } }
+  function addBar(a) {
+    const box = document.querySelector('#nb-ov .nb-box'); if (!box || box.querySelector('.nb-bar')) return;
+    const d = document.createElement('div'); d.className = 'nb-bar'; d.innerHTML = `<button class="pbtn sm" onclick="NB.newTab('${a.id}')">${IC('external')} Mở tab mới</button><button class="pbtn sm" onclick="NB.shareDlg('${a.id}')">${IC('link')} Chia sẻ link</button>`; box.insertBefore(d, box.firstChild);
   }
   function quizView(a) {
     const d = a.data;
@@ -604,6 +784,7 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
       <div class="nb-note" style="margin-bottom:8px">AI có thể sai. Hãy đối chiếu đáp án với tài liệu và xóa câu không ổn trước khi chơi. Ván chơi bằng đề này không tính vào bảng xếp hạng và dữ liệu nghiên cứu.</div>
       ${d.items.map((x, i) => `<div class="nb-q"><div class="t">${i + 1}. ${esc(x.q)}${x.pts ? ` <b>(${x.pts} điểm)</b>` : ''}<small>Đáp án: <b>${esc(x.a)}</b>${x.src ? ' · ' + esc(x.src) : ''}</small></div><button class="nb-x" title="Xóa câu" onclick="NB.qdel('${a.id}',${i})">${IC('trash')}</button></div>`).join('')}
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Đóng</button><button class="pbtn p" onclick="NB.play('${a.id}')">${IC('play')} Chơi ngay</button></div>`);
+    addBar(a);
   }
   function qdel(id, i) { const a = cur.arts.find(x => x.id === id); a.data.items.splice(i, 1); saveDb(); quizView(a); }
   function play(id) {
@@ -618,5 +799,5 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
   }
   function back(fromNb) { if (fromNb && nbOf(fromNb)) { cur = nbOf(fromNb); openNb(fromNb); } else open(); }
 
-  return { open, create: createNb, openNb, del, rename, pane: showPane, colToggle, addDialog, closeModal, toggleSrc, delSrc, delArt, addFiles, addYt, addText, wikiFind, addWiki, wikiAdd, addRound, fromRound, ask, tool, genQuiz, openArt, fc, qdel, play, saveRound, buildPlay, back, cite, preview, attach, paste, unatt, copyMsg, msgNote, msgFlash, act, noteSave, _md: md, _feats: feats, _useAi: useAi };
+  return { open, create: createNb, openNb, del, rename, pane: showPane, colToggle, addDialog, closeModal, toggleSrc, delSrc, delArt, addFiles, addYt, addText, wikiFind, addWiki, wikiAdd, addRound, fromRound, ask, tool, genQuiz, openArt, fc, qdel, play, saveRound, buildPlay, back, cite, preview, attach, paste, unatt, copyMsg, msgNote, msgFlash, act, noteSave, depth, make, mq, mqSubmit, mqReset, mqWord, docDl, docG, docPdf, docCopy, docCsv, newTab, shareDlg, copyLink, unshare, _intent: intent, _md: md, _feats: feats, _useAi: useAi };
 })();
