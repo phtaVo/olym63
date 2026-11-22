@@ -72,13 +72,13 @@ document.addEventListener('click', function u() {
 // THEME
 // ============================================================
 const THEMES = ['navy','red','green','blue','gold','purple'];
-const THEME_LABELS = { navy:'🔷 Olympia', red:'🔴 Đỏ', green:'🟢 Xanh lá', blue:'🔵 Xanh dương', gold:'🟡 Vàng', purple:'🟣 Tím' };
+const THEME_LABELS = { navy:'Olympia', red:'Đỏ', green:'Xanh lá', blue:'Xanh dương', gold:'Vàng', purple:'Tím' };
 let currentThemeIdx = 0;
 function cycleTheme() {
   currentThemeIdx = (currentThemeIdx + 1) % THEMES.length;
   const t = THEMES[currentThemeIdx];
   document.body.setAttribute('data-theme', t);
-  showToast('🎨 ' + THEME_LABELS[t]);
+  showToast('' + THEME_LABELS[t]);
 }
 
 // ============================================================
@@ -94,7 +94,7 @@ function toggleIntroSetting() {
   introEnabled = !introEnabled;
   try { localStorage.setItem('olympia_intro_enabled', introEnabled ? '1' : '0'); } catch (e) {}
   updateIntroToggleUI();
-  showToast(introEnabled ? '🎬 Đã bật màn giới thiệu' : '⏩ Đã tắt màn giới thiệu – vào thẳng câu hỏi');
+  showToast(introEnabled ? 'Đã bật màn giới thiệu' : 'Đã tắt màn giới thiệu – vào thẳng câu hỏi');
 }
 
 function updateIntroToggleUI() {
@@ -144,17 +144,13 @@ function playUntilEnd(el, onDone, fallbackMs) {
 // ============================================================
 // SCREENS
 // ============================================================
-const TABBAR_SCREENS = ['home-screen', 'nb-screen'];
 function showScreen(id) {
   if (typeof AUTH !== 'undefined' && AUTH.closeIslandModal) AUTH.closeIslandModal();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-  const tabbar = document.getElementById('main-tabbar');
-  if (tabbar) {
-    const loggedIn = typeof AUTH !== 'undefined' && AUTH.getCurrentUser && AUTH.getCurrentUser();
-    tabbar.classList.toggle('hidden', !(TABBAR_SCREENS.includes(id) && loggedIn));
-    tabbar.querySelectorAll('.tabbar-btn, .sidenav-avatar-btn').forEach(b => b.classList.toggle('active', b.dataset.screen === id));
-  }
+  const el = document.getElementById(id); if (!el) return;
+  el.classList.remove('hidden');
+  if (id === 'home-screen' && !el.firstElementChild) { try { PORTAL.renderPractice(); } catch (e) {} }
+  try { PORTAL.onScreen(id); } catch (e) {}
 }
 function goHome() {
   STATE.runId++; clearAllTimers(); AUDIO.stopAll(); clearMedia();
@@ -333,7 +329,7 @@ function sourceLabel(src) {
   src = src || DEFAULT_SOURCE;
   const sc = (CONFIG.SCOPES.find(x => x.id === src.scope) || CONFIG.SCOPES[0]).label;
   const base = src.subject && src.subject !== 'ALL' ? `${sc} · ${src.subject}` : sc;
-  return src.weak ? base + ' · 🎯 môn yếu' : base;
+  return src.weak ? base + ' · môn yếu' : base;
 }
 // Đọc các sheet của phạm vi đã chọn, bỏ hàng tiêu đề (hàng 1), lọc theo môn ở cột B
 async function fetchScopedRows(mode, src) {
@@ -393,7 +389,7 @@ async function loadVeDich(src) {
         let url = sp.url, type = null;
         if (url) type = guessMediaType(url, []);
         else { const m = findMediaInRow(r, 5); if (m) { url = m.url; type = m.type; } }
-        const text = sp.text || (type === 'video' ? '🎬 Xem video và trả lời câu hỏi' : (type === 'image' ? '🖼️ Quan sát hình ảnh và trả lời' : cell(r, 2)));
+        const text = sp.text || (type === 'video' ? 'Xem video và trả lời câu hỏi' : (type === 'image' ? 'Quan sát hình ảnh và trả lời' : cell(r, 2)));
         return { question: text, answer: cell(r, 3), points: parseInt(cell(r, 4)) || 10,   // E = điểm
                  media: url, mediaType: type, subject: cell(r, 1) };
       });
@@ -436,7 +432,7 @@ async function loadTangToc(all) {
     console.log('[TangToc] đọc được', rows.length, 'hàng:', rows.map(r => [cell(r, 0).slice(0, 50), cell(r, 1)]));
     const qs = [];
     const mk = (text, media, type, answer) => {
-      const label = text || (type === 'video' ? '🎬 Câu hỏi video' : (type === 'image' ? '🖼️ Câu hỏi hình ảnh' : 'Câu hỏi'));
+      const label = text || (type === 'video' ? 'Câu hỏi video' : (type === 'image' ? 'Câu hỏi hình ảnh' : 'Câu hỏi'));
       if (text || media) qs.push({ question: label, text, media, mediaType: type, answer });
     };
     rows.filter(r => cell(r, 1)).forEach(r => {
@@ -473,7 +469,7 @@ function mountImage(url) {
   area.innerHTML = ''; area.classList.remove('hidden');
   const img = document.createElement('img');
   img.className = 'q-img'; img.alt = 'Hình ảnh câu hỏi'; img.referrerPolicy = 'no-referrer';
-  img.onerror = () => { area.innerHTML = '<div class="media-error">⚠️ Không tải được hình ảnh (kiểm tra link / quyền chia sẻ)</div>'; };
+  img.onerror = () => { area.innerHTML = '<div class="media-error">Không tải được hình ảnh (kiểm tra link / quyền chia sẻ)</div>'; };
   img.src = normalizeImageUrl(url);
   area.appendChild(img);
 }
@@ -507,7 +503,7 @@ function mountVideo(url, opts) {
         const f = document.createElement('iframe');
         f.className = 'q-video q-iframe'; f.allow = 'autoplay'; f.src = `https://drive.google.com/file/d/${id}/preview`;
         area.appendChild(f);
-      } else area.innerHTML = '<div class="media-error">⚠️ Không tải được video — chuyển sang chế độ tính giờ cố định</div>';
+      } else area.innerHTML = '<div class="media-error">Không tải được video — chuyển sang chế độ tính giờ cố định</div>';
       if (run === STATE.runId) opts.onFail();
       return;
     }
@@ -518,11 +514,11 @@ function mountVideo(url, opts) {
       f.className = 'q-video q-iframe'; f.allow = 'autoplay'; f.allowFullscreen = false;
       f.src = `https://drive.google.com/file/d/${id}/preview`;
       const btn = document.createElement('button');
-      btn.className = 'btn btn-primary btn-sm media-done-btn'; btn.textContent = '✔ Đã xem xong — bắt đầu trả lời';
+      btn.className = 'btn btn-primary btn-sm media-done-btn'; btn.textContent = 'Đã xem xong — bắt đầu trả lời';
       btn.onclick = finish;
       area.appendChild(f); area.appendChild(btn);
     } else {
-      area.innerHTML = '<div class="media-error">⚠️ Không phát được video — tiếp tục câu hỏi…</div>';
+      area.innerHTML = '<div class="media-error">Không phát được video — tiếp tục câu hỏi…</div>';
       later(finish, 1500);
     }
   });
@@ -538,7 +534,7 @@ function mountVideo(url, opts) {
     if (run === STATE.runId && opts.onReady) opts.onReady();
   };
   if (opts.onReady) {
-    const lb = document.createElement('div'); lb.className = 'media-loading'; lb.textContent = '⏳ Đang tải video...';
+    const lb = document.createElement('div'); lb.className = 'media-loading'; lb.textContent = 'Đang tải video...';
     area.appendChild(lb);
     v.load();
     const startedAt = performance.now();
@@ -550,7 +546,7 @@ function mountVideo(url, opts) {
       if (bufferedAll) { fireReady(); return; }
       if (isFinite(dur) && dur > 0 && v.buffered.length) {
         const pct = Math.min(99, Math.floor(v.buffered.end(v.buffered.length - 1) / dur * 100));
-        lb.textContent = `⏳ Đang tải video... ${pct}%`;
+        lb.textContent = `Đang tải video... ${pct}%`;
       }
       if (performance.now() - startedAt > 60000 && v.readyState >= 3) fireReady();   // quá 60s mà đã phát được thì cho chạy
     }, 250);
@@ -562,7 +558,7 @@ function mountVideo(url, opts) {
       const showBtn = () => {
         if (finished || !v.parentNode) return;
         const b = document.createElement('button');
-        b.className = 'btn btn-primary media-play-btn'; b.textContent = '▶ Bấm để phát video';
+        b.className = 'btn btn-primary media-play-btn'; b.textContent = 'Bấm để phát video';
         b.onclick = () => { b.remove(); v.play().catch(() => {}); };
         area.appendChild(b);
       };
@@ -735,8 +731,8 @@ function openSourcePicker(mode) {
 }
 
 const SUBJECT_ICONS = {
-  'Art/Sports': '🎨', 'Biology': '🧬', 'Chemistry': '⚗️', 'English': '🔤', 'General/Social': '🌐',
-  'Geography': '🌍', 'History': '🏛️', 'Literature': '📖', 'Logic/IQ': '🧩', 'Math': '➗', 'Physics': '⚛️'
+  'Art/Sports': 'Ar', 'Biology': 'Bi', 'Chemistry': 'Ch', 'English': 'En', 'General/Social': 'GS',
+  'Geography': 'Ge', 'History': 'Hi', 'Literature': 'Li', 'Logic/IQ': 'IQ', 'Math': 'Ma', 'Physics': 'Ph'
 };
 const SCOPE_HINTS = { ALL: 'Tuần + Tháng + Quý', W: 'Đề theo tuần', M: 'Đề theo tháng', Q: 'Đề theo quý' };
 
@@ -767,8 +763,8 @@ function renderSourcePicker() {
       <div class="srcp-section">
         <div class="srcp-label"><span class="srcp-step">2</span>Môn học</div>
         <div class="srcp-subjects">
-          ${subjBtn('ALL', 'Tất cả các môn', '✨')}
-          ${CONFIG.SUBJECTS.map(sb => subjBtn(sb, sb, SUBJECT_ICONS[sb] || '📚')).join('')}
+          ${subjBtn('ALL', 'Tất cả các môn', 'All')}
+          ${CONFIG.SUBJECTS.map(sb => subjBtn(sb, sb, SUBJECT_ICONS[sb] || sb.slice(0,2))).join('')}
         </div>
       </div>
 
@@ -829,7 +825,7 @@ function onQuestionsLoaded(result) {
   const want = { xuat_phat: CONFIG.GAME.XUAT_PHAT_COUNT, khoi_dong: CONFIG.GAME.KHOI_DONG_COUNT, vcnv: CONFIG.GAME.VCNV_COUNT, tang_toc: CONFIG.GAME.TANG_TOC_COUNT }[STATE.mode];
   if (want && !STATE.custom && result.questions.length < want) {
     console.warn(`[${STATE.mode}] Sheet chỉ đọc được ${result.questions.length} câu hợp lệ, cần ${want}.`);
-    showToast(`⚠️ Sheet chỉ có ${result.questions.length} câu hợp lệ (cần ${want}). Kiểm tra lại sheet.`);
+    showToast(`Sheet chỉ có ${result.questions.length} câu hợp lệ (cần ${want}). Kiểm tra lại sheet.`);
   }
   setupGameUI();
 
@@ -866,7 +862,7 @@ function setupGameUI() {
   const starBtn = document.getElementById('star-hope-btn');
   if (mode === 've_dich') {
     starBtn.style.display = 'block'; starBtn.classList.remove('active', 'used');
-    starBtn.innerHTML = '<span class="star-hope-icon">⭐</span>Ngôi sao<br>hy vọng';
+    starBtn.innerHTML = '<span class="star-hope-icon">' + IC('star') + '</span>Ngôi sao<br>hy vọng';
   } else { starBtn.style.display = 'none'; }
 
   const input = document.getElementById('answer-input');
@@ -929,8 +925,8 @@ function submitVeDichAnswerNow() {
   if (savedEl) {
     savedEl.className = 'saved-answer-indicator';
     savedEl.textContent = val === ''
-      ? '📝 Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
-      : `📝 Đã ghi nhận đáp án: "${val}" — vẫn có thể nhập lại`;
+      ? 'Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
+      : `Đã ghi nhận đáp án: "${val}" — vẫn có thể nhập lại`;
   }
 
   input.classList.remove('flash-saved');
@@ -1001,7 +997,7 @@ function endKhoiDong() {
   STATE.kdDone = true; hideKdHint();
   clearAllTimers(); AUDIO.stopAll();
   document.getElementById('answer-input').disabled = true;
-  showFeedback('info', '⏳ Đang chấm điểm...');
+  showFeedback('info', 'Đang chấm điểm...');
   setTimeout(() => showResults(), 1500);
 }
 
@@ -1040,13 +1036,13 @@ function showStarIntroBeforeQuestion(q, times) {
   STATE.vedich.phase = 'star_intro'; STATE.starHope = false; updateStarBtn();
   const el = document.getElementById('question-text');
   el.classList.remove('entering', 'star-msg'); void el.offsetWidth;
-  el.textContent = '⭐ Ngôi sao hy vọng sẽ giúp nhân đôi số điểm nếu trả lời đúng!';
+  el.textContent = 'Ngôi sao hy vọng sẽ giúp nhân đôi số điểm nếu trả lời đúng!';
   el.classList.add('entering', 'star-msg');
 
   const pc = q.points === 10 ? 'p10' : (q.points === 20 ? 'p20' : 'p30');
   document.getElementById('question-meta').innerHTML = `
     <span class="points-badge ${pc}">+${q.points} điểm</span>
-    <span class="phase-badge star">⭐ Chuẩn bị – Bấm để dùng ngôi sao!</span>`;
+    <span class="phase-badge star">Chuẩn bị – Bấm để dùng ngôi sao!</span>`;
 
   updateTimerUI(7, 7); AUDIO.stopAll();
   let countdown = 7; clearPhaseTimer();
@@ -1071,7 +1067,7 @@ function showQuestionContent(q, times) {
     STATE.vedich.phase = 'video';
     const badge = document.getElementById('phase-badge');
     if (badge) badge.textContent = 'Đang tải video';
-    const d = document.getElementById('timer-display'); d.textContent = '⏳'; d.className = 'game-timer-display';
+    const d = document.getElementById('timer-display'); d.textContent = '…'; d.className = 'game-timer-display';
     document.getElementById('timeline-fill').style.width = '100%';
     const inp = document.getElementById('answer-input');
     inp.disabled = true; inp.placeholder = 'Xem hết video để bắt đầu trả lời...';   // ô trả lời khoá trong lúc xem video
@@ -1079,8 +1075,8 @@ function showQuestionContent(q, times) {
       muted: false,
       onReady: () => {                 // tải xong hết mới phát
         if (STATE.vedich.phase !== 'video') return;
-        const b = document.getElementById('phase-badge'); if (b) b.textContent = '🎬 Xem video';
-        d.textContent = '▶'; ctrl.play();
+        const b = document.getElementById('phase-badge'); if (b) b.textContent = 'Xem video';
+        d.textContent = ''; ctrl.play();
       },
       onEnded: () => { if (STATE.vedich.phase === 'video') startVeDichAnswerPhase(); }   // xem xong mới tính giờ
     });
@@ -1139,7 +1135,7 @@ function gradeVeDichCurrent() {
     if (correct) {
       let pts = q.points; if (usedStar) pts *= 2;
       STATE.score += pts; updateScoreUI(true);
-      showFeedback('correct', `✅ Đúng! +${pts} điểm${usedStar ? ' ⭐×2' : ''}`);
+      showFeedback('correct', `Đúng! +${pts} điểm${usedStar ? ' ×2' : ''}`);
     } else {
       let penalty = 0;
       // Điểm số có thể âm: không giới hạn ở 0 khi bị trừ điểm do dùng ngôi sao hy vọng mà trả lời sai.
@@ -1225,7 +1221,7 @@ function confirmVeDichPick() {
   const input = document.getElementById('answer-input');
   input.disabled = true; input.placeholder = 'Chờ bắt đầu...';
   updateQCounter(1, STATE.questions.length);
-  const d = document.getElementById('timer-display'); d.textContent = '🏆'; d.className = 'game-timer-display';
+  const d = document.getElementById('timer-display'); d.textContent = '…'; d.className = 'game-timer-display';
   document.getElementById('timeline-fill').style.width = '100%';
   playUntilEnd(AUDIO.mocauhoiVD, () => startVeDich(), 2500);
 }
@@ -1286,8 +1282,8 @@ function submitVcnv(timedOut) {
 
   STATE.answers.push({ question: q.question, userAnswer, correctAnswer: q.answer, correct, points: CONFIG.GAME.VCNV_POINTS });
   AUDIO.playSFX(correct);
-  if (correct) { STATE.score += CONFIG.GAME.VCNV_POINTS; updateScoreUI(true); showFeedback('correct', `✅ Chính xác! +${CONFIG.GAME.VCNV_POINTS} điểm`); }
-  else showFeedback('wrong', (timedOut && !userAnswer ? '⏰ Hết giờ — ' : '❌ Chưa đúng — ') + `Đáp án: ${q.answer}`);
+  if (correct) { STATE.score += CONFIG.GAME.VCNV_POINTS; updateScoreUI(true); showFeedback('correct', `Chính xác! +${CONFIG.GAME.VCNV_POINTS} điểm`); }
+  else showFeedback('wrong', (timedOut && !userAnswer ? 'Hết giờ — ' : 'Chưa đúng — ') + `Đáp án: ${q.answer}`);
 
   later(() => { STATE.currentIndex++; showVcnvQuestion(); }, correct ? 1500 : 2800);
 }
@@ -1327,7 +1323,7 @@ function showTtQuestion() {
   // Khoá ô trả lời cho đến khi hết âm thanh mở câu hỏi
   const input = document.getElementById('answer-input');
   input.value = ''; input.disabled = true; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
-  const d = document.getElementById('timer-display'); d.textContent = '⚡'; d.className = 'game-timer-display';
+  const d = document.getElementById('timer-display'); d.textContent = '…'; d.className = 'game-timer-display';
   document.getElementById('timeline-fill').style.width = '100%';
 
   const openingAudio = (afterAudio) => playUntilEnd(AUDIO.mocauhoiTT, afterAudio, 2500);
@@ -1337,21 +1333,21 @@ function showTtQuestion() {
     // 3) hết nhạc: video tự phát + mở ô nhập; thời lượng video chính là thời gian trả lời
     STATE.tt.phase = 'loading';
     const badge0 = document.getElementById('phase-badge'); if (badge0) badge0.textContent = 'Đang tải video';
-    d.textContent = '⏳';
+    d.textContent = '…';
     input.placeholder = 'Đang tải video...';
     const vctrl = mountVideo(q.media, {
       muted: true,
       onReady: () => {
         STATE.tt.phase = 'opening';
         const b = document.getElementById('phase-badge'); if (b) b.textContent = 'Chuẩn bị';
-        d.textContent = '⚡'; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
+        d.textContent = '…'; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
         openingAudio(() => ttStartVideoRound(q, vctrl));
       },
       onEnded: () => { if (STATE.tt.phase === 'answering' && STATE.tt.videoMode) ttFinish(q); },
       onFail: () => {            // không tải được video: quay về cách tính giờ bằng âm thanh nhập câu hỏi
         STATE.tt.phase = 'opening';
         const b = document.getElementById('phase-badge'); if (b) b.textContent = 'Chuẩn bị';
-        d.textContent = '⚡'; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
+        d.textContent = '…'; input.placeholder = 'Chờ hết âm thanh mở câu hỏi...';
         openingAudio(() => ttStartInput(q));
       }
     });
@@ -1368,7 +1364,7 @@ function ttStartVideoRound(q, vctrl) {
   const input = document.getElementById('answer-input');
   input.disabled = false; input.placeholder = 'Nhập đáp án rồi bấm Enter (Enter cuối cùng được tính giờ)'; input.focus();
   const badge = document.getElementById('phase-badge');
-  if (badge) { badge.className = 'phase-badge answering'; badge.textContent = '🎬 Xem video & trả lời'; }
+  if (badge) { badge.className = 'phase-badge answering'; badge.textContent = 'Xem video & trả lời'; }
   STATE.tt.t0 = performance.now();
   vctrl.play();
   const v = vctrl.el;
@@ -1413,8 +1409,8 @@ function submitTtAnswerNow() {
   const savedEl = document.getElementById('saved-answer-indicator');
   savedEl.className = 'saved-answer-indicator';
   savedEl.textContent = val === ''
-    ? '📝 Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
-    : `📝 Đã ghi nhận: "${val}" lúc ${at.toFixed(2)}s — vẫn có thể nhập lại`;
+    ? 'Đã ghi nhận: (để trống) — vẫn có thể nhập lại'
+    : `Đã ghi nhận: "${val}" lúc ${at.toFixed(2)}s — vẫn có thể nhập lại`;
   input.classList.remove('flash-saved'); void input.offsetWidth; input.classList.add('flash-saved');
   setTimeout(() => input.classList.remove('flash-saved'), 300);
 }
@@ -1434,7 +1430,7 @@ function ttFinish(q) {
 
   const rp = document.getElementById('reveal-panel');
   rp.className = 'reveal-panel';
-  rp.innerHTML = '<div class="reveal-wait">⏳ Đang chấm điểm...</div>';
+  rp.innerHTML = '<div class="reveal-wait">Đang chấm điểm...</div>';
   const badge = document.getElementById('phase-badge'); if (badge) { badge.className = 'phase-badge star'; badge.textContent = 'Kết quả'; }
 
   const entry = { question: q.question, userAnswer, correctAnswer: q.answer, correct: null, time };
@@ -1448,7 +1444,7 @@ function ttFinish(q) {
       <div class="reveal-row"><span>Đáp án của bạn</span><b>${userAnswer ? escapeHTML(userAnswer) : '(bỏ trống)'}</b></div>
       <div class="reveal-row"><span>Thời gian trả lời (Enter cuối cùng)</span><b>${userAnswer ? time.toFixed(2) + ' giây' : '—'}</b></div>
       <div class="reveal-row"><span>Đáp án chương trình</span><b>${escapeHTML(q.answer)}</b></div>
-      <div class="reveal-result ${correct ? 'correct' : 'wrong'}">${correct ? `✅ Chính xác! +${pts} điểm` : '❌ Chưa đúng — +0 điểm'}</div>`;
+      <div class="reveal-result ${correct ? 'correct' : 'wrong'}">${correct ? `Chính xác! +${pts} điểm` : 'Chưa đúng — +0 điểm'}</div>`;
     later(() => { STATE.currentIndex++; showTtQuestion(); }, 5000);
   });
 }
@@ -1503,7 +1499,7 @@ function showFeedback(type, msg) {
 let _quickFeedbackTimeout;
 function flashQuickFeedback(isCorrect, userAnswer) {
   if (userAnswer === '') { showFeedback('wrong', '⏭ Bỏ qua'); }
-  else showFeedback(isCorrect ? 'correct' : 'wrong', isCorrect ? '✅ Chính xác!' : '❌ Chưa đúng');
+  else showFeedback(isCorrect ? 'correct' : 'wrong', isCorrect ? 'Chính xác!' : 'Chưa đúng');
 
   const input = document.getElementById('answer-input');
   if (input) {
@@ -1523,12 +1519,12 @@ function flashQuickFeedback(isCorrect, userAnswer) {
 // STAR HOPE
 // ============================================================
 function toggleStarHope() {
-  if (STATE.starHopeUsed) { showToast('⚠️ Ngôi sao hy vọng chỉ dùng được 1 lần mỗi trận!'); return; }
+  if (STATE.starHopeUsed) { showToast('Ngôi sao hy vọng chỉ dùng được 1 lần mỗi trận!'); return; }
   // Ngôi sao hy vọng chỉ được BẬT, một khi đã bật thì không thể tắt lại.
-  if (STATE.starHope) { showToast('⭐ Ngôi sao hy vọng đã bật rồi, không thể tắt!'); return; }
-  if (STATE.vedich.phase !== 'star_intro') { showToast('⚠️ Chỉ bật được trong lúc hiện thông báo ngôi sao!'); return; }
+  if (STATE.starHope) { showToast('Ngôi sao hy vọng đã bật rồi, không thể tắt!'); return; }
+  if (STATE.vedich.phase !== 'star_intro') { showToast('Chỉ bật được trong lúc hiện thông báo ngôi sao!'); return; }
   STATE.starHope = true;
-  AUDIO.playStarHope(); showToast('⭐ Ngôi sao hy vọng đã bật! Không thể tắt lại.');
+  AUDIO.playStarHope(); showToast('Ngôi sao hy vọng đã bật! Không thể tắt lại.');
   updateStarBtn();
 }
 
@@ -1536,14 +1532,14 @@ function updateStarBtn() {
   const btn = document.getElementById('star-hope-btn'); if (!btn) return;
   if (STATE.starHopeUsed) {
     btn.classList.remove('active'); btn.classList.add('used');
-    btn.innerHTML = '<span class="star-hope-icon">⭐</span>Đã sử dụng'; return;
+    btn.innerHTML = '<span class="star-hope-icon">' + IC('star') + '</span>Đã sử dụng'; return;
   }
   if (STATE.starHope) {
     btn.classList.add('active'); btn.classList.remove('used');
-    btn.innerHTML = '<span class="star-hope-icon">⭐</span>Ngôi sao<br><strong>BẬT</strong>';
+    btn.innerHTML = '<span class="star-hope-icon">' + IC('star') + '</span>Ngôi sao<br><strong>BẬT</strong>';
   } else {
     btn.classList.remove('active', 'used');
-    btn.innerHTML = '<span class="star-hope-icon">⭐</span>Ngôi sao<br>hy vọng';
+    btn.innerHTML = '<span class="star-hope-icon">' + IC('star') + '</span>Ngôi sao<br>hy vọng';
   }
 }
 
@@ -1557,7 +1553,7 @@ function requestGeminiRegrade(question, userAnswer) {
   const verdictEl = document.getElementById('gemini-modal-verdict');
   const explEl = document.getElementById('gemini-modal-explanation');
 
-  emojiEl.textContent = '⏳';
+  emojiEl.textContent = '…';
   titleEl.textContent = 'Đang gọi Gemini...';
   verdictEl.textContent = 'Vui lòng chờ giây lát';
   explEl.textContent = '';
@@ -1566,18 +1562,18 @@ function requestGeminiRegrade(question, userAnswer) {
   geminiRegradeOnly(question, userAnswer).then(result => {
     if (result && result.success) {
       const data = result.data;
-      emojiEl.textContent = data.correct ? '✅' : '❌';
+      emojiEl.textContent = data.correct ? '✓' : '✕';
       titleEl.textContent = data.correct ? 'CHÍNH XÁC' : 'CHƯA CHÍNH XÁC';
       verdictEl.innerHTML = `<strong>Kết luận:</strong> ${data.verdict}`;
       explEl.innerHTML = `<strong>Giải thích:</strong><br>${escapeHTML(data.explanation)}`;
     } else {
-      emojiEl.textContent = '⚠️';
+      emojiEl.textContent = '!';
       titleEl.textContent = 'Lỗi';
       verdictEl.textContent = 'Không thể liên hệ Gemini';
       explEl.textContent = (result && result.error) || 'Vui lòng thử lại sau.';
     }
   }).catch(err => {
-    emojiEl.textContent = '⚠️';
+    emojiEl.textContent = '!';
     titleEl.textContent = 'Lỗi hệ thống';
     verdictEl.textContent = 'Gọi Gemini thất bại';
     explEl.textContent = String(err);
@@ -1643,8 +1639,8 @@ function displayResults() {
     <div class="result-actions">
       <button class="btn btn-primary" onclick="restartGame()">Chơi lại</button>
       <button class="btn btn-outline" onclick="goHome()">Trang chủ</button>
-      <button class="btn btn-research" onclick="openResearch()">🔎 Nghiên cứu</button>
-      ${STATE.custom ? `<button class="btn btn-outline" onclick="NB.back('${STATE.custom.fromNb || ''}')">📓 Về sổ nghiên cứu</button>` : `<button class="btn btn-outline" onclick="NB.fromRound()">📓 Mở trong Sổ nghiên cứu</button>`}
+      <button class="btn btn-research" onclick="openResearch()">Nghiên cứu nhanh</button>
+      ${STATE.custom ? `<button class="btn btn-outline" onclick="NB.back('${STATE.custom.fromNb || ''}')">Về sổ nghiên cứu</button>` : `<button class="btn btn-outline" onclick="NB.fromRound()">Mở trong Sổ nghiên cứu</button>`}
     </div>
   `;
 
@@ -1658,13 +1654,13 @@ function displayResults() {
     let ptsHtml = '';
     if (STATE.mode === 've_dich') {
       const pc = a.points === 10 ? 'p10' : (a.points === 20 ? 'p20' : 'p30');
-      ptsHtml = `<span class="pts-chip ${pc}">${a.points}đ${a.usedStar ? ' ⭐' : ''}</span>`;
+      ptsHtml = `<span class="pts-chip ${pc}">${a.points}đ${a.usedStar ? ' ' : ''}</span>`;
     } else if (STATE.mode === 'tang_toc') {
-      ptsHtml = `<span class="pts-chip p20">${a.correct ? '+' + ttPoints(a.time) + 'đ' : '0đ'}${a.time != null ? ' · ⏱ ' + a.time.toFixed(2) + 's' : ''}</span>`;
+      ptsHtml = `<span class="pts-chip p20">${a.correct ? '+' + ttPoints(a.time) + 'đ' : '0đ'}${a.time != null ? ' · ' + a.time.toFixed(2) + 's' : ''}</span>`;
     }
     let explanationHtml = '';
     if (!isCorrect && !isSkipped && a.explanation) {
-      explanationHtml = `<div style="font-size:11px;color:#999;margin-top:3px;">📝 ${escapeHTML(a.explanation)}</div>`;
+      explanationHtml = `<div style="font-size:11px;color:#999;margin-top:3px;">${escapeHTML(a.explanation)}</div>`;
     }
 
     const tr = document.createElement('tr');
@@ -1712,10 +1708,10 @@ function escapeHTML(str) {
 }
 
 // ============================================================
-// 🔎 NGHIÊN CỨU (biến bộ câu hỏi vừa làm thành kho kiến thức)
+// NGHIÊN CỨU (biến bộ câu hỏi vừa làm thành kho kiến thức)
 // ============================================================
 // ============================================================
-// 🔎 NGHIÊN CỨU (Gemini viết ra một "cheat sheet" kiến thức dạng Markdown,
+// NGHIÊN CỨU (Gemini viết ra một "cheat sheet" kiến thức dạng Markdown,
 // trình duyệt render trực tiếp — tối giản, chữ to, tối ưu cho điện thoại)
 // ============================================================
 const RESEARCH = { raw: null, hash: null };
@@ -1752,7 +1748,7 @@ function renderResearchLoading() {
 function renderResearchError(msg) {
   document.getElementById('research-screen').innerHTML = `
     <div class="research-loading">
-      <div style="font-size:40px;">⚠️</div>
+      <div style="font-size:40px;"></div>
       <div class="research-loading-text">Không thể tạo bản nghiên cứu.<br><span style="font-size:13px;color:var(--text-muted)">${escapeHTML(msg || '')}</span></div>
       <div style="display:flex;gap:10px;">
         <button class="btn btn-primary" onclick="fetchResearch()">Thử lại</button>
@@ -1826,7 +1822,7 @@ Nếu nhiều câu hỏi cùng đề cập đến một nhân vật, sự kiện
 ==================================================
 7. PHÂN LOẠI ĐỘ QUAN TRỌNG
 ==================================================
-Có thể đánh dấu mỗi kiến thức: 🔥 CỐT LÕI (trực tiếp từ đáp án hoặc khả năng xuất hiện lại cao), ⭐ QUAN TRỌNG (liên quan trực tiếp và đáng nhớ), • BỔ SUNG (mở rộng nhưng không thiết yếu). Ưu tiên hiển thị 🔥 trước.
+Có thể đánh dấu mỗi kiến thức: CỐT LÕI (trực tiếp từ đáp án hoặc khả năng xuất hiện lại cao), QUAN TRỌNG (liên quan trực tiếp và đáng nhớ), • BỔ SUNG (mở rộng nhưng không thiết yếu). Ưu tiên hiển thị trước.
 
 ==================================================
 8. CÂU THƠ / CÂU VĂN
@@ -1846,52 +1842,52 @@ CHỈ sử dụng thông tin có trong câu hỏi, có trong đáp án, suy ra t
 ==================================================
 11. CẤU TRÚC OUTPUT — BẮT BUỘC TUÂN THỦ CHÍNH XÁC ĐỊNH DẠNG MARKDOWN SAU
 ==================================================
-# 🧠 KHO KIẾN THỨC
+# KHO KIẾN THỨC
 
-## 🔥 TỪ KHÓA CỐT LÕI
+## TỪ KHÓA CỐT LÕI
 - Keyword 1
 - Keyword 2
 - Keyword 3
 
-## 📚 CỤM KIẾN THỨC
+## CỤM KIẾN THỨC
 
-### 🔑 [Keyword / Chủ đề]
+### [Keyword / Chủ đề]
 - Thông tin 1
 - Thông tin 2
 - Thông tin 3
 
-🔗 Liên quan:
+Liên quan:
 A → B → C
 
 ---
 
-### 🔑 [Keyword / Chủ đề]
+### [Keyword / Chủ đề]
 - Thông tin 1
 - Thông tin 2
 
-🔗 Liên quan:
+Liên quan:
 A → B → C
 
-## ⏳ MỐC THỜI GIAN
+## MỐC THỜI GIAN
 - 1945 → ...
 - 1954 → ...
 
-## 👤 NHÂN VẬT
+## NHÂN VẬT
 - Tên → vai trò → sự kiện/tác phẩm
 
-## 📍 ĐỊA DANH
+## ĐỊA DANH
 - Địa danh → quốc gia/vùng → đặc điểm
 
-## 📖 VĂN HỌC
+## VĂN HỌC
 - Tác giả → tác phẩm → thể loại
 
-## 🔗 LIÊN KẾT KIẾN THỨC
+## LIÊN KẾT KIẾN THỨC
 A
 → B
 → C
 → D
 
-## 🎯 10 ĐIỀU CẦN NHỚ NHẤT
+## 10 ĐIỀU CẦN NHỚ NHẤT
 - Điều 1
 - Điều 2
 - ...
@@ -1907,7 +1903,7 @@ BỘ CÂU HỎI (${answers.length} câu, chế độ ${modeLabel(mode)}):
 
 ${qaList}
 
-Hãy trình bày kết quả CHÍNH XÁC theo cấu trúc Markdown ở mục 11 phía trên, bắt đầu bằng "# 🧠 KHO KIẾN THỨC". Chỉ trả về đúng nội dung markdown đó, không thêm lời dẫn, không thêm giải thích, không bọc trong dấu backtick.`;
+Hãy trình bày kết quả CHÍNH XÁC theo cấu trúc Markdown ở mục 11 phía trên, bắt đầu bằng "# KHO KIẾN THỨC". Chỉ trả về đúng nội dung markdown đó, không thêm lời dẫn, không thêm giải thích, không bọc trong dấu backtick.`;
 }
 
 async function fetchResearch() {
@@ -1932,6 +1928,7 @@ function slugifyHeading(s) {
 function stripHeadingMarks(raw) { return raw.replace(/^#+\s*/, '').trim(); }
 
 function parseResearchMarkdown(md) {
+  md = NOEMOJI(md);
   const lines = String(md).replace(/\r\n/g, '\n').split('\n');
   let html = '';
   let navItems = [];
@@ -2008,7 +2005,7 @@ function parseResearchMarkdown(md) {
       continue;
     }
 
-    // đoạn văn thường (vd nhãn "🔗 Liên quan:")
+    // đoạn văn thường (vd nhãn "Liên quan:")
     closeList();
     html += `<p class="rs-para" data-search="${escapeHTML(t.toLowerCase())}">${escapeHTML(t)}</p>`;
   }
@@ -2022,8 +2019,8 @@ function renderResearch() {
   screen.innerHTML = `
     <div class="research-topbar">
       <button class="btn btn-outline btn-sm" onclick="showScreen('result-screen')">← Kết quả</button>
-      <div class="research-title">🔎 Nghiên cứu</div>
-      <button class="icon-btn research-search-toggle" onclick="toggleResearchSearch()" title="Tìm kiếm">🔍</button>
+      <div class="research-title">Nghiên cứu</div>
+      <button class="icon-btn research-search-toggle" onclick="toggleResearchSearch()" title="Tìm kiếm"></button>
     </div>
     <div class="research-search-bar hidden" id="research-search-bar">
       <input type="text" id="research-search" class="research-search" placeholder="Tìm từ khóa, nhân vật, mốc thời gian..." oninput="filterResearch()">
@@ -2031,7 +2028,7 @@ function renderResearch() {
     ${navItems.length ? `<div class="research-quicknav">${navItems.map(n => `<a href="#${n.id}" class="research-nav-pill">${escapeHTML(n.label)}</a>`).join('')}</div>` : ''}
     <div class="research-main" id="research-main">
       ${html || '<p class="rs-para">Không có dữ liệu để hiển thị.</p>'}
-      <div class="research-footer-note">⚠️ Nội dung do AI tạo ra dựa trên bộ câu hỏi vừa làm — nên đối chiếu lại với nguồn chính thức trước khi ghi nhớ tuyệt đối.</div>
+      <div class="research-footer-note">Nội dung do AI tạo ra dựa trên bộ câu hỏi vừa làm — nên đối chiếu lại với nguồn chính thức trước khi ghi nhớ tuyệt đối.</div>
     </div>`;
 }
 
@@ -2067,7 +2064,7 @@ function fallbackCopyText(text, cb) {
   if (cb) cb();
 }
 
-// -------------------- 🔬 Nghiên cứu sâu một từ khóa --------------------
+// -------------------- Nghiên cứu sâu một từ khóa --------------------
 function markdownLiteToHtml(text) {
   const lines = String(text).split('\n');
   let html = '', inList = false;
@@ -2091,7 +2088,7 @@ function markdownLiteToHtml(text) {
 
 function researchDeepDive(keyword) {
   const modal = document.getElementById('research-deep-modal');
-  document.getElementById('rdm-title').textContent = '🔬 ' + keyword;
+  document.getElementById('rdm-title').textContent = '' + keyword;
   const body = document.getElementById('rdm-body');
   modal.classList.add('show');
 
@@ -2104,7 +2101,7 @@ function researchDeepDive(keyword) {
   const context = STATE.answers.map(a => (a.question || '') + ' -> ' + (a.correctAnswer || '')).join('; ');
   const prompt = `Bạn là chuyên gia kiến thức Olympia. Hãy mở rộng kiến thức về từ khóa sau, liên hệ với bối cảnh bộ câu hỏi đã cho.
 Trình bày dạng bullet cô đọng, chia theo các khía cạnh liên quan (vd: Lịch sử, Địa lý, Nhân vật, Thời gian, Bối cảnh...). Mỗi khía cạnh 2-5 bullet.
-KHÔNG bịa thông tin, nếu không chắc chắn thêm "⚠️ Chưa xác minh". Trả lời bằng heading nhỏ "### " cho mỗi khía cạnh và bullet "- " bên dưới, không thêm lời dẫn hay kết luận.
+KHÔNG bịa thông tin, nếu không chắc chắn thêm "Chưa xác minh". Trả lời bằng heading nhỏ "### " cho mỗi khía cạnh và bullet "- " bên dưới, không thêm lời dẫn hay kết luận.
 
 Từ khóa: ${keyword}
 
