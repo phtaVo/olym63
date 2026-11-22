@@ -96,7 +96,7 @@ const PORTAL = (() => {
     if ($('topnav')) return;
     const n = document.createElement('header'); n.id = 'topnav'; n.className = 'hidden';
     n.innerHTML = `
-      <div class="nav-brand" onclick="PORTAL.go('portal-screen')"><span class="mark">O</span><span>Olym63</span></div>
+      <div class="nav-brand" onclick="PORTAL.go('portal-screen')"><img class="brand-logo" src="assets/logo.png?v=2" alt="Olym63" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'mark',textContent:'O'}))"><span>Olym63</span></div>
       <nav class="nav-links" id="nav-links">${NAV.map(x => `<button class="nav-link" data-id="${x.id}" onclick="PORTAL.go('${x.id}')">${x.label}</button>`).join('')}</nav>
       <div class="nav-right" id="nav-right"></div>
       <button class="nav-ico" id="nav-menu-btn" onclick="PORTAL.toggleMenu()" title="Menu">${IC('menu')}</button>`;
@@ -108,7 +108,7 @@ const PORTAL = (() => {
     const el = $('nav-right'); if (!el) return; const u = userObj(); const dark = document.body.getAttribute('data-mode') === 'dark';
     el.innerHTML = `
       <div style="position:relative"><button class="nav-ico" id="nav-set" onclick="PORTAL.togglePop('look')" title="Giao diện">${IC(dark ? 'moon' : 'sun')}</button><div id="pop-look"></div></div>
-      ${u && u.role === 'admin' ? `<button class="nav-ico" onclick="AUTH.openAdmin()" title="Quản trị">${IC('shield')}</button>` : ''}
+      ${u && u.role === 'admin' ? `<button class="nav-ico" onclick="window.open('admin-content.html','_blank')" title="Duyệt cửa hàng và đăng tin tức">${IC('store')}</button><button class="nav-ico" onclick="AUTH.openAdmin()" title="Quản trị">${IC('shield')}</button>` : ''}
       ${u ? `<div style="position:relative"><button class="nav-user" onclick="PORTAL.togglePop('user')"><span id="sidenav-avatar-slot"></span><span class="nm">${esc(u.full_name || u.username)}</span></button><div id="pop-user"></div></div>` : ''}`;
     try { if (u) { const sl = $('sidenav-avatar-slot'); sl.innerHTML = AUTH.avatarHtml ? AUTH.avatarHtml(u.avatar, u.username, 32) : ''; } } catch (e) {}
   }
@@ -184,7 +184,7 @@ const PORTAL = (() => {
     const mods = [
       { ic: 'target', n: 'Luyện tập', d: 'Các phần thi mô phỏng, chọn bộ câu hỏi theo môn, chế độ ưu tiên môn còn yếu.', id: 'home-screen', st: 'Đang dùng' },
       { ic: 'notebook', n: 'Nghiên cứu', d: 'Sổ nghiên cứu có AI: tải tài liệu, hình ảnh, hỏi đáp, sơ đồ, flashcard, tạo đề.', id: 'nb-screen', st: 'Đang dùng' },
-      { ic: 'store', n: 'Cửa hàng bộ câu hỏi', d: 'Nơi chia sẻ tài liệu và bộ câu hỏi (PDF, Word, Excel…) có nhãn bản quyền.', id: 'store-screen', st: 'Sắp ra mắt' },
+      { ic: 'store', n: 'Cửa hàng bộ câu hỏi', d: 'Nơi chia sẻ miễn phí tài liệu và bộ câu hỏi (PDF, Word, Excel…) có nhãn bản quyền, được quản trị viên duyệt.', id: 'store-screen', st: 'Đang dùng' },
       { ic: 'chart', n: 'Báo cáo', d: 'Theo dõi tiến bộ, môn mạnh yếu và lịch sử luyện tập của bạn.', id: 'report-screen', st: 'Sắp ra mắt' },
       { ic: 'users', n: 'Cộng đồng', d: 'Trao đổi, hỏi đáp và thi đấu cùng các bạn.', id: 'community-screen', st: 'Sắp ra mắt' },
       { ic: 'help', n: 'Hỗ trợ', d: 'Hướng dẫn sử dụng và câu hỏi thường gặp.', id: 'support-screen', st: 'Đang dùng' }
@@ -220,6 +220,11 @@ const PORTAL = (() => {
             </div>`).join('')}</div>
         </section>
 
+        <section class="sec" id="home-news">
+          <div class="sec-head rv"><h2>Video mới nhất</h2><p>Các video do quản trị viên chọn từ YouTube của chương trình. Bấm vào hình để xem ngay tại đây.</p></div>
+          <div id="news-body"><div class="nb-note">Đang tải…</div></div>
+        </section>
+
         <section class="sec">
           <div class="sec-head rv"><h2>Một nền tảng, nhiều công cụ</h2><p>Từ luyện tập hằng ngày đến nghiên cứu chuyên sâu. Mục nào chưa mở sẽ được đánh dấu "Sắp ra mắt".</p></div>
           <div class="grid3">${mods.map((m, i) => `
@@ -241,6 +246,7 @@ const PORTAL = (() => {
         </footer>
       </div>`;
     observe($('portal-screen')); bindScroll($('portal-screen'));
+    loadNews();
   }
 
   // ---------- LUYỆN TẬP (hub) ----------
@@ -260,20 +266,97 @@ const PORTAL = (() => {
       ddvq: [
         { ic: 'flag', num: 'ĐĐVQ · Phần 01', name: 'Xuất Phát', meta: `${G.XUAT_PHAT_TIME} giây · ${G.XUAT_PHAT_COUNT} câu · +10 điểm mỗi câu`, fn: "startGame('xuat_phat')" },
         { ic: 'crown', num: 'ĐĐVQ · Phần 02', name: 'Vinh Quang', meta: 'Đang được phát triển', lock: 1 }],
-      trieuphu: [{ ic: 'tv', num: 'Ai là triệu phú', name: 'Sắp ra mắt', meta: 'Chế độ luyện 15 câu hỏi trắc nghiệm tăng dần độ khó đang được chuẩn bị.', lock: 1 }],
-      vuatv: [{ ic: 'book', num: 'Vua Tiếng Việt', name: 'Sắp ra mắt', meta: 'Chế độ luyện chính tả, từ ngữ và thành ngữ đang được chuẩn bị.', lock: 1 }]
     };
     el.innerHTML = `<div class="page">
       <div class="page-head rv"><div style="flex:1"><h1>Luyện tập</h1><p>Chọn cuộc thi và phần thi để bắt đầu. Sau mỗi ván, hệ thống ghi lại môn còn yếu để gợi ý lần luyện kế tiếp.</p></div>
         <button class="pbtn" onclick="AUTH.openLeaderboard()">${IC('trophy')} Bảng xếp hạng</button>
         <button class="pbtn p" onclick="startWeakPractice()">${IC('target')} Luyện môn còn yếu</button></div>
-      <div class="practice-top rv"><div class="seg">${[['olympia', 'Đường lên đỉnh Olympia'], ['ddvq', 'Đường đến Vinh quang'], ['trieuphu', 'Ai là triệu phú'], ['vuatv', 'Vua Tiếng Việt']].map(t => `<button class="${tab === t[0] ? 'on' : ''}" onclick="PORTAL.setTab('${t[0]}')">${t[1]}</button>`).join('')}</div></div>
+      <div class="practice-top rv"><div class="seg">${[['olympia', 'Đường lên đỉnh Olympia'], ['ddvq', 'Đường đến Vinh quang']].map(t => `<button class="${tab === t[0] ? 'on' : ''}" onclick="PORTAL.setTab('${t[0]}')">${t[1]}</button>`).join('')}</div></div>
       <div class="grid4" style="${(sets[tab].length < 3) ? 'grid-template-columns:repeat(auto-fill,minmax(260px,1fr))' : ''}">${sets[tab].map(card).join('')}</div>
       <div class="glass rv" style="margin-top:22px;padding:18px 22px;display:flex;align-items:center;gap:14px"><div style="flex:1"><b>Màn giới thiệu trước phần thi</b><div class="nb-note">Bật để xem hiệu ứng mở đầu, tắt để vào thẳng câu hỏi.</div></div><button class="toggle ${on ? 'on' : ''}" id="intro-toggle-switch" onclick="toggleIntroSetting();this.classList.toggle('on')" aria-label="Bật tắt màn giới thiệu"></button></div>
     </div>`;
     observe(el); bindScroll(el);
   }
   function setTab(t) { tab = t; renderPractice(); }
+
+
+  // ---------- TIN TỨC: video YouTube do admin đăng ----------
+  const PROG = { all: 'Tất cả', olympia: 'Đường lên đỉnh Olympia', ddvq: 'Đường đến Vinh quang', trieuphu: 'Ai là triệu phú', vuatv: 'Vua Tiếng Việt', khac: 'Khác' };
+  const toast = m => { try { showToast(m); } catch (e) { alert(m); } };
+  const apiBase = () => ((typeof CONFIG !== 'undefined' && CONFIG.ACCOUNTS_API_URL) || '').replace(/\/+$/, '');
+  let newsCache = null, newsFilter = 'all';
+  async function loadNews() {
+    const host = $('news-body'); if (!host) return;
+    try {
+      if (!newsCache) { const r = await fetch(apiBase() + '/news'); const d = await r.json(); newsCache = d.videos || []; }
+      drawNews();
+    } catch (e) { host.innerHTML = '<div class="glass empty" style="padding:26px"><p>Chưa tải được video lúc này. Hãy thử lại sau.</p></div>'; }
+  }
+  function drawNews() {
+    const host = $('news-body'); if (!host) return; const all = newsCache || [];
+    if (!all.length) { host.innerHTML = '<div class="glass empty rv in" style="padding:30px"><div class="ico">' + IC('play') + '</div><h3>Chưa có video</h3><p>Khi quản trị viên đăng video mới của các chương trình, chúng sẽ xuất hiện ở đây.</p></div>'; return; }
+    const have = ['all', ...Object.keys(PROG).filter(k => k !== 'all' && all.some(v => v.program === k))];
+    const list = all.filter(v => newsFilter === 'all' || v.program === newsFilter).slice(0, 12);
+    host.innerHTML = `<div class="chips">${have.map(k => `<button class="pbtn sm ${newsFilter === k ? 'p' : ''}" onclick="PORTAL.newsFilter('${k}')">${PROG[k]}</button>`).join('')}</div>
+      <div class="vids">${list.map(v => `<div class="vid glass"><button class="pv" style="background-image:url(https://i.ytimg.com/vi/${v.yt_id}/hqdefault.jpg)" onclick="PORTAL.playVid(this,'${v.yt_id}')" aria-label="Phát video"><i>${IC('play')}</i></button><div class="in"><h4>${esc(v.title)}</h4><small>${PROG[v.program] || ''} · ${new Date(v.created).toLocaleDateString('vi-VN')} · <a href="https://www.youtube.com/watch?v=${v.yt_id}" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Xem trên YouTube</a></small></div></div>`).join('')}</div>`;
+  }
+  function playVid(btn, id) { btn.outerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`; }
+
+  // ---------- CỬA HÀNG: chia sẻ tài liệu miễn phí, có nhãn bản quyền ----------
+  const KIND = { pdf: 'PDF', word: 'Word', excel: 'Excel', slide: 'Trình chiếu', other: 'Khác' };
+  const RIGHTS = { own: 'Tác giả tự soạn', school: 'Tài liệu của nhà trường (THPT Chuyên Tiền Giang)', cc: 'Giấy phép Creative Commons', other: 'Nguồn khác, đã ghi rõ' };
+  let shop = { items: null, q: '', kind: 'all', mine: null };
+  async function storePage() {
+    const id = 'store-screen'; showScreen(id);
+    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>Cửa hàng bộ câu hỏi</h1><p>Nơi học sinh chia sẻ miễn phí tài liệu và bộ câu hỏi (PDF, Word, Excel…). Mỗi tài liệu có nhãn bản quyền và được quản trị viên duyệt trước khi hiển thị.</p></div>
+      <button class="pbtn" onclick="PORTAL.shopMine()">Tài liệu của tôi</button><button class="pbtn p" onclick="PORTAL.shopAdd()">${IC('upload')} Đăng tài liệu</button></div>
+      <div class="practice-top rv"><div class="search">${IC('search')}<input id="shop-q" placeholder="Tìm tài liệu, môn học, tác giả…" value="${esc(shop.q)}" oninput="PORTAL.shopFind(this.value)"></div>
+        <div class="seg">${[['all', 'Tất cả'], ['pdf', 'PDF'], ['word', 'Word'], ['excel', 'Excel'], ['slide', 'Trình chiếu'], ['other', 'Khác']].map(k => `<button class="${shop.kind === k[0] ? 'on' : ''}" onclick="PORTAL.shopKind('${k[0]}')">${k[1]}</button>`).join('')}</div></div>
+      <div id="shop-body"><div class="nb-note">Đang tải…</div></div>
+      <div class="glass rv" style="margin-top:26px;padding:18px 22px;font-size:14px;line-height:1.6;color:var(--text-muted)"><b style="color:var(--text)">Lưu ý bản quyền.</b> Chỉ đăng tài liệu do chính bạn soạn, tài liệu được phép chia sẻ (của nhà trường, giấy phép mở) hoặc nguồn đã ghi rõ. Tài liệu vi phạm bản quyền sẽ bị gỡ. Hiện tại cửa hàng chia sẻ miễn phí bằng liên kết (Google Drive, OneDrive…); chức năng mua bán sẽ được bổ sung sau.</div></div>`;
+    observe($(id)); bindScroll($(id)); await shopLoad();
+  }
+  async function shopLoad() {
+    try { const r = await AUTH.apiFetch('/store'); shop.items = r.items || []; } catch (e) { shop.items = []; const b = $('shop-body'); if (b) b.innerHTML = `<div class="glass empty" style="padding:26px"><p>${esc(e.message)}</p></div>`; return; }
+    shopDraw();
+  }
+  function shopDraw() {
+    const b = $('shop-body'); if (!b || !shop.items) return; const q = noDiac(shop.q);
+    const L = shop.items.filter(x => (shop.kind === 'all' || x.kind === shop.kind) && (!q || noDiac([x.title, x.subject, x.author, x.description].join(' ')).includes(q)));
+    b.innerHTML = L.length ? `<div class="shop">${L.map(itemCard).join('')}</div>` : `<div class="glass empty" style="padding:34px"><div class="ico">${IC('store')}</div><h3>${shop.items.length ? 'Không có kết quả phù hợp' : 'Chưa có tài liệu nào'}</h3><p>${shop.items.length ? 'Thử từ khóa hoặc loại tệp khác.' : 'Hãy là người đầu tiên đăng tài liệu. Tài liệu sẽ hiện sau khi quản trị viên duyệt.'}</p></div>`;
+  }
+  const noDiac = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+  const itemCard = x => `<div class="item glass"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">${KIND[x.kind] || 'Khác'}</span>${x.subject ? `<span class="chip gray">${esc(x.subject)}</span>` : ''}</div>
+    <h3>${esc(x.title)}</h3>${x.description ? `<p>${esc(x.description)}</p>` : ''}
+    <p style="font-size:12.5px"><b>Bản quyền:</b> ${RIGHTS[x.rights] || ''}<br>Đăng bởi ${esc(x.author || 'ẩn danh')} · ${new Date(x.created).toLocaleDateString('vi-VN')}</p>
+    <div class="row"><a class="pbtn sm p" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Mở tài liệu ${IC('external')}</a></div></div>`;
+  function ovl(html) { const d = document.createElement('div'); d.className = 'nb-ov'; d.id = 'shop-ov'; d.innerHTML = `<div class="nb-box">${html}</div>`; d.addEventListener('mousedown', e => { if (e.target === d) d.remove(); }); document.body.appendChild(d); return d; }
+  function shopAdd() {
+    ovl(`<h2>Đăng tài liệu</h2><div class="form-grid">
+      <div class="full"><label class="nb-note">Tiêu đề *</label><input id="sh-t" maxlength="160" placeholder="Ví dụ: Tổng hợp công thức Vật lí 11 học kì 1"></div>
+      <div class="full"><label class="nb-note">Đường dẫn tải hoặc xem tài liệu * (Google Drive, OneDrive… để chế độ "ai có liên kết đều xem được")</label><input id="sh-u" placeholder="https://drive.google.com/…"></div>
+      <div><label class="nb-note">Loại tệp</label><select id="sh-k">${Object.entries(KIND).map(k => `<option value="${k[0]}">${k[1]}</option>`).join('')}</select></div>
+      <div><label class="nb-note">Môn học</label><input id="sh-s" maxlength="60" placeholder="Vật lí, Văn…"></div>
+      <div class="full"><label class="nb-note">Nhãn bản quyền *</label><select id="sh-r">${Object.entries(RIGHTS).map(k => `<option value="${k[0]}">${k[1]}</option>`).join('')}</select></div>
+      <div class="full"><label class="nb-note">Mô tả ngắn</label><textarea id="sh-d" maxlength="600" placeholder="Nội dung, phạm vi, cách dùng…"></textarea></div></div>
+      <label class="nb-note" style="display:flex;gap:8px;align-items:flex-start;margin:6px 0 12px"><input type="checkbox" id="sh-a" style="width:auto;margin-top:3px;accent-color:var(--accent)"> Tôi xác nhận có quyền chia sẻ tài liệu này và nhãn bản quyền ở trên là đúng.</label>
+      <div id="sh-e" class="nb-note" style="color:#d93025"></div>
+      <div style="text-align:right"><button class="pbtn" onclick="document.getElementById('shop-ov').remove()">Hủy</button> <button class="pbtn p" onclick="PORTAL.shopSend()">Gửi để duyệt</button></div>`);
+  }
+  async function shopSend() {
+    const v = i => ($(i) || {}).value || '';
+    try { await AUTH.apiFetch('/store', { method: 'POST', body: JSON.stringify({ title: v('sh-t'), url: v('sh-u'), kind: v('sh-k'), subject: v('sh-s'), rights: v('sh-r'), description: v('sh-d'), agree: $('sh-a').checked }) }); $('shop-ov').remove(); toast('Đã gửi. Tài liệu sẽ hiện sau khi quản trị viên duyệt.'); }
+    catch (e) { $('sh-e').textContent = e.message; }
+  }
+  async function shopMine() {
+    const d = ovl('<h2>Tài liệu của tôi</h2><div class="nb-note">Đang tải…</div>');
+    try {
+      const r = await AUTH.apiFetch('/store/mine'); const ST = { pending: ['gray', 'Chờ duyệt'], approved: ['green', 'Đã duyệt'], rejected: ['gray', 'Bị từ chối'] };
+      d.firstChild.innerHTML = `<h2>Tài liệu của tôi</h2>${(r.items || []).map(x => `<div style="padding:12px 0;border-bottom:1px solid var(--line)"><b>${esc(x.title)}</b> <span class="chip ${ST[x.status][0]}">${ST[x.status][1]}</span><br><small class="nb-note">${KIND[x.kind] || ''} · ${new Date(x.created).toLocaleDateString('vi-VN')}${x.note ? ' · Ghi chú của quản trị viên: ' + esc(x.note) : ''}</small></div>`).join('') || '<div class="nb-note">Bạn chưa đăng tài liệu nào.</div>'}<div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="document.getElementById('shop-ov').remove()">Đóng</button></div>`;
+    } catch (e) { d.firstChild.innerHTML = `<h2>Tài liệu của tôi</h2><div class="nb-note">${esc(e.message)}</div>`; }
+  }
+  const shopFind = q => { shop.q = q; shopDraw(); };
+  const shopKind = k => { shop.kind = k; storePage(); };
 
   // ---------- trang module chưa có chức năng ----------
   const PAGES = {
@@ -287,6 +370,7 @@ const PORTAL = (() => {
   function page(k) {
     const id = k + '-screen'; showScreen(id);
     if (k === 'support') return support();
+    if (k === 'store') return storePage();
     const p = PAGES[k];
     $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><span class="chip gray">Sắp ra mắt</span></div>
       ${k === 'store' ? `<div class="practice-top rv"><div class="search">${IC('search')}<input placeholder="Tìm tài liệu, bộ câu hỏi…" disabled></div><div class="seg">${['Tất cả', 'PDF', 'Word', 'Excel', 'Bộ câu hỏi'].map((x, i) => `<button class="${i ? '' : 'on'}" disabled>${x}</button>`).join('')}</div></div>` : ''}
@@ -311,5 +395,5 @@ const PORTAL = (() => {
 
   function init() { applyLook(); ensureScreens(); buildNav(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
-  return { go, home, practice, renderPractice, setTab, page, onScreen, togglePop, closePop, setMode, setAcc, toggleMenu, observe, bindScroll, renderNavRight, ensureScreens };
+  return { newsFilter: k => { newsFilter = k; drawNews(); }, playVid, shopAdd, shopSend, shopMine, shopFind, shopKind, go, home, practice, renderPractice, setTab, page, onScreen, togglePop, closePop, setMode, setAcc, toggleMenu, observe, bindScroll, renderNavRight, ensureScreens };
 })();
