@@ -57,7 +57,7 @@ const AUTH = (function () {
     }
     if (!backendReady()) {
       console.warn('[AUTH] CONFIG.ACCOUNTS_API_URL chưa được cấu hình — bỏ qua đăng nhập, vào thẳng trang chủ.');
-      showScreen('home-screen'); renderHome(); return;
+      try { PORTAL.home(); } catch (e) {} return;
     }
     const token = getToken();
     if (!token) { showScreen('login-screen'); return; }
@@ -76,8 +76,7 @@ const AUTH = (function () {
     const adminBtn = document.getElementById('tab-admin-btn');
     if (adminBtn) adminBtn.classList.toggle('hidden', !currentUser || currentUser.role !== 'admin');
     renderSidenavUser();
-    showScreen('home-screen');
-    renderHome();
+    try { PORTAL.home(); } catch (e) { showScreen('portal-screen'); }
     try { RESLOG.init(); } catch (e) {}
   }
 
@@ -133,7 +132,7 @@ const AUTH = (function () {
     showScreen('login-screen');
   }
 
-  function gotoHome() { closeIslandModal(); showScreen('home-screen'); renderHome(); }
+  function gotoHome() { closeIslandModal(); try { PORTAL.go('portal-screen'); } catch (e) {} }
 
   function setActiveTab(id) {
     const tabbar = document.getElementById('main-tabbar');
@@ -148,79 +147,8 @@ const AUTH = (function () {
   // ============================================================
   // HOME (render động — có chip người dùng)
   // ============================================================
-  let homeTab = 'olympia';
-  function setHomeTab(tab) { homeTab = (tab === 'ddvq') ? 'ddvq' : 'olympia'; renderHome(); }
-
-  function renderHome() {
-    const el = document.getElementById('home-screen');
-    const olympiaCards = `
-        <div class="section-card" onclick="openSourcePicker('khoi_dong')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🚀</div>
-          <div class="section-num">Phần 01</div>
-          <div class="section-name">Khởi<br>Động</div>
-          <div class="section-desc">${CONFIG.GAME.KHOI_DONG_TIME} giây · ${CONFIG.GAME.KHOI_DONG_COUNT} câu · +10đ/câu</div>
-        </div>
-        <div class="section-card" onclick="startGame('vcnv')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🧩</div>
-          <div class="section-num">Phần 02</div>
-          <div class="section-name">Vượt<br>Chướng Ngại Vật</div>
-          <div class="section-desc">${CONFIG.GAME.VCNV_COUNT} câu · hình ảnh + từ khóa</div>
-        </div>
-        <div class="section-card" onclick="startGame('tang_toc')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">⚡</div>
-          <div class="section-num">Phần 03</div>
-          <div class="section-name">Tăng<br>Tốc</div>
-          <div class="section-desc">${CONFIG.GAME.TANG_TOC_COUNT} câu · hình ảnh/video · tối đa +40đ</div>
-        </div>
-        <div class="section-card" onclick="openSourcePicker('ve_dich')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🏆</div>
-          <div class="section-num">Phần 04</div>
-          <div class="section-name">Về<br>Đích</div>
-          <div class="section-desc">3 câu · chọn gói 20/30đ · Ngôi sao HV</div>
-        </div>`;
-    const ddvqCards = `
-        <div class="section-card" onclick="startGame('xuat_phat')">
-          <div class="section-badge live">Đang mở</div>
-          <div class="section-icon">🏁</div>
-          <div class="section-num">ĐĐVQ · Phần 01</div>
-          <div class="section-name">Xuất<br>Phát</div>
-          <div class="section-desc">${CONFIG.GAME.XUAT_PHAT_TIME} giây · ${CONFIG.GAME.XUAT_PHAT_COUNT} câu · +10đ/câu</div>
-        </div>
-        <div class="section-card locked" onclick="showComingSoon('Vinh Quang')">
-          <div class="section-badge">Sắp ra mắt</div>
-          <div class="section-icon">👑</div>
-          <div class="section-num">ĐĐVQ · Phần 02</div>
-          <div class="section-name">Vinh<br>Quang</div>
-          <div class="section-desc">Đang được phát triển</div>
-        </div>`;
-    el.innerHTML = `
-      <div class="home-content">
-      <div class="logo-area">
-        <img class="logo-emblem" src="assets/logo.png" alt="Olympia" onerror="this.style.display='none'">
-        <div class="logo-badge">Sân chơi tri thức</div>
-        <div class="logo-title">Đường Lên<br><span>Đỉnh Olympia</span></div>
-        <div class="logo-sub">Chọn phần thi để bắt đầu</div>
-      </div>
-      <div class="home-right">
-      <div class="home-tabs">
-        <button class="home-tab ${homeTab === 'olympia' ? 'active' : ''}" onclick="AUTH.setHomeTab('olympia')">Olympia</button>
-        <button class="home-tab ${homeTab === 'ddvq' ? 'active' : ''}" onclick="AUTH.setHomeTab('ddvq')">ĐĐVQ</button>
-      </div>
-      <div class="sections-grid">
-        ${homeTab === 'olympia' ? olympiaCards : ddvqCards}
-      </div>
-      <div class="intro-toggle-row">
-        <span class="intro-toggle-label">🎬 Hiệu ứng giới thiệu</span>
-        <button class="intro-toggle-switch" id="intro-toggle-switch" onclick="toggleIntroSetting()" title="Bật/tắt màn giới thiệu trước khi vào phần thi"></button>
-      </div>
-      </div>
-      </div>`;
-    if (typeof updateIntroToggleUI === 'function') updateIntroToggleUI();
-  }
+  function setHomeTab(tab) { try { PORTAL.setTab(tab); } catch (e) {} }
+  function renderHome() { PORTAL.renderPractice(); }
 
   // ============================================================
   // SCORES
@@ -245,12 +173,12 @@ const AUTH = (function () {
     const el = document.getElementById('leaderboard-screen');
     el.innerHTML = `
       <div class="lb-topbar">
-        <div class="lb-title">🏆 Bảng xếp hạng</div>
+        <div class="lb-title">Bảng xếp hạng</div>
         <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
       </div>
       <div class="lb-tabs">
-        <button class="lb-tab ${lbMode === 'khoi_dong' ? 'active' : ''}" onclick="AUTH.switchLeaderboardTab('khoi_dong')">🚀 Khởi Động</button>
-        <button class="lb-tab ${lbMode === 've_dich' ? 'active' : ''}" onclick="AUTH.switchLeaderboardTab('ve_dich')">🏆 Về Đích</button>
+        <button class="lb-tab ${lbMode === 'khoi_dong' ? 'active' : ''}" onclick="AUTH.switchLeaderboardTab('khoi_dong')">Khởi Động</button>
+        <button class="lb-tab ${lbMode === 've_dich' ? 'active' : ''}" onclick="AUTH.switchLeaderboardTab('ve_dich')">Về Đích</button>
       </div>
       <div class="lb-list" id="lb-list"><div class="lb-loading">Đang tải...</div></div>`;
   }
@@ -269,10 +197,10 @@ const AUTH = (function () {
       const rows = data.leaderboard || [];
       if (!listEl) return;
       if (!rows.length) {
-        listEl.innerHTML = `<div class="lb-empty">Chưa có ai chơi phần thi này cả — hãy là người đầu tiên! 🎯</div>`;
+        listEl.innerHTML = `<div class="lb-empty">Chưa có ai chơi phần thi này cả — hãy là người đầu tiên! </div>`;
         return;
       }
-      const medals = ['🥇', '🥈', '🥉'];
+      const medals = [];
       listEl.innerHTML = rows.map((r, i) => `
         <div class="lb-row ${i < 3 ? 'lb-top' + (i + 1) : ''} ${currentUser && r.id === currentUser.id ? 'lb-me' : ''}">
           <div class="lb-rank">${medals[i] || (i + 1)}</div>
@@ -304,14 +232,14 @@ const AUTH = (function () {
     const u = currentUser || {};
     el.innerHTML = `
       <div class="profile-topbar">
-        <div class="profile-title">👤 Hồ sơ của tôi</div>
+        <div class="profile-title">Hồ sơ của tôi</div>
         <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
       </div>
       <div class="profile-body">
         <div class="profile-avatar-wrap">
           <div class="profile-avatar-click" onclick="document.getElementById('avatar-file-input').click()">
             ${avatarHtml(u.avatar, u.username, 96)}
-            <div class="profile-avatar-edit">📷</div>
+            <div class="profile-avatar-edit">${IC('image')}</div>
           </div>
           <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="AUTH.onAvatarSelected(event)">
           <div class="profile-avatar-hint">Bấm vào ảnh để đổi ảnh đại diện</div>
@@ -335,11 +263,11 @@ const AUTH = (function () {
           <div class="profile-info-row"><span class="profile-info-label">Lớp</span><span class="profile-info-value">${esc(u.class) || '—'}</span></div>
           <div class="profile-info-row"><span class="profile-info-label">Email</span><span class="profile-info-value">${esc(u.email) || '—'}</span></div>
           <div class="profile-info-row"><span class="profile-info-label">Số điện thoại</span><span class="profile-info-value">${esc(u.phone) || '—'}</span></div>
-          <div class="profile-info-note">⚠️ Các thông tin này do quản trị viên cấp — liên hệ quản trị viên nếu cần sửa.</div>
+          <div class="profile-info-note">Các thông tin này do quản trị viên cấp — liên hệ quản trị viên nếu cần sửa.</div>
         </div>
 
         <div class="profile-card">
-          <div class="profile-card-title">🔒 Đổi mật khẩu</div>
+          <div class="profile-card-title">Đổi mật khẩu</div>
           <label class="profile-field-label">Mật khẩu hiện tại</label>
           <input type="password" id="pw-old" class="profile-input" autocomplete="current-password">
           <label class="profile-field-label">Mật khẩu mới</label>
@@ -365,10 +293,10 @@ const AUTH = (function () {
       const data = await apiFetch('/update-profile', { method: 'POST', body: JSON.stringify({ username: newUsername }) });
       currentUser = data.user;
       renderSidenavUser();
-      showToast('✅ Đã đổi tên người dùng!');
+      showToast('Đã đổi tên người dùng!');
       renderProfile();
     } catch (e) {
-      showToast('❌ ' + e.message);
+      showToast('' + e.message);
     }
   }
 
@@ -396,15 +324,15 @@ const AUTH = (function () {
     reader.readAsDataURL(file);
   }
   async function uploadAvatar(dataUrl) {
-    showToast('⏳ Đang tải ảnh lên...');
+    showToast('Đang tải ảnh lên...');
     try {
       const data = await apiFetch('/update-profile', { method: 'POST', body: JSON.stringify({ avatar: dataUrl }) });
       currentUser = data.user;
       renderSidenavUser();
-      showToast('✅ Đã đổi ảnh đại diện!');
+      showToast('Đã đổi ảnh đại diện!');
       renderProfile();
     } catch (e) {
-      showToast('❌ ' + e.message);
+      showToast('' + e.message);
     }
   }
 
@@ -420,7 +348,7 @@ const AUTH = (function () {
       setToken(data.token);
       document.getElementById('pw-old').value = '';
       document.getElementById('pw-new').value = '';
-      okEl.textContent = '✅ Đã đổi mật khẩu thành công!'; okEl.classList.remove('hidden');
+      okEl.textContent = 'Đã đổi mật khẩu thành công!'; okEl.classList.remove('hidden');
     } catch (e) {
       errEl.textContent = e.message; errEl.classList.remove('hidden');
     }
@@ -440,9 +368,9 @@ const AUTH = (function () {
     const el = document.getElementById('admin-screen');
     el.innerHTML = `
       <div class="admin-topbar">
-        <div class="admin-title">⚙️ Quản trị tài khoản</div>
+        <div class="admin-title">Quản trị tài khoản</div>
         <div class="admin-topbar-actions">
-          <button class="btn btn-primary btn-sm" onclick="AUTH.openUserModal()">➕ Thêm</button>
+          <button class="btn btn-primary btn-sm" onclick="AUTH.openUserModal()">Thêm</button>
           <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
         </div>
       </div>
@@ -463,7 +391,7 @@ const AUTH = (function () {
   function renderAdminUsers() {
     const body = document.getElementById('admin-body');
     if (!body) return;
-    if (!adminUsersCache.length) { body.innerHTML = `<div class="lb-empty">Chưa có tài khoản nào — bấm "➕ Thêm" để tạo.</div>`; return; }
+    if (!adminUsersCache.length) { body.innerHTML = `<div class="lb-empty">Chưa có tài khoản nào — bấm "Thêm" để tạo.</div>`; return; }
     body.innerHTML = adminUsersCache.map(u => `
       <div class="admin-user-card">
         ${avatarHtml(u.avatar, u.username, 48)}
@@ -473,8 +401,8 @@ const AUTH = (function () {
           <div class="admin-user-sub">${esc(u.email || '')}${u.email && u.phone ? ' · ' : ''}${esc(u.phone || '')}</div>
         </div>
         <div class="admin-user-actions">
-          <button class="icon-btn" onclick="AUTH.openUserModal(${u.id})" title="Sửa">✏️</button>
-          <button class="icon-btn admin-del-btn" onclick="AUTH.deleteUser(${u.id})" title="Xoá">🗑️</button>
+          <button class="icon-btn" onclick="AUTH.openUserModal(${u.id})" title="Sửa"></button>
+          <button class="icon-btn admin-del-btn" onclick="AUTH.deleteUser(${u.id})" title="Xoá"></button>
         </div>
       </div>`).join('');
   }
@@ -482,7 +410,7 @@ const AUTH = (function () {
   function openUserModal(userId) {
     editingUserId = userId || null;
     const u = userId ? adminUsersCache.find(x => x.id === userId) : null;
-    document.getElementById('admin-modal-title').textContent = u ? '✏️ Sửa tài khoản' : '➕ Thêm tài khoản';
+    document.getElementById('admin-modal-title').textContent = u ? 'Sửa tài khoản' : 'Thêm tài khoản';
     document.getElementById('admin-form-error').classList.add('hidden');
     document.getElementById('admin-form').innerHTML = `
       <label class="profile-field-label">Họ và tên *</label>
@@ -548,10 +476,10 @@ const AUTH = (function () {
         const body = { full_name, username, school, class: klass, email, phone, role };
         if (password) body.newPassword = password;
         await apiFetch('/admin/users/' + editingUserId, { method: 'PUT', body: JSON.stringify(body) });
-        showToast('✅ Đã cập nhật tài khoản.');
+        showToast('Đã cập nhật tài khoản.');
       } else {
         await apiFetch('/admin/users', { method: 'POST', body: JSON.stringify({ full_name, username, password, school, class: klass, email, phone, role }) });
-        showToast('✅ Đã tạo tài khoản mới.');
+        showToast('Đã tạo tài khoản mới.');
       }
       closeUserModal();
       loadAdminUsers();
@@ -565,10 +493,10 @@ const AUTH = (function () {
     if (!confirm(`Xoá tài khoản "${u ? u.full_name : id}"? Toàn bộ điểm số của tài khoản này cũng sẽ bị xoá.`)) return;
     try {
       await apiFetch('/admin/users/' + id, { method: 'DELETE' });
-      showToast('🗑️ Đã xoá tài khoản.');
+      showToast('Đã xoá tài khoản.');
       loadAdminUsers();
     } catch (e) {
-      showToast('❌ ' + e.message);
+      showToast('' + e.message);
     }
   }
 
@@ -580,5 +508,6 @@ const AUTH = (function () {
     openAdmin, openUserModal, closeUserModal, submitUserForm, deleteUser,
     closeIslandModal,
     getCurrentUser: () => currentUser,
+    renderHome, avatarHtml, apiFetch, backendReady, getToken,
   };
 })();
