@@ -2,7 +2,6 @@
    Olym63 — hệ giao diện mới (glass, tối giản, kiểu Google / YouTube / NotebookLM)
    Nạp SAU style.css. Chỉ cần đổi biến --accent để đổi màu toàn web.
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
   --accent: #1a73e8; --accent-dark: #1557b0; --accent-light: #4285f4;
