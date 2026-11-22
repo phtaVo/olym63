@@ -2,7 +2,7 @@
 // ADAPT — ghi nhận môn còn yếu + luyện tập thích ứng (Olym63 v2)
 //  • Mỗi học sinh có hồ sơ mức nắm từng môn (BKT) lưu NGAY TRÊN THIẾT BỊ (localStorage); học sinh đã đồng ý nghiên cứu
 //    còn được dựng lại hồ sơ từ máy chủ khi đổi thiết bị.
-//  • Nút gạt "🎯 Ưu tiên môn còn yếu" ở màn chọn bộ câu hỏi: tăng mạnh tỉ lệ câu thuộc môn yếu (Khởi Động, Về Đích).
+//  • Nút gạt "Ưu tiên môn còn yếu" ở màn chọn bộ câu hỏi: tăng mạnh tỉ lệ câu thuộc môn yếu (Khởi Động, Về Đích).
 //  • Học sinh đã đồng ý nghiên cứu: nhóm "adaptive" được bật tự động, nhóm "random" (đối chứng) bị khóa nút gạt trong thời gian
 //    nghiên cứu để không làm nhiễu thực nghiệm, trừ khi admin mở khóa.
 //  • Mọi lỗi đều quay về chọn ngẫu nhiên — không làm hỏng luồng chơi.
@@ -166,14 +166,14 @@ const ADAPT = (() => {
   function renderWeakCard() {
     const el = document.getElementById('profile-weak-card'); if (!el) return;
     const L = weakList();
-    if (!L.length) { el.innerHTML = '<div class="profile-card-title">🎯 Môn học cần luyện</div><div class="profile-info-note">Chơi vài ván Khởi Động hoặc Về Đích, hệ thống sẽ ghi lại môn nào bạn còn yếu.</div>'; return; }
+    if (!L.length) { el.innerHTML = '<div class="profile-card-title">Môn học cần luyện</div><div class="profile-info-note">Chơi vài ván Khởi Động hoặc Về Đích, hệ thống sẽ ghi lại môn nào bạn còn yếu.</div>'; return; }
     const weak = L.filter(x => x.level === 'weak');
-    el.innerHTML = `<div class="profile-card-title">🎯 Môn học cần luyện</div>
+    el.innerHTML = `<div class="profile-card-title">Môn học cần luyện</div>
       ${L.map(x => { const [t, c] = LV[x.level]; return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(x.subject)}</span><span style="color:${c};font-weight:600">${t}</span></div>
         <div style="height:6px;border-radius:3px;background:rgba(128,128,128,.25);overflow:hidden;margin-top:3px"><div style="height:100%;width:${Math.round(x.pL * 100)}%;background:${c}"></div></div>
         <div style="font-size:11px;opacity:.7;margin-top:2px">${x.n} lượt · đúng ${Math.round(x.acc * 100)}% · mức nắm ước lượng ${Math.round(x.pL * 100)}%</div></div>`; }).join('')}
       <div class="profile-info-note" style="margin:8px 0">Ước lượng dựa trên các ván bạn đã chơi (cần ≥${MIN_N} lượt mỗi môn). Dữ liệu lưu trên thiết bị này${(typeof RESLOG !== 'undefined' && RESLOG.getStatus && RESLOG.getStatus() && RESLOG.getStatus().consented) ? ' và trong nghiên cứu bạn đã đồng ý tham gia' : ''}.</div>
-      <button class="btn btn-primary" style="width:100%" onclick="startWeakPractice()" ${access().free ? '' : 'disabled'}>🎯 Luyện các môn còn yếu${weak.length ? ' (' + weak.length + ' môn)' : ''}</button>
+      <button class="btn btn-primary" style="width:100%" onclick="startWeakPractice()" ${access().free ? '' : 'disabled'}>Luyện các môn còn yếu${weak.length ? ' (' + weak.length + ' môn)' : ''}</button>
       ${access().free ? '' : `<div class="profile-info-note" style="margin-top:6px">${esc(access().msg)}</div>`}`;
   }
   // Dòng nút gạt ở màn chọn bộ câu hỏi (do app.js gọi)
@@ -187,7 +187,7 @@ const ADAPT = (() => {
     return `<div class="srcp-section"><div class="srcp-label"><span class="srcp-step">3</span>Chế độ luyện</div>
       <label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1px solid rgba(128,128,128,.35);cursor:${disabledByLock || disabledBySubject ? 'not-allowed' : 'pointer'};opacity:${disabledByLock || disabledBySubject ? .6 : 1}" onclick="${disabledByLock || disabledBySubject ? '' : 'srcPickWeak()'}">
         <span style="width:46px;height:26px;border-radius:13px;background:${on ? '#188038' : 'rgba(128,128,128,.5)'};position:relative;flex-shrink:0;transition:.15s"><i style="position:absolute;top:3px;left:${on ? 23 : 3}px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s"></i></span>
-        <span style="flex:1"><b>🎯 Ưu tiên môn còn yếu</b><br><span style="font-size:12px;opacity:.75">${hint}</span></span></label></div>`;
+        <span style="flex:1"><b>Ưu tiên môn còn yếu</b><br><span style="font-size:12px;opacity:.75">${hint}</span></span></label></div>`;
   }
 
   return { pick, order, update, rebuild, access, weakList, renderWeakCard, toggleHtml, bktUpdate, bktPredict, eloTheta, predict, fitScore, load, params: P };
