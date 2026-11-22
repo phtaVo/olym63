@@ -1,154 +1,398 @@
-/* Trang trí bằng hình ảnh. Gọn nhẹ: hình ở các góc, công trình tiêu biểu ở giữa. */
-const DECO = (() => {
+// ============================================================
+// PORTAL — khung giao diện mới của Olym63
+//  • Bộ biểu tượng SVG (thay emoji)  • Thanh điều hướng kính  • Trang chủ học thuật
+//  • Trang module: Luyện tập (hub) · Nghiên cứu (NB) · Cửa hàng · Báo cáo · Cộng đồng · Hỗ trợ · Hồ sơ
+//  • Hiệu ứng: gợn sóng khi nhấp, hiện dần khi cuộn, thanh nav đổi khi cuộn, nền chuyển động nhẹ
+// ============================================================
+const _IC = {
+  home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+  book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M9 7h6"/>',
+  notebook: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12.5 8h3M12.5 12h3"/>',
+  store: '<path d="M4 8h16l-1 12H5z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7"/><path d="M12 17h.01"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14a5 5 0 0 1 5 5"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4v1a3 3 0 0 0 4 3M16 6h4v1a3 3 0 0 1-4 3"/><path d="M12 13v4M8 21h8M10 17h4"/>',
+  bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  puzzle: '<path d="M4 8h4a2 2 0 1 1 4 0h4v4a2 2 0 1 1 0 4v4H4z"/>',
+  crown: '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>',
+  star: '<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.2 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  youtube: '<rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z"/>',
+  file: '<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/>',
+  text: '<path d="M5 6h14M5 11h14M5 16h9"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+  send: '<path d="M4 12l16-8-6 16-3-7z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  bookmark: '<path d="M6 3h12v18l-6-4-6 4z"/>',
+  trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  chevron: '<path d="M9 6l6 6-6 6"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+  mind: '<circle cx="12" cy="12" r="2.5"/><circle cx="4.5" cy="5.5" r="1.8"/><circle cx="19.5" cy="5.5" r="1.8"/><circle cx="4.5" cy="18.5" r="1.8"/><circle cx="19.5" cy="18.5" r="1.8"/><path d="M10 10.5L5.8 6.8M14 10.5l4.2-3.7M10 13.5l-4.2 3.7M14 13.5l4.2 3.7"/>',
+  tree: '<path d="M12 3v7M12 10H5v4M12 10h7v4M12 10v11"/><rect x="3" y="14" width="4" height="4" rx="1"/><rect x="17" y="14" width="4" height="4" rx="1"/>',
+  quiz: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 9l1.5 1.5L13 8M9 15h6"/>',
+  cards: '<rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 7V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  logout: '<path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  paperclip: '<path d="M20 11l-8.5 8.5a5 5 0 0 1-7-7L13 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L14 7"/>',
+  refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+  download: '<path d="M12 4v12M7 11l5 5 5-5M4 20h16"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  message: '<path d="M4 5h16v11H9l-5 4z"/>',
+  note: '<path d="M5 4h14v12l-5 5H5z"/><path d="M14 21v-5h5"/>',
+  tv: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
+  warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  play: '<path d="M7 5l12 7-12 7z"/>'
+};
+const NOEMOJI = t => String(t == null ? '' : t).replace(/[\u{1F000}-\u{1FAFF}\u26A0\u23F3\u23F0\u23F1\u2705\u274C\u2714\u2728\u26A1\u2B50\u2699\uFE0F\u200D]+ ?/gu, '');
+function IC(name, cls) { return `<svg class="ic ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${_IC[name] || ''}</svg>`; }
+
+const PORTAL = (() => {
   const $ = id => document.getElementById(id);
-  const V = '3';
-  const SRC = (k, s) => 'assets/deco/' + k + (s ? '-s' : '') + '.webp?v=' + V;
-  const FACT = {
-    khuevan: ['Khuê Văn Các', 'Gác trong Văn Miếu – Quốc Tử Giám, Hà Nội, xây năm 1805 và là một biểu tượng của Thủ đô.'],
-    benthanh: ['Chợ Bến Thành', 'Biểu tượng của TP. Hồ Chí Minh. Tòa nhà chợ hiện nay khánh thành năm 1914.'],
-    bitexco: ['Bitexco Financial Tower', 'Tòa tháp 68 tầng ở TP. Hồ Chí Minh, nổi bật với sân đáp trực thăng nhô ra như chiếc đĩa.'],
-    lac: ['Chim Lạc', 'Họa tiết chim Lạc thường thấy trên mặt trống đồng Đông Sơn, gắn với văn hóa Việt cổ.'],
-    docLap: ['Báo "Độc Lập"', 'Tư liệu báo chí thời kỳ đầu của nước Việt Nam độc lập.'],
-    cotco: ['Cột cờ Hà Nội', 'Xây năm 1812 dưới triều Gia Long, là một chứng tích của Thành cổ Hà Nội.'],
-    thienmu: ['Chùa Thiên Mụ', 'Ngôi chùa cổ bên sông Hương, Huế. Tháp Phước Duyên của chùa có 7 tầng.'],
-    buudien: ['Bưu điện Trung tâm Sài Gòn', 'Công trình kiến trúc kiểu Pháp ở TP. Hồ Chí Minh, xây vào cuối thế kỷ XIX.'],
-    stamp: ['Tem bưu chính cũ', 'Tem in hình một ngọn tháp ở Bắc Ninh, là tư liệu thú vị về lịch sử bưu chính.'],
-    napoleon: ['Napoléon vượt dãy Alps', 'Họa phẩm của Jacques-Louis David, vẽ khoảng năm 1801.'],
-    compass: ['La bàn', 'Dụng cụ chỉ hướng bằng kim nam châm, được phát minh từ Trung Quốc cổ đại.'],
-    ship: ['Thuyền buồm', 'Những con thuyền buồm lớn đã mở ra thời đại hàng hải khám phá từ thế kỷ XV.'],
-    ceiling: ['Tranh trần kiểu Baroque', 'Tranh vẽ trên trần một nhà thờ ở Rome, tạo ảo giác không gian ba chiều.'],
-    bigben: ['Big Ben', 'Big Ben thật ra là tên của chiếc chuông lớn. Tháp đồng hồ ở London có tên là Tháp Elizabeth.'],
-    eiffel: ['Tháp Eiffel', 'Hoàn thành năm 1889 tại Paris, dựng cho Triển lãm Thế giới.'],
-    pyramid: ['Kim tự tháp Giza', 'Công trình cổ ở Ai Cập, xây cách đây khoảng 4.500 năm, có tượng Nhân sư canh giữ.'],
-    greek: ['Chữ Hy Lạp cổ', 'Bảng chữ cái Hy Lạp góp phần hình thành nhiều hệ chữ viết về sau, trong đó có chữ Latin.'],
-    pisa: ['Tháp nghiêng Pisa', 'Ở Ý, khởi công năm 1173 và bắt đầu nghiêng ngay khi xây do nền đất yếu.'],
-    colosseum: ['Đấu trường Colosseum', 'Ở Rome, khánh thành năm 80 sau Công nguyên, từng chứa hàng chục nghìn khán giả.'],
-    caphe: ['Cà phê phin', 'Cà phê nhỏ giọt qua phin kim loại. Ly cà phê sữa đá là thức uống quen thuộc của người Việt.'],
-    bien: ['Biển tên phố Hà Nội', 'Biển xanh chữ trắng trên cột sơn đỏ trắng, quen thuộc ở các ngã tư phố cổ Hà Nội.'],
-    nonla: ['Nón lá', 'Chiếc nón đan từ lá, che nắng che mưa, là hình ảnh quen thuộc của người Việt.'],
-    quanxoi: ['Quán vỉa hè', 'Quán xôi nóng, ghế nhựa thấp bên đường là nét sinh hoạt đặc trưng của phố phường Hà Nội.'],
-    xichlo: ['Xe xích lô', 'Phương tiện ba bánh đạp chân, từng rất phổ biến ở các đô thị Việt Nam.'],
-    disan: ['Di sản Việt Nam', 'Tổ hợp hình ảnh Cột cờ Hà Nội, Tháp Rùa và một công trình cung đình cổ.'],
-    pagoda: ['Mái cong phương Đông', 'Những tầng mái cong, rường cột chạm khắc là nét đặc trưng của kiến trúc cổ phương Đông.'],
-    book: ['Trang sách cổ', 'Chi tiết một họa phẩm cổ châu Âu: bàn tay lật giở những trang sách chép tay.'],
-    bust: ['Tượng bán thân Hy Lạp', 'Điêu khắc Hy Lạp cổ đại đề cao vẻ đẹp cân đối và trí tuệ của con người.']
-  };
-  const TOTAL = 14; let found = new Set();
-  try { found = new Set(JSON.parse(localStorage.getItem('olym63_deco') || '[]')); } catch (e) {}
-  const nm = k => FACT[k] ? FACT[k][0] : k;
-  const img = k => `<img class="dd" data-k="${k}" src="${SRC(k, 1)}" alt="${nm(k)}" loading="lazy" decoding="async">`;
-  const item = (k, st, cls, eager) => `<button class="dc ${cls || ''}" data-k="${k}" style="${st}" aria-label="${nm(k)}"><span class="in"><img src="${SRC(k)}" alt="" decoding="async" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'}></span></button>`;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const NAV = [
+    { id: 'portal-screen', label: 'Trang chủ', go: () => home() },
+    { id: 'home-screen', label: 'Luyện tập', go: () => practice() },
+    { id: 'nb-screen', label: 'Nghiên cứu', go: () => NB.open() },
+    { id: 'store-screen', label: 'Cửa hàng', go: () => page('store') },
+    { id: 'report-screen', label: 'Báo cáo', go: () => page('report') },
+    { id: 'community-screen', label: 'Cộng đồng', go: () => page('community') },
+    { id: 'support-screen', label: 'Hỗ trợ', go: () => page('support') }
+  ];
+  const NAV_SCREENS = NAV.map(n => n.id);
+  const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  let io = null;
 
-  // ---------- Sân khấu hero: giữa là công trình, các góc là vật phẩm ----------
-  function stage() {
-    return `<div class="stage rv rv-s" id="stage" role="group" aria-label="Công trình và vật phẩm tri thức, bấm vào để tìm hiểu">
-      <div class="sun"></div>
-      <svg class="orb" viewBox="0 0 400 400" aria-hidden="true"><g class="o1" fill="none" stroke="currentColor"><circle cx="200" cy="200" r="186" stroke-width="1" stroke-dasharray="2 7"/><circle cx="200" cy="200" r="140" stroke-width="1.2"/></g><g class="o2" fill="currentColor"><circle cx="200" cy="14" r="5"/><circle cx="346" cy="200" r="4"/></g></svg>
-      ${item('disan', '--l:0%;--b:4%;--w:100%;--z:.2', 'back')}
-      ${item('khuevan', '--l:28%;--b:4%;--w:44%;--z:.6', 'front', 1)}
-      ${item('compass', '--l:0%;--t:0%;--w:19%;--z:1', 'compass', 1)}
-      ${item('ship', '--l:75%;--t:0%;--w:25%;--z:.9', 'ship')}
-      ${item('book', '--l:-3%;--b:0%;--w:27%;--z:.9', 'book')}
-      <img class="orn br" src="${SRC('ornament', 1)}" alt="" aria-hidden="true" loading="lazy">
-      <div class="hint">Bấm vào hình để tìm hiểu</div>
-    </div>`;
+  // ---------- giao diện: sáng/tối + màu nhấn ----------
+  function applyLook() {
+    const b = document.body; b.removeAttribute('data-theme');
+    b.setAttribute('data-mode', ls.get('olym63_mode') || 'light');
+    b.setAttribute('data-acc', ls.get('olym63_acc') || 'gold');
+    const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = (ls.get('olym63_mode') === 'dark') ? '#0e1014' : '#f4f6fb';
   }
-  const curtains = () => '';
-  // ---------- Dải di sản (cuộn dọc, trượt ngang) ----------
-  function skyline() {
-    const S = [['cotco', 280], ['thienmu', 220], ['benthanh', 230], ['bitexco', 360], ['buudien', 180], ['tag', 'Thế giới'], ['pisa', 320], ['colosseum', 240], ['pyramid', 210], ['bigben', 340], ['eiffel', 380], ['napoleon', 240]];
-    return `<section class="sec sky" id="sky">
-      <div class="sec-head rv"><h2>Hành trình tri thức</h2><p>Từ những công trình quen thuộc của Việt Nam đến các di sản thế giới. Cuộn trang để đi dọc dải di sản, bấm vào từng hình để tìm hiểu.</p></div>
-      <div class="sky-view"><div class="sky-track" id="sky-track"><span class="sky-tag">Việt Nam</span>
-        ${S.map((s, i) => s[0] === 'tag' ? `<span class="sky-tag w">${s[1]}</span>` : `<button class="sk" data-k="${s[0]}" style="--h:${s[1]}px" aria-label="${nm(s[0])}"><img src="${SRC(s[0])}" alt="" loading="lazy" decoding="async"></button>`).join('')}
-      </div><div class="sky-ground"></div></div></section>`;
-  }
-  const counter = () => `<span class="chip dc-count" id="dc-count">Đã khám phá ${found.size}/${TOTAL} hình · bấm để tìm hiểu</span>`;
+  function setMode(v) { ls.set('olym63_mode', v); applyLook(); renderNavRight(); }
+  function setAcc(v) { ls.set('olym63_acc', v); applyLook(); closePop(); }
 
-  // ---------- Bong bóng kiến thức + lấp lánh ----------
-  let bubble, bt;
-  const lite = () => document.body.classList.contains('lite');
-  function showFact(k, el, ev) {
-    const f = FACT[k]; if (!f) return;
-    if (!found.has(k)) { found.add(k); try { localStorage.setItem('olym63_deco', JSON.stringify([...found])); } catch (e) {} const c = $('dc-count'); if (c) { c.textContent = found.size >= TOTAL ? 'Bạn đã khám phá ' + found.size + ' hình. Thật tò mò!' : `Đã khám phá ${found.size}/${TOTAL} hình · bấm để tìm hiểu`; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); } }
-    if (!bubble) { bubble = document.createElement('div'); bubble.className = 'fact glass'; bubble.setAttribute('role', 'status'); document.body.appendChild(bubble); }
-    bubble.innerHTML = `<small>Bạn có biết?</small><b>${f[0]}</b><span>${f[1]}</span>`;
-    const r = el.getBoundingClientRect(), W = Math.min(290, innerWidth - 24); let x = r.left + r.width / 2 - W / 2; x = Math.max(12, Math.min(innerWidth - W - 12, x));
-    bubble.style.width = W + 'px'; bubble.style.left = x + 'px'; bubble.classList.add('on');
-    const h = bubble.offsetHeight; let y = r.top - 8 - h; if (y < 74) y = Math.min(innerHeight - h - 12, r.bottom + 10); bubble.style.top = y + 'px';
-    clearTimeout(bt); bt = setTimeout(() => bubble && bubble.classList.remove('on'), 5200);
-    if (!lite()) sparkle(ev ? ev.clientX : r.left + r.width / 2, ev ? ev.clientY : r.top + r.height / 2);
+  // ---------- thanh điều hướng ----------
+  function buildNav() {
+    if ($('topnav')) return;
+    const n = document.createElement('header'); n.id = 'topnav'; n.className = 'hidden';
+    n.innerHTML = `
+      <div class="nav-brand" onclick="PORTAL.go('portal-screen')"><img class="brand-logo" src="assets/logo.png?v=2" alt="Olym63" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'mark',textContent:'O'}))"><span>Olym63</span></div>
+      <nav class="nav-links" id="nav-links">${NAV.map(x => `<button class="nav-link" data-id="${x.id}" onclick="PORTAL.go('${x.id}')">${x.label}</button>`).join('')}</nav>
+      <div class="nav-right" id="nav-right"></div>
+      <button class="nav-ico" id="nav-menu-btn" onclick="PORTAL.toggleMenu()" title="Menu">${IC('menu')}</button>`;
+    document.body.insertBefore(n, document.body.firstChild);
+    document.addEventListener('click', e => { if (!e.target.closest('.pop,.nav-user,#nav-set')) closePop(); if (!e.target.closest('#nav-links,#nav-menu-btn')) $('nav-links').classList.remove('open'); });
   }
-  function sparkle(x, y) {
-    const cols = ['#d4a437', '#f2d27a', 'var(--accent)', '#ea4335', '#f08cb0'];
-    for (let i = 0; i < 10; i++) {
-      const s = document.createElement('i'); s.className = 'spk'; const a = Math.random() * 6.283, d = 36 + Math.random() * 60;
-      s.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d - 18}px;--c:${cols[i % cols.length]};--s:${5 + Math.random() * 5}px;--r:${Math.random() * 360}deg`;
-      document.body.appendChild(s); setTimeout(() => s.remove(), 850);
-    }
+  function userObj() { try { return AUTH.getCurrentUser(); } catch (e) { return null; } }
+  function renderNavRight() {
+    const el = $('nav-right'); if (!el) return; const u = userObj(); const dark = document.body.getAttribute('data-mode') === 'dark';
+    el.innerHTML = `
+      <div style="position:relative"><button class="nav-ico" id="nav-set" onclick="PORTAL.togglePop('look')" title="Giao diện">${IC(dark ? 'moon' : 'sun')}</button><div id="pop-look"></div></div>
+      ${u && u.role === 'admin' ? `<button class="nav-ico" onclick="window.open('admin-content.html','_blank')" title="Duyệt cửa hàng và đăng tin tức">${IC('store')}</button><button class="nav-ico" onclick="AUTH.openAdmin()" title="Quản trị">${IC('shield')}</button>` : ''}
+      ${u ? `<div style="position:relative"><button class="nav-user" onclick="PORTAL.togglePop('user')"><span id="sidenav-avatar-slot"></span><span class="nm">${esc(u.full_name || u.username)}</span></button><div id="pop-user"></div></div>` : ''}`;
+    try { if (u) { const sl = $('sidenav-avatar-slot'); sl.innerHTML = AUTH.avatarHtml ? AUTH.avatarHtml(u.avatar, u.username, 32) : ''; } } catch (e) {}
+  }
+  function togglePop(w) {
+    const open = $('pop-' + w) && $('pop-' + w).firstChild; closePop(); if (open) return;
+    const host = $('pop-' + w); const dark = document.body.getAttribute('data-mode') === 'dark', acc = document.body.getAttribute('data-acc') || 'gold';
+    if (w === 'look') host.innerHTML = `<div class="pop"><div class="lbl">Chế độ</div>
+        <button onclick="PORTAL.setMode('light')">${IC('sun')} Sáng ${!dark ? IC('check') : ''}</button><button onclick="PORTAL.setMode('dark')">${IC('moon')} Tối ${dark ? IC('check') : ''}</button>
+        <div class="lbl">Màu nhấn</div><div class="sw">${[['gold', '#b8862b'], ['pink', '#ec8fb3'], ['blue', '#1a73e8'], ['red', '#d93025'], ['ink', '#202124']].map(c => `<i class="${acc === c[0] ? 'on' : ''}" style="background:${c[1]}" onclick="PORTAL.setAcc('${c[0]}')"></i>`).join('')}</div></div>`;
+    else host.innerHTML = `<div class="pop"><button onclick="PORTAL.closePop();AUTH.openProfile()">${IC('user')} Hồ sơ của tôi</button><button onclick="PORTAL.closePop();AUTH.openLeaderboard()">${IC('trophy')} Bảng xếp hạng</button><div class="sep"></div><button onclick="PORTAL.closePop();AUTH.confirmLogout()">${IC('logout')} Đăng xuất</button></div>`;
+  }
+  function closePop() { ['look', 'user'].forEach(w => { const h = $('pop-' + w); if (h) h.innerHTML = ''; }); }
+  function toggleMenu() { $('nav-links').classList.toggle('open'); }
+  function setActive(id) { document.querySelectorAll('#topnav .nav-link').forEach(b => b.classList.toggle('on', b.dataset.id === id)); }
+
+  // gọi từ showScreen() trong app.js
+  function onScreen(id) {
+    buildNav();
+    const logged = !!userObj() || !(typeof AUTH !== 'undefined' && AUTH.backendReady && AUTH.backendReady());
+    $('topnav').classList.toggle('hidden', !(NAV_SCREENS.includes(id) && logged));
+    setActive(id); $('nav-links').classList.remove('open'); closePop(); renderNavRight();
+    const el = $(id); if (el && el.classList.contains('pg')) { el.scrollTop = 0; observe(el); bindScroll(el); }
+  }
+  function go(id) {
+    const n = NAV.find(x => x.id === id); if (!n) return;
+    try { if (typeof STATE !== 'undefined') { STATE.runId++; } } catch (e) {}
+    n.go();
   }
 
-  // ---------- Ảnh ở các góc trang ----------
-  // [ảnh, vị trí (tr/tl/bl/br/l/r), cỡ theo vw, % chiều cao (cho l/r), tốc độ cuộn]
-  const CORN = {
-    'portal-screen': [['ceiling', 'l', 13, 31, .05], ['bien', 'r', 8, 47, .08], ['nonla', 'l', 11, 64, .06], ['pagoda', 'br', 13, 0, .03]],
-    'home-screen': [['bust', 'tr', 12, 0, .04], ['colosseum', 'bl', 16, 0, .03], ['compass', 'br', 10, 0, .05]],
-    'store-screen': [['nonla', 'tr', 11, 0, .04], ['caphe', 'bl', 8, 0, .03], ['bien', 'br', 8, 0, .03]],
-    'report-screen': [['compass', 'tr', 10, 0, .05], ['pisa', 'bl', 8, 0, .03]],
-    'community-screen': [['quanxoi', 'tr', 14, 0, .04], ['xichlo', 'bl', 15, 0, .03], ['nonla', 'br', 9, 0, .04]],
-    'support-screen': [['bigben', 'tr', 7, 0, .03], ['bien', 'bl', 9, 0, .03], ['book', 'br', 12, 0, .04]]
-  };
-  const PAPER = { 'home-screen': 1, 'store-screen': 1, 'report-screen': 1, 'community-screen': 1, 'support-screen': 1, 'portal-screen': 2 };
-  function sprinkle(id) {
-    const root = $(id); if (!root) return; const pg = root.querySelector('.page'); if (!pg || pg.querySelector(':scope > .dec-layer')) return;
-    const L = CORN[id]; if (!L) return; const lay = document.createElement('div'); lay.className = 'dec-layer';
-    let h = '';
-    if (PAPER[id] === 1) h += `<img class="paper tr" src="assets/deco/paperTR.webp?v=${V}" alt="" loading="lazy" decoding="async">`;
-    if (PAPER[id]) h += `<img class="paper bl" src="assets/deco/paperBL.webp?v=${V}" alt="" loading="lazy" decoding="async">`;
-    h += L.map(([k, pos, w, top, sp]) => `<button class="dc cn ${pos}" data-k="${k}" tabindex="-1" style="--w:clamp(76px,${w}vw,${Math.round(w * 17)}px);--t:${top}%;--k:${sp}" aria-label="${nm(k)}"><span class="in"><img src="${SRC(k, 1)}" alt="" loading="lazy" decoding="async"></span></button>`).join('');
-    lay.innerHTML = h; pg.prepend(lay); watchVis(lay); layerScroll(root);
+  // ---------- hiệu ứng ----------
+  function observe(root) {
+    if (io) io.disconnect();
+    io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { root, threshold: .12, rootMargin: '0px 0px -6% 0px' });
+    root.querySelectorAll('.rv').forEach(x => { x.classList.remove('in'); io.observe(x); });
   }
-  function watch() {
-    Object.keys(CORN).forEach(id => { const el = $(id); if (!el || el._dw) return; el._dw = 1; let q = 0; new MutationObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; sprinkle(id); }); }).observe(el, { childList: true }); sprinkle(id); });
+  function bindScroll(el) {
+    if (el._sb) return; el._sb = true;
+    el.addEventListener('scroll', () => {
+      const y = el.scrollTop; const n = $('topnav'); if (n) n.classList.toggle('scrolled', y > 12);
+      el.querySelectorAll('[data-par]').forEach(b => { b.style.transform = `translate3d(0,${y * parseFloat(b.dataset.par)}px,0)`; });
+    }, { passive: true });
   }
-  let io;
-  function watchVis(el) { if (!('IntersectionObserver' in window)) return; if (!io) io = new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('off', !e.isIntersecting)), { rootMargin: '120px' }); io.observe(el); }
-  function layerScroll(root) { const l = root.querySelector('.dec-layer'); if (l) l.style.setProperty('--sc', (root.scrollTop || 0).toFixed(0)); }
+  document.addEventListener('pointerdown', e => {
+    const t = e.target.closest('.pbtn,.btn,.nav-link,.nav-ico,.nb-chip,.nb-tool,.nb-acts button,.seg button,.pc,.nb-tabs button');
+    if (!t || t.disabled) return;
+    const r = t.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2, s = document.createElement('span');
+    s.className = 'ripple'; s.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+    if (getComputedStyle(t).position === 'static') t.style.position = 'relative'; t.style.overflow = 'hidden';
+    t.appendChild(s); setTimeout(() => s.remove(), 520);
+  }, { passive: true });
 
-  // ---------- Sự kiện ----------
-  let bound = false, tick = false, pm = null, pmq = false;
-  function bind() {
-    if (bound) return; bound = true;
-    document.body.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || matchMedia('(prefers-reduced-motion:reduce)').matches);
-    document.addEventListener('click', e => {
-      const t = e.target.closest('[data-k]'); if (!t || !FACT[t.dataset.k]) { if (bubble && !e.target.closest('.fact')) bubble.classList.remove('on'); return; }
-      const inn = t.querySelector('.in') || t; inn.classList.remove('pop'); void inn.offsetWidth; inn.classList.add('pop');
-      showFact(t.dataset.k, t, e);
+  // ---------- tạo các màn hình trang ----------
+  function ensureScreens() {
+    ['portal-screen', 'store-screen', 'report-screen', 'community-screen', 'support-screen'].forEach(id => {
+      if (!$(id)) { const d = document.createElement('div'); d.id = id; d.className = 'screen pg hidden'; document.body.appendChild(d); }
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && bubble) bubble.classList.remove('on'); });
-    if (matchMedia('(hover:hover)').matches) {
-      document.addEventListener('pointermove', e => { pm = e; if (!pmq) { pmq = true; requestAnimationFrame(() => { pmq = false; pointer(); }); } }, { passive: true });
-    }
-    addEventListener('scroll', e => { const t = e.target; if (t && t.classList && t.classList.contains('pg')) layerScroll(t); onScroll(); }, { passive: true, capture: true });
-    let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { frame(); document.querySelectorAll('.screen.pg').forEach(layerScroll); }, 120); });
+    ['home-screen', 'nb-screen'].forEach(id => { const e = $(id); if (e) e.classList.add('pg'); });
+    const nb = $('nb-screen'); if (nb) nb.classList.add('ws');
   }
-  function pointer() {
-    if (!pm || lite()) return; const st = $('stage'); if (!st) return;
-    const r = st.getBoundingClientRect();
-    if (pm.clientY > r.top - 60 && pm.clientY < r.bottom + 60 && pm.clientX > r.left - 60 && pm.clientX < r.right + 60) {
-      st.style.setProperty('--mx', ((pm.clientX - (r.left + r.width / 2)) / r.width * 26).toFixed(1));
-      st.style.setProperty('--my', ((pm.clientY - (r.top + r.height / 2)) / r.height * 18).toFixed(1));
-      const d = pm.target.closest && pm.target.closest('.dc'); document.querySelectorAll('.dc.tilt').forEach(x => { if (x !== d) { const i = x.querySelector('.in'); i.style.removeProperty('--rx'); i.style.removeProperty('--ry'); x.classList.remove('tilt'); } });
-      if (d && st.contains(d)) { const b = d.getBoundingClientRect(), i = d.querySelector('.in'); i.style.setProperty('--rx', (-((pm.clientY - b.top) / b.height - .5) * 9).toFixed(1) + 'deg'); i.style.setProperty('--ry', (((pm.clientX - b.left) / b.width - .5) * 11).toFixed(1) + 'deg'); d.classList.add('tilt'); }
-    }
+
+  // ---------- TRANG CHỦ ----------
+  const gnews = q => 'https://www.google.com/search?tbm=nws&q=' + encodeURIComponent(q);
+  const wiki = q => 'https://vi.wikipedia.org/w/index.php?search=' + encodeURIComponent(q);
+  function home() {
+    showScreen('portal-screen');
+    const u = userObj();
+    const comp = [
+      { ic: 'trophy', n: 'Đường lên đỉnh Olympia', d: 'Cuộc thi truyền hình tri thức dành cho học sinh THPT, phát sóng trên VTV. Olym63 mô phỏng các phần Khởi Động, Vượt Chướng Ngại Vật, Tăng Tốc và Về Đích.', st: ['green', 'Có trong Olym63'], q: 'Đường lên đỉnh Olympia', site: 'https://olympia.vn' },
+      { ic: 'flag', n: 'Đường đến Vinh quang', d: 'Cuộc thi truyền hình tri thức của VTV, cùng họ chương trình Olympia. Olym63 có phần Xuất Phát; phần Vinh Quang đang được phát triển.', st: ['green', 'Có một phần'], q: 'Đường đến Vinh quang VTV' },
+      { ic: 'tv', n: 'Ai là triệu phú', d: 'Chương trình truyền hình trả lời chuỗi câu hỏi trắc nghiệm có độ khó tăng dần để nhận giải thưởng.', st: ['gray', 'Sắp ra mắt'], q: 'Ai là triệu phú' },
+      { ic: 'book', n: 'Vua Tiếng Việt', d: 'Chương trình truyền hình về ngôn ngữ và văn hóa tiếng Việt: chính tả, từ ngữ, thành ngữ, ngữ nghĩa.', st: ['gray', 'Sắp ra mắt'], q: 'Vua Tiếng Việt' }
+    ];
+    const mods = [
+      { ic: 'target', n: 'Luyện tập', d: 'Các phần thi mô phỏng, chọn bộ câu hỏi theo môn, chế độ ưu tiên môn còn yếu.', id: 'home-screen', st: 'Đang dùng' },
+      { ic: 'notebook', n: 'Nghiên cứu', d: 'Sổ nghiên cứu có AI: tải tài liệu, hình ảnh, hỏi đáp, sơ đồ, flashcard, tạo đề.', id: 'nb-screen', st: 'Đang dùng' },
+      { ic: 'store', n: 'Cửa hàng bộ câu hỏi', d: 'Nơi chia sẻ miễn phí tài liệu và bộ câu hỏi (PDF, Word, Excel…) có nhãn bản quyền, được quản trị viên duyệt.', id: 'store-screen', st: 'Đang dùng' },
+      { ic: 'chart', n: 'Báo cáo', d: 'Theo dõi tiến bộ, môn mạnh yếu và lịch sử luyện tập của bạn.', id: 'report-screen', st: 'Sắp ra mắt' },
+      { ic: 'users', n: 'Cộng đồng', d: 'Trao đổi, hỏi đáp và thi đấu cùng các bạn.', id: 'community-screen', st: 'Sắp ra mắt' },
+      { ic: 'help', n: 'Hỗ trợ', d: 'Hướng dẫn sử dụng và câu hỏi thường gặp.', id: 'support-screen', st: 'Đang dùng' }
+    ];
+    $('portal-screen').innerHTML = `
+      <div class="blob" data-par=".18" style="width:520px;height:520px;left:-140px;top:60px;background:color-mix(in srgb,var(--accent) 30%,transparent)"></div>
+      <div class="blob" data-par=".30" style="width:420px;height:420px;right:-120px;top:240px;background:rgba(234,67,53,.18)"></div>
+      <div class="blob" data-par=".12" style="width:480px;height:480px;left:30%;top:900px;background:rgba(52,168,83,.16)"></div>
+      <div class="page">
+        <section class="hero hero-wrap">
+          <div>
+            <span class="chip eyebrow rv">Nền tảng luyện tập và nghiên cứu tri thức</span>
+            <h1 class="rv" style="--d:.05s">Luyện tập thông minh.<br><em>Nghiên cứu sâu hơn.</em></h1>
+            <p class="lead rv" style="--d:.12s">${u ? 'Chào ' + esc(u.full_name || u.username) + '. ' : ''}Olym63 giúp học sinh luyện các phần thi quen thuộc của Đường lên đỉnh Olympia, tự nhận ra môn còn yếu, rồi đào sâu kiến thức bằng Sổ nghiên cứu có AI.</p>
+            <div class="cta rv" style="--d:.2s"><button class="pbtn p" onclick="PORTAL.go('home-screen')">Bắt đầu luyện tập ${IC('arrow')}</button><button class="pbtn" onclick="PORTAL.go('nb-screen')">Mở Sổ nghiên cứu</button></div>
+            ${DECO.counter()}
+          </div>
+          ${DECO.stage()}
+        </section>
+
+        <section class="sec">
+          <div class="sec-head rv"><h2>Các cuộc thi tri thức trên truyền hình</h2><p>Liên kết nhanh tới thông tin mới nhất của từng chương trình. Các nút "Tin mới nhất" luôn mở kết quả tin tức hiện tại, nên không bị lỗi thời.</p></div>
+          <div class="grid4">${comp.map((c, i) => `
+            <div class="pc dcor glass static rv ${c.st[0] === 'gray' ? 'soon' : ''}" style="--d:${i * .07}s">
+              <img class="corner" loading="lazy" src="assets/deco/${['cotco','bitexco','ship','lac'][i%4]}-s.webp?v=3" alt="" aria-hidden="true">
+              <div class="ico">${IC(c.ic)}</div><span class="chip ${c.st[0]}" style="align-self:flex-start">${c.st[1]}</span>
+              <h3>${c.n}</h3><p>${c.d}</p>
+              <div class="row"><a class="lnk" href="${gnews(c.q)}" target="_blank" rel="noopener noreferrer">Tin mới nhất ${IC('external')}</a><a class="lnk" href="${wiki(c.q)}" target="_blank" rel="noopener noreferrer">Tìm hiểu ${IC('external')}</a>${c.site ? `<a class="lnk" href="${c.site}" target="_blank" rel="noopener noreferrer">Trang chính thức ${IC('external')}</a>` : ''}</div>
+            </div>`).join('')}</div>
+        </section>
+
+        ${DECO.skyline()}
+
+        <section class="sec" id="home-news">
+          <div class="sec-head rv"><h2>Video mới nhất</h2><p>Các video do quản trị viên chọn từ YouTube của chương trình. Bấm vào hình để xem ngay tại đây.</p></div>
+          <div id="news-body"><div class="nb-note">Đang tải…</div></div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-head rv"><h2>Một nền tảng, nhiều công cụ</h2><p>Từ luyện tập hằng ngày đến nghiên cứu chuyên sâu. Mục nào chưa mở sẽ được đánh dấu "Sắp ra mắt".</p></div>
+          <div class="grid3">${mods.map((m, i) => `
+            <button class="pc glass rv" style="--d:${(i % 3) * .07}s" onclick="PORTAL.go('${m.id}')">
+              <div class="ico">${IC(m.ic)}</div><h3>${m.n}</h3><p>${m.d}</p>
+              <div class="row"><span class="chip ${m.st === 'Đang dùng' ? 'green' : 'gray'}">${m.st}</span></div></button>`).join('')}
+            <button class="pc glass rv" style="--d:.14s" onclick="AUTH.openProfile()"><div class="ico">${IC('user')}</div><h3>Hồ sơ</h3><p>Thông tin tài khoản, môn học cần luyện và tham gia nghiên cứu.</p><div class="row"><span class="chip green">Đang dùng</span></div></button>
+          </div>
+        </section>
+
+        <section class="sec">
+          <div class="sec-head rv"><h2>Vòng học khép kín</h2><p>Mỗi ván chơi là một dữ liệu học tập. Hệ thống dùng nó để gợi ý bước tiếp theo.</p></div>
+          <div class="flow">${[['Luyện tập', 'Chơi các phần thi mô phỏng với bộ câu hỏi theo môn.'], ['Ghi nhận', 'Mỗi câu trả lời được lưu để biết bạn mạnh, yếu ở môn nào.'], ['Ưu tiên môn yếu', 'Bật chế độ ưu tiên để câu hỏi tập trung vào môn còn yếu.'], ['Nghiên cứu sâu', 'Nạp ván vừa chơi hoặc tài liệu vào Sổ nghiên cứu, hỏi AI và tạo bài ôn.']].map((s, i) => `<div class="st glass rv" style="--d:${i * .08}s"><h3>${s[0]}</h3><p>${s[1]}</p></div>`).join('')}</div>
+        </section>
+
+        <div class="foot-deco" aria-hidden="true">${['thienmu','benthanh','pisa','eiffel','pyramid'].map(k=>DECO.img(k)).join('')}</div>
+        <footer class="foot glass rv">
+          <div><b>Olym63</b><br>Sản phẩm của nhóm học sinh trường THPT Chuyên Tiền Giang, phục vụ học tập và nghiên cứu khoa học kỹ thuật.</div>
+          <div style="max-width:430px"><b>Về dữ liệu</b><br>Dữ liệu học tập chỉ được ghi vào nhật ký nghiên cứu khi bạn đã đồng ý tham gia. Tài liệu trong Sổ nghiên cứu lưu trong trình duyệt của bạn và được gửi cho AI để phân tích. AI có thể sai, hãy đối chiếu với nguồn gốc.</div>
+        </footer>
+      </div>`;
+    observe($('portal-screen')); bindScroll($('portal-screen')); if (typeof DECO !== 'undefined') DECO.init();
+    loadNews();
   }
-  function onScroll() { if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; frame(); }); } }
-  function frame() {
-    const vh = innerHeight, st = $('stage');
-    if (st && st.offsetParent !== null && !lite()) { const r = st.getBoundingClientRect(); if (r.bottom > -100 && r.top < vh + 100) { const p = vh / 2 - (r.top + r.height / 2); st.style.setProperty('--rot', (p * .1).toFixed(1) + 'deg'); st.style.setProperty('--shipx', (p * .1).toFixed(1) + 'px'); } }
-    const sk = $('sky'), tr = $('sky-track');
-    if (sk && tr && sk.offsetParent !== null) { const r = sk.getBoundingClientRect(); if (r.bottom > -50 && r.top < vh + 50) { const view = tr.parentElement.clientWidth, over = Math.max(0, tr.scrollWidth - view); const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height * .6))); tr.style.transform = `translate3d(${(-p * over).toFixed(1)}px,0,0)`; } }
+
+  // ---------- LUYỆN TẬP (hub) ----------
+  let tab = 'olympia';
+  function practice() { showScreen('home-screen'); AUTH.renderHome(); }
+  function renderPractice() {
+    const el = $('home-screen'); const G = CONFIG.GAME; const on = (typeof introEnabled !== 'undefined') ? introEnabled : true;
+    const card = (o, i) => `<button class="pc dcor glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
+        ${o.deco?`<img class="corner" loading="lazy" src="assets/deco/${o.deco}-s.webp?v=3" alt="" aria-hidden="true">`:''}<div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
+        ${o.lock ? '<span class="chip gray" style="position:absolute;right:18px;top:18px">Sắp ra mắt</span>' : `<span class="go">${IC('arrow')}</span>`}</button>`;
+    const sets = {
+      olympia: [
+        { ic: 'bolt', num: 'Phần 01', deco: 'compass', name: 'Khởi Động', meta: `${G.KHOI_DONG_TIME} giây · ${G.KHOI_DONG_COUNT} câu · +10 điểm mỗi câu`, fn: "openSourcePicker('khoi_dong')" },
+        { ic: 'puzzle', num: 'Phần 02', deco: 'bust', name: 'Vượt Chướng Ngại Vật', meta: `${G.VCNV_COUNT} câu · hình ảnh và từ khóa`, fn: "startGame('vcnv')" },
+        { ic: 'play', num: 'Phần 03', deco: 'ship', name: 'Tăng Tốc', meta: `${G.TANG_TOC_COUNT} câu · hình ảnh, video · tối đa 40 điểm`, fn: "startGame('tang_toc')" },
+        { ic: 'trophy', num: 'Phần 04', deco: 'lac', name: 'Về Đích', meta: '3 câu · chọn gói 20 hoặc 30 điểm · Ngôi sao hy vọng', fn: "openSourcePicker('ve_dich')" }],
+      ddvq: [
+        { ic: 'flag', num: 'ĐĐVQ · Phần 01', name: 'Xuất Phát', meta: `${G.XUAT_PHAT_TIME} giây · ${G.XUAT_PHAT_COUNT} câu · +10 điểm mỗi câu`, fn: "startGame('xuat_phat')" },
+        { ic: 'crown', num: 'ĐĐVQ · Phần 02', name: 'Vinh Quang', meta: 'Đang được phát triển', lock: 1 }],
+    };
+    el.innerHTML = `<div class="page">
+      <div class="page-head rv"><div style="flex:1"><h1>Luyện tập</h1><p>Chọn cuộc thi và phần thi để bắt đầu. Sau mỗi ván, hệ thống ghi lại môn còn yếu để gợi ý lần luyện kế tiếp.</p></div>
+        <button class="pbtn" onclick="AUTH.openLeaderboard()">${IC('trophy')} Bảng xếp hạng</button>
+        <button class="pbtn p" onclick="startWeakPractice()">${IC('target')} Luyện môn còn yếu</button></div>
+      <div class="practice-top rv"><div class="seg">${[['olympia', 'Đường lên đỉnh Olympia'], ['ddvq', 'Đường đến Vinh quang']].map(t => `<button class="${tab === t[0] ? 'on' : ''}" onclick="PORTAL.setTab('${t[0]}')">${t[1]}</button>`).join('')}</div></div>
+      <div class="grid4" style="${(sets[tab].length < 3) ? 'grid-template-columns:repeat(auto-fill,minmax(260px,1fr))' : ''}">${sets[tab].map(card).join('')}</div>
+      <div class="glass rv" style="margin-top:22px;padding:18px 22px;display:flex;align-items:center;gap:14px"><div style="flex:1"><b>Màn giới thiệu trước phần thi</b><div class="nb-note">Bật để xem hiệu ứng mở đầu, tắt để vào thẳng câu hỏi.</div></div><button class="toggle ${on ? 'on' : ''}" id="intro-toggle-switch" onclick="toggleIntroSetting();this.classList.toggle('on')" aria-label="Bật tắt màn giới thiệu"></button></div>
+    </div>`;
+    observe(el); bindScroll(el);
   }
-  function init() { bind(); watch(); const s = $('stage'), k = $('sky'); if (s) watchVis(s); if (k) watchVis(k); frame(); onScroll(); }
-  return { stage, curtains, skyline, counter, img, init, frame, FACT, SRC, found: () => found.size };
+  function setTab(t) { tab = t; renderPractice(); }
+
+
+  // ---------- TIN TỨC: video YouTube do admin đăng ----------
+  const PROG = { all: 'Tất cả', olympia: 'Đường lên đỉnh Olympia', ddvq: 'Đường đến Vinh quang', trieuphu: 'Ai là triệu phú', vuatv: 'Vua Tiếng Việt', khac: 'Khác' };
+  const toast = m => { try { showToast(m); } catch (e) { alert(m); } };
+  const apiBase = () => ((typeof CONFIG !== 'undefined' && CONFIG.ACCOUNTS_API_URL) || '').replace(/\/+$/, '');
+  let newsCache = null, newsFilter = 'all';
+  async function loadNews() {
+    const host = $('news-body'); if (!host) return;
+    try {
+      if (!newsCache) { const r = await fetch(apiBase() + '/news'); const d = await r.json(); newsCache = d.videos || []; }
+      drawNews();
+    } catch (e) { host.innerHTML = '<div class="glass empty" style="padding:26px"><p>Chưa tải được video lúc này. Hãy thử lại sau.</p></div>'; }
+  }
+  function drawNews() {
+    const host = $('news-body'); if (!host) return; const all = newsCache || [];
+    if (!all.length) { host.innerHTML = '<div class="glass empty rv in" style="padding:30px"><div class="ico">' + IC('play') + '</div><h3>Chưa có video</h3><p>Khi quản trị viên đăng video mới của các chương trình, chúng sẽ xuất hiện ở đây.</p></div>'; return; }
+    const have = ['all', ...Object.keys(PROG).filter(k => k !== 'all' && all.some(v => v.program === k))];
+    const list = all.filter(v => newsFilter === 'all' || v.program === newsFilter).slice(0, 12);
+    host.innerHTML = `<div class="chips">${have.map(k => `<button class="pbtn sm ${newsFilter === k ? 'p' : ''}" onclick="PORTAL.newsFilter('${k}')">${PROG[k]}</button>`).join('')}</div>
+      <div class="vids">${list.map(v => `<div class="vid glass"><button class="pv" style="background-image:url(https://i.ytimg.com/vi/${v.yt_id}/hqdefault.jpg)" onclick="PORTAL.playVid(this,'${v.yt_id}')" aria-label="Phát video"><i>${IC('play')}</i></button><div class="in"><h4>${esc(v.title)}</h4><small>${PROG[v.program] || ''} · ${new Date(v.created).toLocaleDateString('vi-VN')} · <a href="https://www.youtube.com/watch?v=${v.yt_id}" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">Xem trên YouTube</a></small></div></div>`).join('')}</div>`;
+  }
+  function playVid(btn, id) { btn.outerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe>`; }
+
+  // ---------- CỬA HÀNG: chia sẻ tài liệu miễn phí, có nhãn bản quyền ----------
+  const KIND = { pdf: 'PDF', word: 'Word', excel: 'Excel', slide: 'Trình chiếu', other: 'Khác' };
+  const RIGHTS = { own: 'Tác giả tự soạn', school: 'Tài liệu của nhà trường (THPT Chuyên Tiền Giang)', cc: 'Giấy phép Creative Commons', other: 'Nguồn khác, đã ghi rõ' };
+  let shop = { items: null, q: '', kind: 'all', mine: null };
+  async function storePage() {
+    const id = 'store-screen'; showScreen(id);
+    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>Cửa hàng bộ câu hỏi</h1><p>Nơi học sinh chia sẻ miễn phí tài liệu và bộ câu hỏi (PDF, Word, Excel…). Mỗi tài liệu có nhãn bản quyền và được quản trị viên duyệt trước khi hiển thị.</p></div>
+      <button class="pbtn" onclick="PORTAL.shopMine()">Tài liệu của tôi</button><button class="pbtn p" onclick="PORTAL.shopAdd()">${IC('upload')} Đăng tài liệu</button></div>
+      <div class="practice-top rv"><div class="search">${IC('search')}<input id="shop-q" placeholder="Tìm tài liệu, môn học, tác giả…" value="${esc(shop.q)}" oninput="PORTAL.shopFind(this.value)"></div>
+        <div class="seg">${[['all', 'Tất cả'], ['pdf', 'PDF'], ['word', 'Word'], ['excel', 'Excel'], ['slide', 'Trình chiếu'], ['other', 'Khác']].map(k => `<button class="${shop.kind === k[0] ? 'on' : ''}" onclick="PORTAL.shopKind('${k[0]}')">${k[1]}</button>`).join('')}</div></div>
+      <div id="shop-body"><div class="nb-note">Đang tải…</div></div>
+      <div class="glass rv" style="margin-top:26px;padding:18px 22px;font-size:14px;line-height:1.6;color:var(--text-muted)"><b style="color:var(--text)">Lưu ý bản quyền.</b> Chỉ đăng tài liệu do chính bạn soạn, tài liệu được phép chia sẻ (của nhà trường, giấy phép mở) hoặc nguồn đã ghi rõ. Tài liệu vi phạm bản quyền sẽ bị gỡ. Hiện tại cửa hàng chia sẻ miễn phí bằng liên kết (Google Drive, OneDrive…); chức năng mua bán sẽ được bổ sung sau.</div></div>`;
+    observe($(id)); bindScroll($(id)); await shopLoad();
+  }
+  async function shopLoad() {
+    try { const r = await AUTH.apiFetch('/store'); shop.items = r.items || []; } catch (e) { shop.items = []; const b = $('shop-body'); if (b) b.innerHTML = `<div class="glass empty" style="padding:26px"><p>${esc(e.message)}</p></div>`; return; }
+    shopDraw();
+  }
+  function shopDraw() {
+    const b = $('shop-body'); if (!b || !shop.items) return; const q = noDiac(shop.q);
+    const L = shop.items.filter(x => (shop.kind === 'all' || x.kind === shop.kind) && (!q || noDiac([x.title, x.subject, x.author, x.description].join(' ')).includes(q)));
+    b.innerHTML = L.length ? `<div class="shop">${L.map(itemCard).join('')}</div>` : `<div class="glass empty" style="padding:34px"><div class="ico">${IC('store')}</div><h3>${shop.items.length ? 'Không có kết quả phù hợp' : 'Chưa có tài liệu nào'}</h3><p>${shop.items.length ? 'Thử từ khóa hoặc loại tệp khác.' : 'Hãy là người đầu tiên đăng tài liệu. Tài liệu sẽ hiện sau khi quản trị viên duyệt.'}</p></div>`;
+  }
+  const noDiac = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+  const itemCard = x => `<div class="item glass"><div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">${KIND[x.kind] || 'Khác'}</span>${x.subject ? `<span class="chip gray">${esc(x.subject)}</span>` : ''}</div>
+    <h3>${esc(x.title)}</h3>${x.description ? `<p>${esc(x.description)}</p>` : ''}
+    <p style="font-size:12.5px"><b>Bản quyền:</b> ${RIGHTS[x.rights] || ''}<br>Đăng bởi ${esc(x.author || 'ẩn danh')} · ${new Date(x.created).toLocaleDateString('vi-VN')}</p>
+    <div class="row"><a class="pbtn sm p" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Mở tài liệu ${IC('external')}</a></div></div>`;
+  function ovl(html) { const d = document.createElement('div'); d.className = 'nb-ov'; d.id = 'shop-ov'; d.innerHTML = `<div class="nb-box">${html}</div>`; d.addEventListener('mousedown', e => { if (e.target === d) d.remove(); }); document.body.appendChild(d); return d; }
+  function shopAdd() {
+    ovl(`<h2>Đăng tài liệu</h2><div class="form-grid">
+      <div class="full"><label class="nb-note">Tiêu đề *</label><input id="sh-t" maxlength="160" placeholder="Ví dụ: Tổng hợp công thức Vật lí 11 học kì 1"></div>
+      <div class="full"><label class="nb-note">Đường dẫn tải hoặc xem tài liệu * (Google Drive, OneDrive… để chế độ "ai có liên kết đều xem được")</label><input id="sh-u" placeholder="https://drive.google.com/…"></div>
+      <div><label class="nb-note">Loại tệp</label><select id="sh-k">${Object.entries(KIND).map(k => `<option value="${k[0]}">${k[1]}</option>`).join('')}</select></div>
+      <div><label class="nb-note">Môn học</label><input id="sh-s" maxlength="60" placeholder="Vật lí, Văn…"></div>
+      <div class="full"><label class="nb-note">Nhãn bản quyền *</label><select id="sh-r">${Object.entries(RIGHTS).map(k => `<option value="${k[0]}">${k[1]}</option>`).join('')}</select></div>
+      <div class="full"><label class="nb-note">Mô tả ngắn</label><textarea id="sh-d" maxlength="600" placeholder="Nội dung, phạm vi, cách dùng…"></textarea></div></div>
+      <label class="nb-note" style="display:flex;gap:8px;align-items:flex-start;margin:6px 0 12px"><input type="checkbox" id="sh-a" style="width:auto;margin-top:3px;accent-color:var(--accent)"> Tôi xác nhận có quyền chia sẻ tài liệu này và nhãn bản quyền ở trên là đúng.</label>
+      <div id="sh-e" class="nb-note" style="color:#d93025"></div>
+      <div style="text-align:right"><button class="pbtn" onclick="document.getElementById('shop-ov').remove()">Hủy</button> <button class="pbtn p" onclick="PORTAL.shopSend()">Gửi để duyệt</button></div>`);
+  }
+  async function shopSend() {
+    const v = i => ($(i) || {}).value || '';
+    try { await AUTH.apiFetch('/store', { method: 'POST', body: JSON.stringify({ title: v('sh-t'), url: v('sh-u'), kind: v('sh-k'), subject: v('sh-s'), rights: v('sh-r'), description: v('sh-d'), agree: $('sh-a').checked }) }); $('shop-ov').remove(); toast('Đã gửi. Tài liệu sẽ hiện sau khi quản trị viên duyệt.'); }
+    catch (e) { $('sh-e').textContent = e.message; }
+  }
+  async function shopMine() {
+    const d = ovl('<h2>Tài liệu của tôi</h2><div class="nb-note">Đang tải…</div>');
+    try {
+      const r = await AUTH.apiFetch('/store/mine'); const ST = { pending: ['gray', 'Chờ duyệt'], approved: ['green', 'Đã duyệt'], rejected: ['gray', 'Bị từ chối'] };
+      d.firstChild.innerHTML = `<h2>Tài liệu của tôi</h2>${(r.items || []).map(x => `<div style="padding:12px 0;border-bottom:1px solid var(--line)"><b>${esc(x.title)}</b> <span class="chip ${ST[x.status][0]}">${ST[x.status][1]}</span><br><small class="nb-note">${KIND[x.kind] || ''} · ${new Date(x.created).toLocaleDateString('vi-VN')}${x.note ? ' · Ghi chú của quản trị viên: ' + esc(x.note) : ''}</small></div>`).join('') || '<div class="nb-note">Bạn chưa đăng tài liệu nào.</div>'}<div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="document.getElementById('shop-ov').remove()">Đóng</button></div>`;
+    } catch (e) { d.firstChild.innerHTML = `<h2>Tài liệu của tôi</h2><div class="nb-note">${esc(e.message)}</div>`; }
+  }
+  const shopFind = q => { shop.q = q; shopDraw(); };
+  const shopKind = k => { shop.kind = k; storePage(); };
+
+  // ---------- trang module chưa có chức năng ----------
+  const PAGES = {
+    store: { ic: 'store', t: 'Cửa hàng bộ câu hỏi', lead: 'Nơi học sinh chia sẻ tài liệu và bộ câu hỏi: PDF, Word, Excel và các định dạng khác, kèm nhãn bản quyền của trường.',
+      feats: ['Tìm kiếm theo môn, cấp lớp, định dạng', 'Nhãn bản quyền cho từng tài liệu (tác giả, trường, giấy phép)', 'Đánh giá và báo cáo tài liệu không phù hợp', 'Đưa tài liệu thẳng vào Sổ nghiên cứu'] },
+    report: { ic: 'chart', t: 'Báo cáo', lead: 'Báo cáo cá nhân về quá trình học: môn mạnh yếu, tiến bộ theo thời gian và gợi ý ôn tập.',
+      feats: ['Biểu đồ tiến bộ theo tuần', 'Bản đồ môn mạnh – yếu', 'Lịch sử các ván và sổ nghiên cứu', 'Xuất báo cáo để nộp cho giáo viên'], btn: ['Xem môn cần luyện trong Hồ sơ', 'AUTH.openProfile()'] },
+    community: { ic: 'users', t: 'Cộng đồng', lead: 'Không gian trao đổi, hỏi đáp và thi đấu cùng các bạn học sinh.',
+      feats: ['Diễn đàn hỏi đáp theo môn', 'Thi đấu nhóm theo thời gian thực', 'Nhóm học theo lớp, theo trường', 'Bảng vinh danh'], btn: ['Xem bảng xếp hạng', 'AUTH.openLeaderboard()'] }
+  };
+  function page(k) {
+    const id = k + '-screen'; showScreen(id);
+    if (k === 'support') return support();
+    if (k === 'store') return storePage();
+    const p = PAGES[k];
+    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><img class="pdeco" loading="lazy" src="assets/deco/${k==='report'?'compass':'ship'}-s.webp?v=3" alt="" aria-hidden="true"><span class="chip gray">Sắp ra mắt</span></div>
+      ${k === 'store' ? `<div class="practice-top rv"><div class="search">${IC('search')}<input placeholder="Tìm tài liệu, bộ câu hỏi…" disabled></div><div class="seg">${['Tất cả', 'PDF', 'Word', 'Excel', 'Bộ câu hỏi'].map((x, i) => `<button class="${i ? '' : 'on'}" disabled>${x}</button>`).join('')}</div></div>` : ''}
+      <div class="glass rv empty"><div class="ico">${IC(p.ic)}</div><h3>Đang được xây dựng</h3><p>Chức năng này đã có chỗ sẵn trong hệ thống và sẽ được mở khi hoàn thiện.</p>${p.btn ? `<button class="pbtn p" onclick="${p.btn[1]}">${p.btn[0]}</button>` : ''}</div>
+      <div class="sec" style="margin-top:46px"><div class="sec-head rv"><h2 style="font-size:24px">Dự kiến sẽ có</h2></div><div class="grid2">${p.feats.map((f, i) => `<div class="pc glass static rv soon" style="--d:${i * .06}s;flex-direction:row;align-items:center;gap:14px"><div class="ico" style="margin:0">${IC('check')}</div><p style="font-size:15px;color:var(--text)">${f}</p></div>`).join('')}</div></div></div>`;
+    observe($(id)); bindScroll($(id));
+  }
+  function support() {
+    const faq = [
+      ['Bắt đầu luyện tập như thế nào?', 'Vào mục Luyện tập, chọn cuộc thi và phần thi. Với Khởi Động và Về Đích, bạn có thể chọn phạm vi (tuần, tháng, quý) và môn học trước khi vào.'],
+      ['Nút "Ưu tiên môn còn yếu" hoạt động ra sao?', 'Sau khi bạn chơi một số ván, hệ thống ước lượng mức nắm từng môn. Khi bật nút này, các câu thuộc môn còn yếu được chọn nhiều hơn. Nút chỉ khả dụng cho tài khoản không nằm trong nhóm đối chứng của nghiên cứu.'],
+      ['Sổ nghiên cứu lưu dữ liệu ở đâu?', 'Trong trình duyệt của bạn trên thiết bị đang dùng. Đổi máy hoặc xóa dữ liệu trình duyệt sẽ mất sổ. Nội dung nguồn được gửi cho Gemini để phân tích, vì vậy đừng tải tài liệu chứa thông tin cá nhân.'],
+      ['Vì sao AI trả lời sai hoặc link không mở được?', 'AI có thể sai. Hãy đối chiếu với tài liệu gốc. Các link trong câu trả lời lấy từ nguồn của bạn hoặc Wikipedia; nếu link hỏng, hãy dùng nút tìm kiếm trong mục "Tìm tài liệu".'],
+      ['Tôi bị giới hạn lượt dùng AI?', 'Mỗi tài khoản có hạn mức lượt AI mỗi ngày để tránh quá tải và tốn kém. Hạn mức hiện ở góc trên của Sổ nghiên cứu và đặt lại mỗi ngày.'],
+      ['Tôi muốn rút khỏi nghiên cứu?', 'Mở Hồ sơ, tại thẻ "Tham gia nghiên cứu" chọn rút, dữ liệu nghiên cứu của bạn sẽ bị xóa.']
+    ];
+    $('support-screen').innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>Hỗ trợ</h1><p>Hướng dẫn nhanh và các câu hỏi thường gặp.</p></div></div>
+      <div class="faq">${faq.map((f, i) => `<details class="rv" style="--d:${i * .04}s"><summary>${f[0]}</summary><p>${f[1]}</p></details>`).join('')}</div>
+      <div class="glass rv empty" style="margin-top:30px"><div class="ico">${IC('message')}</div><h3>Gửi phản hồi</h3><p>Biểu mẫu gửi phản hồi sẽ sớm có ở đây. Hiện tại, hãy liên hệ quản trị viên hoặc giáo viên phụ trách.</p></div></div>`;
+    observe($('support-screen')); bindScroll($('support-screen'));
+  }
+
+  function init() { applyLook(); ensureScreens(); buildNav(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  return { newsFilter: k => { newsFilter = k; drawNews(); }, playVid, shopAdd, shopSend, shopMine, shopFind, shopKind, go, home, practice, renderPractice, setTab, page, onScreen, togglePop, closePop, setMode, setAcc, toggleMenu, observe, bindScroll, renderNavRight, ensureScreens };
 })();
