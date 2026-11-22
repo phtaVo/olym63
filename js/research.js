@@ -152,10 +152,10 @@ const RESLOG = (() => {
     if (!status) { el.style.display = 'none'; return; }
     el.style.display = '';
     if (status.consented) {
-      el.innerHTML = `<div class="profile-card-title">🔬 Tham gia nghiên cứu</div>
+      el.innerHTML = `<div class="profile-card-title">Tham gia nghiên cứu</div>
         <div class="profile-info-note" style="margin-bottom:10px">Bạn đang tham gia. Hệ thống ghi mã câu hỏi, đúng/sai và thời điểm làm bài (ẩn danh). Bạn có thể rút lui bất cứ lúc nào.</div>
-        ${status.test_open && status.test_open.pre && !(status.test_done && status.test_done.pre) ? '<button class="btn btn-primary" id="rp-pre" style="width:100%;margin-bottom:8px">📝 Làm bài kiểm tra đầu vào</button>' : ''}
-        ${status.test_open && status.test_open.post && !(status.test_done && status.test_done.post) ? '<button class="btn btn-primary" id="rp-post" style="width:100%;margin-bottom:8px">📝 Làm bài kiểm tra đầu ra</button>' : ''}
+        ${status.test_open && status.test_open.pre && !(status.test_done && status.test_done.pre) ? '<button class="btn btn-primary" id="rp-pre" style="width:100%;margin-bottom:8px">Làm bài kiểm tra đầu vào</button>' : ''}
+        ${status.test_open && status.test_open.post && !(status.test_done && status.test_done.post) ? '<button class="btn btn-primary" id="rp-post" style="width:100%;margin-bottom:8px">Làm bài kiểm tra đầu ra</button>' : ''}
         <button class="btn btn-outline" id="rp-out" style="width:100%;margin-bottom:8px">Rút lui (giữ dữ liệu đã ghi)</button>
         <button class="btn btn-outline" id="rp-del" style="width:100%">Rút lui và xóa dữ liệu của tôi</button>`;
       const run = async (del) => {
@@ -167,7 +167,7 @@ const RESLOG = (() => {
       el.querySelector('#rp-out').onclick = () => run(false);
       el.querySelector('#rp-del').onclick = () => run(true);
     } else {
-      el.innerHTML = `<div class="profile-card-title">🔬 Tham gia nghiên cứu</div>
+      el.innerHTML = `<div class="profile-card-title">Tham gia nghiên cứu</div>
         <div class="profile-info-note" style="margin-bottom:10px">Bạn chưa tham gia. Không tham gia vẫn dùng Olym63 bình thường.</div>
         <button class="btn btn-primary" id="rp-join" style="width:100%">Tìm hiểu và tham gia</button>`;
       el.querySelector('#rp-join').onclick = () => { try { localStorage.removeItem(dismissKey()); } catch (e) {} showConsent(); };
@@ -229,7 +229,7 @@ const RESLOG = (() => {
         try {
           await api('/research/test', { method: 'POST', body: { phase, items: result } });
           status.test_done = Object.assign({}, status.test_done, { [phase]: true });
-          body().innerHTML = '<div class="modal-title" style="font-size:20px">Đã nộp bài ✅</div><div style="margin:12px 0">Cảm ơn bạn đã tham gia. Kết quả được ghi nhận cho nghiên cứu.</div><button class="btn btn-primary" id="rt-close">Đóng</button>';
+          body().innerHTML = '<div class="modal-title" style="font-size:20px">Đã nộp bài </div><div style="margin:12px 0">Cảm ơn bạn đã tham gia. Kết quả được ghi nhận cho nghiên cứu.</div><button class="btn btn-primary" id="rt-close">Đóng</button>';
           body().querySelector('#rt-close').onclick = () => { ov.remove(); renderProfileCard(); };
         } catch (e) {
           body().innerHTML = `<div style="color:#c00;margin-bottom:12px">Chưa nộp được: ${esc(e.message)}</div><button class="btn btn-primary" id="rt-retry">Thử nộp lại</button>`;
@@ -278,14 +278,15 @@ const RESLOG = (() => {
     const el = document.getElementById('admin-research-card');
     if (!el || !enabled()) { if (el) el.style.display = 'none'; return; }
     el.style.display = '';
-    el.innerHTML = `<div class="profile-card-title">🔬 Nghiên cứu (admin)</div>
+    el.innerHTML = `<div class="profile-card-title">Nghiên cứu (admin)</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-        <button class="btn btn-primary btn-sm" data-a="page">📊 Mở trang phân tích</button>
+        <button class="btn btn-primary btn-sm" data-a="page">Mở trang phân tích</button>
         <button class="btn btn-outline btn-sm" data-a="sum">Tổng quan</button>
         <button class="btn btn-outline btn-sm" data-a="forms">Tạo 2 đề kiểm tra</button>
         <button class="btn btn-outline btn-sm" data-a="open_pre">Mở/đóng bài đầu vào</button>
         <button class="btn btn-outline btn-sm" data-a="open_post">Mở/đóng bài đầu ra</button>
-        <button class="btn btn-outline btn-sm" data-a="unlock">🔓 Mở nút "môn yếu" cho nhóm đối chứng</button>
+        <button class="btn btn-outline btn-sm" data-a="aiq">Đặt hạn mức lượt AI mỗi ngày</button>
+        <button class="btn btn-outline btn-sm" data-a="unlock">Mở nút "môn yếu" cho nhóm đối chứng</button>
         <button class="btn btn-outline btn-sm" data-a="csv_a">Tải CSV nhật ký</button>
         <button class="btn btn-outline btn-sm" data-a="csv_t">Tải CSV điểm</button>
       </div>
@@ -305,6 +306,9 @@ const RESLOG = (() => {
           const s = await api('/admin/research/summary'); const cur = (s.config || {})[a] === '1';
           await api('/admin/research/config', { method: 'POST', body: { [a]: !cur } });
           say((a === 'open_pre' ? 'Bài đầu vào: ' : 'Bài đầu ra: ') + (!cur ? 'ĐÃ MỞ' : 'ĐÃ ĐÓNG'));
+        } else if (a === 'aiq') {
+          const v = prompt('Hạn mức lượt AI mỗi học sinh mỗi ngày (1–1000). Mặc định 60. Hỏi đáp = 1 lượt, tạo flashcard/sơ đồ/đề = 3 lượt, đọc ảnh = 2 lượt:', '60');
+          if (!v) return; await api('/admin/research/config', { method: 'POST', body: { ai_daily_limit: parseInt(v, 10) } }); say('Đã đặt hạn mức: ' + parseInt(v, 10) + ' lượt/ngày');
         } else if (a === 'unlock') {
           const s = await api('/admin/research/summary'); const cur = (s.config || {}).unlock_all === '1';
           if (!cur && !confirm('Mở nút "môn yếu" cho MỌI học sinh? Chỉ làm SAU KHI kết thúc thu thập dữ liệu thực nghiệm, vì sẽ làm nhiễu so sánh hai nhóm.')) return;
