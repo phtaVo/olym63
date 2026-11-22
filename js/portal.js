@@ -194,31 +194,29 @@ const PORTAL = (() => {
       <div class="blob" data-par=".30" style="width:420px;height:420px;right:-120px;top:240px;background:rgba(234,67,53,.18)"></div>
       <div class="blob" data-par=".12" style="width:480px;height:480px;left:30%;top:900px;background:rgba(52,168,83,.16)"></div>
       <div class="page">
-        <section class="hero">
+        <section class="hero hero-wrap">
           <div>
             <span class="chip eyebrow rv">Nền tảng luyện tập và nghiên cứu tri thức</span>
             <h1 class="rv" style="--d:.05s">Luyện tập thông minh.<br><em>Nghiên cứu sâu hơn.</em></h1>
             <p class="lead rv" style="--d:.12s">${u ? 'Chào ' + esc(u.full_name || u.username) + '. ' : ''}Olym63 giúp học sinh luyện các phần thi quen thuộc của Đường lên đỉnh Olympia, tự nhận ra môn còn yếu, rồi đào sâu kiến thức bằng Sổ nghiên cứu có AI.</p>
             <div class="cta rv" style="--d:.2s"><button class="pbtn p" onclick="PORTAL.go('home-screen')">Bắt đầu luyện tập ${IC('arrow')}</button><button class="pbtn" onclick="PORTAL.go('nb-screen')">Mở Sổ nghiên cứu</button></div>
+            ${DECO.counter()}
           </div>
-          <div class="mock glass rv rv-s" style="--d:.15s" aria-hidden="true">
-            <div class="mock-grid">
-              <div class="mock-col"><div class="mock-bar a m"></div>${[1, 2, 3, 4].map(() => '<div class="mock-tile"><div class="mock-bar" style="flex:1"></div></div>').join('')}</div>
-              <div class="mock-col"><div class="mock-msg u"><div class="mock-bar"></div><div class="mock-bar s"></div></div><div class="mock-msg"><div class="mock-bar m"></div><div class="mock-bar"></div><div class="mock-bar s"></div></div><div class="mock-msg"><div class="mock-bar"></div><div class="mock-bar m"></div></div><div style="flex:1"></div><div class="mock-tile" style="border-radius:20px"><div class="mock-bar" style="flex:1"></div></div></div>
-              <div class="mock-col">${['mind', 'cards', 'quiz', 'tree'].map(i => `<div class="mock-tile">${IC(i)}<div class="mock-bar" style="flex:1"></div></div>`).join('')}</div>
-            </div>
-          </div>
+          ${DECO.stage()}
         </section>
 
         <section class="sec">
           <div class="sec-head rv"><h2>Các cuộc thi tri thức trên truyền hình</h2><p>Liên kết nhanh tới thông tin mới nhất của từng chương trình. Các nút "Tin mới nhất" luôn mở kết quả tin tức hiện tại, nên không bị lỗi thời.</p></div>
           <div class="grid4">${comp.map((c, i) => `
-            <div class="pc glass static rv ${c.st[0] === 'gray' ? 'soon' : ''}" style="--d:${i * .07}s">
+            <div class="pc dcor glass static rv ${c.st[0] === 'gray' ? 'soon' : ''}" style="--d:${i * .07}s">
+              <img class="corner" src="assets/deco/${['cotco','bitexco','ship','lac'][i%4]}.webp?v=1" alt="" aria-hidden="true">
               <div class="ico">${IC(c.ic)}</div><span class="chip ${c.st[0]}" style="align-self:flex-start">${c.st[1]}</span>
               <h3>${c.n}</h3><p>${c.d}</p>
               <div class="row"><a class="lnk" href="${gnews(c.q)}" target="_blank" rel="noopener noreferrer">Tin mới nhất ${IC('external')}</a><a class="lnk" href="${wiki(c.q)}" target="_blank" rel="noopener noreferrer">Tìm hiểu ${IC('external')}</a>${c.site ? `<a class="lnk" href="${c.site}" target="_blank" rel="noopener noreferrer">Trang chính thức ${IC('external')}</a>` : ''}</div>
             </div>`).join('')}</div>
         </section>
+
+        ${DECO.skyline()}
 
         <section class="sec" id="home-news">
           <div class="sec-head rv"><h2>Video mới nhất</h2><p>Các video do quản trị viên chọn từ YouTube của chương trình. Bấm vào hình để xem ngay tại đây.</p></div>
@@ -240,12 +238,13 @@ const PORTAL = (() => {
           <div class="flow">${[['Luyện tập', 'Chơi các phần thi mô phỏng với bộ câu hỏi theo môn.'], ['Ghi nhận', 'Mỗi câu trả lời được lưu để biết bạn mạnh, yếu ở môn nào.'], ['Ưu tiên môn yếu', 'Bật chế độ ưu tiên để câu hỏi tập trung vào môn còn yếu.'], ['Nghiên cứu sâu', 'Nạp ván vừa chơi hoặc tài liệu vào Sổ nghiên cứu, hỏi AI và tạo bài ôn.']].map((s, i) => `<div class="st glass rv" style="--d:${i * .08}s"><h3>${s[0]}</h3><p>${s[1]}</p></div>`).join('')}</div>
         </section>
 
+        <div class="foot-deco" aria-hidden="true">${['thienmu','benthanh','pisa','eiffel','bigben','pyramid'].map(k=>DECO.img(k)).join('')}</div>
         <footer class="foot glass rv">
           <div><b>Olym63</b><br>Sản phẩm của nhóm học sinh trường THPT Chuyên Tiền Giang, phục vụ học tập và nghiên cứu khoa học kỹ thuật.</div>
           <div style="max-width:430px"><b>Về dữ liệu</b><br>Dữ liệu học tập chỉ được ghi vào nhật ký nghiên cứu khi bạn đã đồng ý tham gia. Tài liệu trong Sổ nghiên cứu lưu trong trình duyệt của bạn và được gửi cho AI để phân tích. AI có thể sai, hãy đối chiếu với nguồn gốc.</div>
         </footer>
       </div>`;
-    observe($('portal-screen')); bindScroll($('portal-screen'));
+    observe($('portal-screen')); bindScroll($('portal-screen')); if (typeof DECO !== 'undefined') DECO.init();
     loadNews();
   }
 
@@ -254,15 +253,15 @@ const PORTAL = (() => {
   function practice() { showScreen('home-screen'); AUTH.renderHome(); }
   function renderPractice() {
     const el = $('home-screen'); const G = CONFIG.GAME; const on = (typeof introEnabled !== 'undefined') ? introEnabled : true;
-    const card = (o, i) => `<button class="pc glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
-        <div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
+    const card = (o, i) => `<button class="pc dcor glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
+        ${o.deco?`<img class="corner" src="assets/deco/${o.deco}.webp?v=1" alt="" aria-hidden="true">`:''}<div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
         ${o.lock ? '<span class="chip gray" style="position:absolute;right:18px;top:18px">Sắp ra mắt</span>' : `<span class="go">${IC('arrow')}</span>`}</button>`;
     const sets = {
       olympia: [
-        { ic: 'bolt', num: 'Phần 01', name: 'Khởi Động', meta: `${G.KHOI_DONG_TIME} giây · ${G.KHOI_DONG_COUNT} câu · +10 điểm mỗi câu`, fn: "openSourcePicker('khoi_dong')" },
-        { ic: 'puzzle', num: 'Phần 02', name: 'Vượt Chướng Ngại Vật', meta: `${G.VCNV_COUNT} câu · hình ảnh và từ khóa`, fn: "startGame('vcnv')" },
-        { ic: 'play', num: 'Phần 03', name: 'Tăng Tốc', meta: `${G.TANG_TOC_COUNT} câu · hình ảnh, video · tối đa 40 điểm`, fn: "startGame('tang_toc')" },
-        { ic: 'trophy', num: 'Phần 04', name: 'Về Đích', meta: '3 câu · chọn gói 20 hoặc 30 điểm · Ngôi sao hy vọng', fn: "openSourcePicker('ve_dich')" }],
+        { ic: 'bolt', num: 'Phần 01', deco: 'compass', name: 'Khởi Động', meta: `${G.KHOI_DONG_TIME} giây · ${G.KHOI_DONG_COUNT} câu · +10 điểm mỗi câu`, fn: "openSourcePicker('khoi_dong')" },
+        { ic: 'puzzle', num: 'Phần 02', deco: 'bust', name: 'Vượt Chướng Ngại Vật', meta: `${G.VCNV_COUNT} câu · hình ảnh và từ khóa`, fn: "startGame('vcnv')" },
+        { ic: 'play', num: 'Phần 03', deco: 'ship', name: 'Tăng Tốc', meta: `${G.TANG_TOC_COUNT} câu · hình ảnh, video · tối đa 40 điểm`, fn: "startGame('tang_toc')" },
+        { ic: 'trophy', num: 'Phần 04', deco: 'lac', name: 'Về Đích', meta: '3 câu · chọn gói 20 hoặc 30 điểm · Ngôi sao hy vọng', fn: "openSourcePicker('ve_dich')" }],
       ddvq: [
         { ic: 'flag', num: 'ĐĐVQ · Phần 01', name: 'Xuất Phát', meta: `${G.XUAT_PHAT_TIME} giây · ${G.XUAT_PHAT_COUNT} câu · +10 điểm mỗi câu`, fn: "startGame('xuat_phat')" },
         { ic: 'crown', num: 'ĐĐVQ · Phần 02', name: 'Vinh Quang', meta: 'Đang được phát triển', lock: 1 }],
@@ -372,7 +371,7 @@ const PORTAL = (() => {
     if (k === 'support') return support();
     if (k === 'store') return storePage();
     const p = PAGES[k];
-    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><span class="chip gray">Sắp ra mắt</span></div>
+    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><img class="pdeco" src="assets/deco/${k==='report'?'compass':'ship'}.webp?v=1" alt="" aria-hidden="true"><span class="chip gray">Sắp ra mắt</span></div>
       ${k === 'store' ? `<div class="practice-top rv"><div class="search">${IC('search')}<input placeholder="Tìm tài liệu, bộ câu hỏi…" disabled></div><div class="seg">${['Tất cả', 'PDF', 'Word', 'Excel', 'Bộ câu hỏi'].map((x, i) => `<button class="${i ? '' : 'on'}" disabled>${x}</button>`).join('')}</div></div>` : ''}
       <div class="glass rv empty"><div class="ico">${IC(p.ic)}</div><h3>Đang được xây dựng</h3><p>Chức năng này đã có chỗ sẵn trong hệ thống và sẽ được mở khi hoàn thiện.</p>${p.btn ? `<button class="pbtn p" onclick="${p.btn[1]}">${p.btn[0]}</button>` : ''}</div>
       <div class="sec" style="margin-top:46px"><div class="sec-head rv"><h2 style="font-size:24px">Dự kiến sẽ có</h2></div><div class="grid2">${p.feats.map((f, i) => `<div class="pc glass static rv soon" style="--d:${i * .06}s;flex-direction:row;align-items:center;gap:14px"><div class="ico" style="margin:0">${IC('check')}</div><p style="font-size:15px;color:var(--text)">${f}</p></div>`).join('')}</div></div></div>`;
