@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Olym63 · Quản trị nội dung</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f7fc;--card:rgba(255,255,255,.8);--card-b:rgba(255,255,255,.92);--text:#1f2430;--mut:#5f6675;--line:#e3e7ef;--acc:#1a73e8;--acc-s:#e8f0fe;--ok:#34a853;--bad:#d93025;--sh:0 8px 30px rgba(30,50,90,.09)}
+@media (prefers-color-scheme:dark){:root{--bg:#10131a;--card:rgba(30,34,46,.8);--card-b:rgba(255,255,255,.08);--text:#eceef4;--mut:#a3a9b8;--line:#2b3040;--acc:#8ab4f8;--acc-s:rgba(138,180,248,.14);--sh:0 8px 30px rgba(0,0,0,.4)}}
+*{box-sizing:border-box}
+body{margin:0;font:15.5px/1.6 Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(900px 500px at 8% -5%,rgba(26,115,232,.16),transparent),radial-gradient(800px 500px at 100% 0,rgba(234,67,53,.1),transparent),var(--bg);min-height:100vh}
+header{position:sticky;top:10px;z-index:5;margin:10px auto 0;width:min(1100px,calc(100vw - 20px));display:flex;align-items:center;gap:12px;padding:8px 10px 8px 12px;border-radius:999px;background:var(--card);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border:1px solid var(--card-b);box-shadow:var(--sh)}
+header img{width:38px;height:38px;border-radius:50%;background:#fff}header b{font:700 18px 'Inter Tight';flex:1}
+.btn{font:600 14px Inter;border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 16px;border-radius:999px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:transform .15s,border-color .2s}.btn:hover{border-color:var(--acc);transform:translateY(-1px)}.btn.p{background:var(--acc);color:#fff;border-color:transparent}@media (prefers-color-scheme:dark){.btn.p{color:#10131a}}.btn.d{color:var(--bad)}.btn.sm{padding:6px 13px;font-size:13px}
+main{width:min(1100px,calc(100vw - 24px));margin:22px auto 60px}
+h1{font:800 clamp(26px,4vw,36px) 'Inter Tight';letter-spacing:-.02em;margin:8px 0 14px}
+.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--card);border:1px solid var(--card-b);margin-bottom:18px}.tabs button{border:0;background:none;color:var(--mut);font:600 14px Inter;padding:9px 18px;border-radius:999px;cursor:pointer}.tabs button.on{background:var(--acc-s);color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--card-b);box-shadow:var(--sh);border-radius:24px;padding:20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.chip{display:inline-block;font:600 12px Inter;padding:3px 10px;border-radius:99px;background:var(--acc-s);color:var(--acc)}.chip.g{background:var(--line);color:var(--mut)}.chip.ok{background:rgba(52,168,83,.15);color:var(--ok)}
+input,select,textarea{width:100%;font:15px Inter;color:var(--text);background:transparent;border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin:4px 0 10px}input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);border-color:transparent}
+label{font-size:13px;color:var(--mut)}
+.note{color:var(--mut);font-size:13.5px}
+.it h3{margin:6px 0 4px;font:650 17px/1.35 'Inter Tight'}.it p{margin:0 0 6px;color:var(--mut);font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:16px;background:#000;display:block}
+.vthumb{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#111 center/cover;border:0;width:100%;cursor:pointer;padding:0}
+.vthumb i{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;color:#d93025;font-style:normal;font-size:20px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px}@media (max-width:820px){.two{grid-template-columns:1fr}}
+#msg{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#202124;color:#fff;padding:10px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:10}#msg.on{opacity:1}
+</style>
+</head>
+<body>
+<header><img src="assets/logo.png?v=2" alt="" onerror="this.style.display='none'"><b>Olym63 · Quản trị nội dung</b><a class="btn" href="./">Về trang chính</a></header>
+<main id="app"><p class="note">Đang kiểm tra quyền truy cập…</p></main>
+<div id="msg"></div>
+<script src="js/config.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const base = () => ((typeof CONFIG !== 'undefined' && CONFIG.ACCOUNTS_API_URL) || '').replace(/\/+$/, '');
+const token = () => { try { return localStorage.getItem('olympia_token'); } catch (e) { return null; } };
+async function api(p, o) { o = o || {}; const r = await fetch(base() + p, Object.assign({}, o, { headers: Object.assign({ 'Content-Type': 'application/json', Authorization: 'Bearer ' + token() }, o.headers || {}) })); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Lỗi ' + r.status); return d; }
+function toast(m) { const e = $('msg'); e.textContent = m; e.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('on'), 2600); }
+const KIND = { pdf: 'PDF', word: 'Word', excel: 'Excel', slide: 'Trình chiếu', other: 'Khác' };
+const RIGHTS = { own: 'Tác giả tự soạn', school: 'Của nhà trường', cc: 'Creative Commons', other: 'Nguồn khác' };
+const PROG = { olympia: 'Đường lên đỉnh Olympia', ddvq: 'Đường đến Vinh quang', trieuphu: 'Ai là triệu phú', vuatv: 'Vua Tiếng Việt', khac: 'Khác' };
+const ytId = u => { const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : (/^[A-Za-z0-9_-]{11}$/.test(String(u || '').trim()) ? String(u).trim() : null); };
+let tab = 'store', st = 'pending';
+async function init() {
+  if (!base()) return $('app').innerHTML = '<p>Chưa cấu hình ACCOUNTS_API_URL trong js/config.js.</p>';
+  if (!token()) return $('app').innerHTML = '<div class="card"><p>Bạn chưa đăng nhập.</p><a class="btn p" href="./">Đăng nhập ở Olym63</a></div>';
+  try { const me = await api('/me'); if (!me.user || me.user.role !== 'admin') throw new Error('Tài khoản này không có quyền quản trị.'); }
+  catch (e) { return $('app').innerHTML = `<div class="card"><p>${esc(e.message)}</p><a class="btn" href="./">Về trang chính</a></div>`; }
+  draw();
+}
+function draw() {
+  $('app').innerHTML = `<h1>Quản trị nội dung</h1><div class="tabs"><button class="${tab === 'store' ? 'on' : ''}" onclick="tab='store';draw()">Duyệt cửa hàng</button><button class="${tab === 'news' ? 'on' : ''}" onclick="tab='news';draw()">Tin tức (video)</button></div><div id="pane"></div>`;
+  tab === 'store' ? store() : news();
+}
+async function store() {
+  $('pane').innerHTML = '<p class="note">Đang tải…</p>';
+  try {
+    const r = await api('/admin/store?status=' + st), c = r.counts || {};
+    $('pane').innerHTML = `<div class="tabs" style="margin-bottom:14px">${[['pending', 'Chờ duyệt'], ['approved', 'Đã duyệt'], ['rejected', 'Từ chối']].map(x => `<button class="${st === x[0] ? 'on' : ''}" onclick="st='${x[0]}';store()">${x[1]} (${c[x[0]] || 0})</button>`).join('')}</div>
+      ${(r.items || []).length ? `<div class="grid">${r.items.map(x => `<div class="card it"><div><span class="chip">${KIND[x.kind] || 'Khác'}</span> <span class="chip g">${esc(x.subject || 'Chưa rõ môn')}</span> <span class="chip ${x.rights === 'own' ? 'ok' : 'g'}">${RIGHTS[x.rights] || ''}</span></div>
+        <h3>${esc(x.title)}</h3>${x.description ? `<p>${esc(x.description)}</p>` : ''}<p>Đăng bởi <b>${esc(x.author)}</b> · ${new Date(x.created).toLocaleString('vi-VN')}</p>
+        <p><a href="${/^https?:\/\//i.test(x.url) ? esc(x.url) : '#'}" target="_blank" rel="noopener noreferrer" style="color:var(--acc);word-break:break-all">${esc(x.url)}</a></p>${x.note ? `<p class="note">Ghi chú: ${esc(x.note)}</p>` : ''}
+        <input id="n-${x.id}" placeholder="Ghi chú cho người đăng (không bắt buộc)" value="${esc(x.note || '')}">
+        <div class="row">${x.status !== 'approved' ? `<button class="btn p sm" onclick="setSt(${x.id},'approved')">Duyệt</button>` : ''}${x.status !== 'rejected' ? `<button class="btn sm" onclick="setSt(${x.id},'rejected')">Từ chối</button>` : ''}<button class="btn d sm" onclick="delItem(${x.id})">Xóa</button></div></div>`).join('')}</div>` : '<div class="card"><p class="note">Không có tài liệu nào ở mục này.</p></div>'}
+      <p class="note" style="margin-top:16px">Hãy mở liên kết để kiểm tra nội dung và bản quyền trước khi duyệt. Chỉ tài liệu đã duyệt mới hiện trong Cửa hàng.</p>`;
+  } catch (e) { $('pane').innerHTML = `<div class="card"><p>${esc(e.message)}</p></div>`; }
+}
+async function setSt(id, s) { try { await api('/admin/store/' + id, { method: 'POST', body: JSON.stringify({ status: s, note: ($('n-' + id) || {}).value || '' }) }); toast(s === 'approved' ? 'Đã duyệt.' : 'Đã từ chối.'); store(); } catch (e) { toast(e.message); } }
+async function delItem(id) { if (!confirm('Xóa vĩnh viễn tài liệu này?')) return; try { await api('/admin/store/' + id, { method: 'DELETE' }); toast('Đã xóa.'); store(); } catch (e) { toast(e.message); } }
+async function news() {
+  $('pane').innerHTML = `<div class="two"><div class="card"><h3 style="margin:0 0 8px;font:700 18px 'Inter Tight'">Đăng video mới</h3>
+    <label>Liên kết YouTube *</label><input id="nu" placeholder="https://www.youtube.com/watch?v=…" oninput="prev()">
+    <label>Tiêu đề hiển thị</label><input id="nt" maxlength="200" placeholder="Ví dụ: Chung kết năm Đường lên đỉnh Olympia 2026">
+    <label>Chương trình</label><select id="np">${Object.entries(PROG).map(x => `<option value="${x[0]}">${x[1]}</option>`).join('')}</select>
+    <div id="pv" class="note" style="margin-bottom:10px">Dán liên kết để xem trước video.</div>
+    <button class="btn p" onclick="addNews()">Đăng lên trang chủ</button>
+    <p class="note" style="margin-top:12px">Video hiện ở mục "Video mới nhất" của trang chủ, mới nhất trước.</p></div>
+    <div><div id="nl"><p class="note">Đang tải danh sách…</p></div></div></div>`;
+  try {
+    const r = await (await fetch(base() + '/news')).json(); const v = r.videos || [];
+    $('nl').innerHTML = v.length ? `<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr))">${v.map(x => `<div class="card it" style="padding:12px"><button class="vthumb" style="background-image:url(https://i.ytimg.com/vi/${x.yt_id}/hqdefault.jpg)" onclick="play(this,'${x.yt_id}')"><i>▶</i></button><h3 style="font-size:15px">${esc(x.title)}</h3><p>${PROG[x.program] || ''} · ${new Date(x.created).toLocaleDateString('vi-VN')}</p><div class="row" style="margin-top:4px"><button class="btn d sm" onclick="delNews(${x.id})">Xóa</button></div></div>`).join('')}</div>` : '<div class="card"><p class="note">Chưa có video nào. Hãy đăng video đầu tiên.</p></div>';
+  } catch (e) { $('nl').innerHTML = `<div class="card"><p>${esc(e.message)}</p></div>`; }
+}
+function play(b, id) { b.outerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`; }
+function prev() { const id = ytId($('nu').value); $('pv').innerHTML = id ? `<iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0" allowfullscreen></iframe>` : 'Chưa nhận ra liên kết YouTube.'; }
+async function addNews() { const u = $('nu').value.trim(); if (!ytId(u)) return toast('Liên kết YouTube chưa hợp lệ.'); try { await api('/admin/news', { method: 'POST', body: JSON.stringify({ url: u, title: $('nt').value.trim(), program: $('np').value }) }); toast('Đã đăng video.'); news(); } catch (e) { toast(e.message); } }
+async function delNews(id) { if (!confirm('Xóa video này khỏi trang chủ?')) return; try { await api('/admin/news/' + id, { method: 'DELETE' }); toast('Đã xóa.'); news(); } catch (e) { toast(e.message); } }
+init();
+</script>
+</body>
+</html>
