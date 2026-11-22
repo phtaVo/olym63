@@ -197,10 +197,10 @@ const AUTH = (function () {
       const rows = data.leaderboard || [];
       if (!listEl) return;
       if (!rows.length) {
-        listEl.innerHTML = `<div class="lb-empty">Chưa có ai chơi phần thi này cả — hãy là người đầu tiên! </div>`;
+        listEl.innerHTML = `<div class="lb-empty">Chưa có ai chơi phần thi này cả — hãy là người đầu tiên! 🚀</div>`;
         return;
       }
-      const medals = [];
+      const medals = ['🥇', '🥈', '🥉'];
       listEl.innerHTML = rows.map((r, i) => `
         <div class="lb-row ${i < 3 ? 'lb-top' + (i + 1) : ''} ${currentUser && r.id === currentUser.id ? 'lb-me' : ''}">
           <div class="lb-rank">${medals[i] || (i + 1)}</div>
