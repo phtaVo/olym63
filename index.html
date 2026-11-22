@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Đường Lên Đỉnh Olympia – Luyện Tập</title>
+<title>Olym63 – Luyện tập và nghiên cứu</title>
 
 <!-- Nếu bạn có file favicon riêng, đặt vào thư mục assets/ rồi sửa dòng dưới -->
 <link rel="icon" href="assets/favicon.png" type="image/png">
 
 <!-- ==================== PWA / Add to Home Screen ==================== -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0A2E6B">
+<meta name="theme-color" content="#f4f6fb">
 
 <!-- iOS Safari: cho phép chạy ở chế độ standalone khi thêm vào Màn hình chính -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,19 +18,20 @@
 <meta name="apple-mobile-web-app-title" content="Olym63">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="css/portal.css?v=1">
 </head>
-<body data-theme="navy">
+<body data-mode="light" data-acc="blue">
 
-<button id="theme-btn" onclick="cycleTheme()" title="Đổi màu chủ đề">🎨</button>
 
 <!-- ==================== LOGIN ==================== -->
 <div id="login-screen" class="screen hidden">
   <div class="login-card">
-    <img class="login-logo" src="assets/logo.png" alt="Olympia" onerror="this.style.display='none'">
-    <div class="login-title">Olympia<br>of CTG</div>
-    <div class="login-sub">Đăng nhập để bắt đầu luyện tập</div>
+    <div class="nav-brand" style="justify-content:center;margin:0 0 20px;cursor:default"><span class="mark" style="width:48px;height:48px;border-radius:15px;font-size:22px">O</span></div>
+    <div class="login-title">Olym63</div>
+    <div class="login-sub">Đăng nhập để luyện tập và nghiên cứu</div>
 
     <label class="login-label" for="login-username">Tên đăng nhập</label>
     <input type="text" id="login-username" class="login-input" placeholder="Tên đăng nhập" autocomplete="username" onkeydown="AUTH.loginKeydown(event)">
@@ -44,27 +45,6 @@
   </div>
 </div>
 
-<!-- ==================== SIDEBAR NỔI (Trang chủ / Xếp hạng / Quản trị / Hồ sơ) ==================== -->
-<nav id="main-tabbar" class="hidden">
-  <button class="sidenav-avatar-btn" id="sidenav-avatar-btn" data-screen="profile-screen" onclick="AUTH.openProfile()" title="Hồ sơ của tôi">
-    <span id="sidenav-avatar-slot"></span>
-  </button>
-  <div class="sidenav-divider"></div>
-  <button class="tabbar-btn" data-screen="home-screen" onclick="AUTH.gotoHome()" title="Trang chủ">
-    <span class="tabbar-icon">🏠</span>
-  </button>
-  <button class="tabbar-btn" data-screen="nb-screen" onclick="NB.open()" title="Sổ nghiên cứu">
-    <span class="tabbar-icon">📓</span>
-  </button>
-  <button class="tabbar-btn" data-screen="leaderboard-screen" onclick="AUTH.openLeaderboard()" title="Bảng xếp hạng">
-    <span class="tabbar-icon">🏆</span>
-  </button>
-  <button class="tabbar-btn hidden" id="tab-admin-btn" data-screen="admin-screen" onclick="AUTH.openAdmin()" title="Quản trị">
-    <span class="tabbar-icon">⚙️</span>
-  </button>
-  <div class="sidenav-divider"></div>
-  <button class="sidenav-logout" onclick="AUTH.confirmLogout()" title="Đăng xuất">⎋</button>
-</nav>
 
 <!-- ==================== HOME ==================== -->
 <div id="home-screen" class="screen hidden"></div>
@@ -146,7 +126,7 @@
       <div class="score-number" id="score-display">0</div>
       <div class="score-unit">điểm</div>
       <button class="star-hope-btn" id="star-hope-btn" onclick="toggleStarHope()" style="display:none;">
-        <span class="star-hope-icon">⭐</span>Ngôi sao<br>hy vọng
+        <span class="star-hope-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.2 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg></span>Ngôi sao<br>hy vọng
       </button>
     </div>
     <div class="question-area">
@@ -176,7 +156,7 @@
 <!-- ==================== SOLO (thi đấu nhóm real-time) ==================== -->
 <div id="solo-screen" class="screen hidden"></div>
 
-<!-- ==================== RESEARCH SCREEN (🔎 Nghiên cứu) ==================== -->
+<!-- ==================== RESEARCH SCREEN (Nghiên cứu nhanh) ==================== -->
 <div id="research-screen" class="screen hidden"></div>
 
 <!-- ==================== SỔ NGHIÊN CỨU (kiểu NotebookLM) ==================== -->
@@ -208,7 +188,7 @@
 <!-- ==================== MODAL ==================== -->
 <div class="modal-overlay" id="coming-soon-modal" onclick="closeModal()">
   <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-emoji">🚧</div>
+    
     <div class="modal-title" id="modal-section-name">Sắp Ra Mắt</div>
     <div class="modal-sub">Phần thi này đang được phát triển.<br>Hãy quay lại sau nhé!</div>
     <button class="btn btn-outline" onclick="closeModal()">Quay lại</button>
@@ -218,7 +198,7 @@
 <!-- Modal hiển thị kết quả Gemini -->
 <div class="modal-overlay" id="gemini-modal" onclick="closeGeminiModal()">
   <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-emoji" id="gemini-modal-emoji">🤖</div>
+    <div class="modal-emoji" id="gemini-modal-emoji" style="font-size:34px;font-weight:700"></div>
     <div class="modal-title" id="gemini-modal-title">Gemini đánh giá</div>
     <div class="modal-sub" id="gemini-modal-verdict"></div>
     <div class="modal-explanation" id="gemini-modal-explanation"></div>
@@ -226,10 +206,10 @@
   </div>
 </div>
 
-<!-- Modal "🔬 Nghiên cứu sâu" một từ khóa -->
+<!-- Modal "Nghiên cứu sâu" một từ khóa -->
 <div class="modal-overlay" id="research-deep-modal" onclick="closeDeepModal()">
   <div class="modal-box modal-box-wide" onclick="event.stopPropagation()">
-    <div class="modal-title" id="rdm-title">🔬 Nghiên cứu sâu</div>
+    <div class="modal-title" id="rdm-title">Nghiên cứu sâu</div>
     <div class="rdm-body" id="rdm-body"></div>
     <button class="btn btn-outline" onclick="closeDeepModal()">Đóng</button>
   </div>
@@ -238,7 +218,7 @@
 <!-- Modal Admin: tạo / sửa tài khoản -->
 <div class="modal-overlay" id="admin-user-modal" onclick="AUTH.closeUserModal(event)">
   <div class="modal-box modal-box-wide admin-form-box" onclick="event.stopPropagation()">
-    <div class="modal-title" id="admin-modal-title">➕ Thêm tài khoản</div>
+    <div class="modal-title" id="admin-modal-title">Thêm tài khoản</div>
     <div class="admin-form" id="admin-form"></div>
     <div class="admin-form-error hidden" id="admin-form-error"></div>
     <div class="admin-form-actions">
@@ -270,14 +250,15 @@
 <!-- Cấu hình: API key, Spreadsheet ID, audio -->
 <script src="js/config.js?v=13"></script>
 <!-- Tài khoản / đăng nhập / bảng xếp hạng / quản trị -->
-<script src="js/auth.js?v=10"></script>
+<script src="js/portal.js?v=1"></script>
+<script src="js/auth.js?v=11"></script>
 <!-- Toàn bộ logic game -->
 <!-- Thống kê hồ sơ (số trận, số câu đã luyện) -->
 <script src="js/stats.js?v=1"></script>
-<script src="js/research.js?v=5"></script>
-<script src="js/adaptive.js?v=2"></script>
-<script src="js/notebook.js?v=1"></script>
-<script src="js/app.js?v=20"></script>
+<script src="js/research.js?v=6"></script>
+<script src="js/adaptive.js?v=3"></script>
+<script src="js/notebook.js?v=2"></script>
+<script src="js/app.js?v=21"></script>
 <!-- Module Solo: thi đấu nhóm real-time (mời, Giành chuông) -->
 <script src="js/solo.js?v=1"></script>
 </body>
