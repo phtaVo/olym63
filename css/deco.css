@@ -121,3 +121,63 @@ body[data-mode="dark"] .paper{display:none}
 @keyframes spk{from{opacity:1;transform:translate(0,0) rotate(var(--r)) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(calc(var(--r) + 200deg)) scale(.2)}}
 .dc.back img{-webkit-mask-image:radial-gradient(ellipse 50% 70% at 50% 82%,#000 40%,transparent 100%);mask-image:radial-gradient(ellipse 50% 70% at 50% 82%,#000 40%,transparent 100%)}
 .page-head .pdeco{display:none}
+
+/* ===== Hero: nền ảnh Khuê Văn Các tối nhẹ + sách cổ lật trang ===== */
+.hero-wrap{--hero-ov:rgba(20,15,8,.6);--hero-em:#f3d58e;--hero-t:rgba(255,255,255,.88);isolation:isolate}
+body[data-acc="pink"] .hero-wrap{--hero-ov:rgba(54,18,38,.56);--hero-em:#ffc4dc}
+body[data-acc="blue"] .hero-wrap{--hero-ov:rgba(10,18,40,.6);--hero-em:#a8c4ff}
+.hero-wrap::before{content:"";position:absolute;z-index:-1;left:50%;width:100vw;transform:translateX(-50%);top:calc(-1*(var(--nav-h,64px) + 36px));bottom:-44px;
+ background:linear-gradient(90deg,var(--hero-ov),color-mix(in srgb,var(--hero-ov) 55%,transparent) 75%),linear-gradient(var(--hero-ov),var(--hero-ov)),url(../assets/deco/hero.webp?v=4) center 35%/cover no-repeat;
+ filter:saturate(.8) blur(.6px);-webkit-mask-image:linear-gradient(180deg,#000 82%,transparent);mask-image:linear-gradient(180deg,#000 82%,transparent)}
+.hero-wrap h1{color:#fff;text-shadow:0 2px 18px rgba(0,0,0,.35)}
+.hero-wrap h1 em{color:var(--hero-em)!important}
+.hero-wrap p.lead{color:var(--hero-t)}
+.hero-wrap .eyebrow,.hero-wrap .dc-count{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.3)}
+.hero-wrap{padding-bottom:30px}
+
+.bkwrap{justify-self:center;width:100%;max-width:560px}
+.bk{position:relative;width:100%;aspect-ratio:1.38/1;container-type:inline-size;perspective:2200px;outline:none;filter:drop-shadow(0 26px 30px rgba(0,0,0,.5));transform:rotate(-1.2deg)}
+.bk:focus-visible{outline:2px solid var(--hero-em);outline-offset:8px;border-radius:10px}
+.bk-back{position:absolute;inset:-2.2% -2.4%;border-radius:1.2cqw;background:linear-gradient(135deg,#5a2f16,#3b1d0d 60%,#2a1408);box-shadow:inset 0 0 0 .35cqw #b8862b66,inset 0 0 0 .8cqw #4a2512}
+.pg{position:absolute;top:0;width:50%;height:100%;background:linear-gradient(90deg,#e8d4a3,#f4e6bf 14%,#f2e3b9 90%,#e2cb97);overflow:hidden}
+.pg.L{left:0;border-radius:.6cqw 0 0 .6cqw;background:linear-gradient(270deg,#e8d4a3,#f4e6bf 14%,#f2e3b9 90%,#e2cb97)}
+.pg.R{left:50%;border-radius:0 .6cqw .6cqw 0}
+.leaf{position:absolute;top:0;left:50%;width:50%;height:100%;transform-origin:left center;transform-style:preserve-3d;transition:transform .95s cubic-bezier(.45,.05,.25,1)}
+.leaf.flipped{transform:rotateY(-180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;cursor:pointer;background:linear-gradient(90deg,#e8d4a3,#f4e6bf 14%,#f2e3b9 90%,#e2cb97);border-radius:0 .6cqw .6cqw 0}
+.face.b{transform:rotateY(180deg);background:linear-gradient(270deg,#e8d4a3,#f4e6bf 14%,#f2e3b9 90%,#e2cb97);border-radius:.6cqw 0 0 .6cqw;cursor:w-resize}
+.face::after,.pg::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(110,70,20,.22));mix-blend-mode:multiply}
+.pc-in{position:absolute;inset:0;padding:8% 9% 9% 10%;display:flex;flex-direction:column;justify-content:center;gap:2.2cqw;font-family:Georgia,'Times New Roman','Noto Serif',serif;color:#3a2412}
+.pc-in.c{align-items:center;text-align:center}
+.pc-in small{font:700 1.55cqw/1.3 var(--font-body,Inter,sans-serif);letter-spacing:.14em;text-transform:uppercase;color:#8a5a14}
+.pc-in h3{font:700 3.3cqw/1.2 Georgia,'Times New Roman',serif;color:#4a2a10}
+.pc-in p{font-size:2.2cqw;line-height:1.55}
+.pc-in blockquote{margin:0;font-size:2.75cqw;line-height:1.55;font-style:italic;position:relative}
+.pc-in .gl{font-size:1.9cqw;color:#6a4a22;border-top:1px dashed #a07a3a88;padding-top:1.6cqw}
+.pc-in .pn{position:absolute;bottom:3.2cqw;left:0;right:0;text-align:center;font-style:normal;font-size:1.6cqw;color:#8a6a34}
+.pc-in img{height:50%;width:auto;filter:drop-shadow(0 6px 8px rgba(60,30,0,.35))}
+.pc-in .rule{width:36%;height:2px;background:linear-gradient(90deg,transparent,#b8862b,transparent)}
+.pc-in .orn-s{font-size:3.4cqw;color:#b8862b}
+.pc-in .pbtn{font-size:1.9cqw!important;padding:1.4cqw 3cqw!important}
+.bk-again{border:1px solid #8a5a14;background:transparent;color:#6a3f0c;border-radius:99px;padding:1cqw 2.6cqw;font:600 1.8cqw var(--font-body,Inter,sans-serif);cursor:pointer}
+.bk-again:hover{background:#8a5a1422}
+.bk-ctl{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:22px;color:#fff;font-size:13px}
+.bk-ctl button{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;font-size:22px;line-height:1;cursor:pointer;backdrop-filter:blur(6px)}
+.bk-ctl button:hover{background:rgba(255,255,255,.28)}
+@media(max-width:760px){.bk{aspect-ratio:.92/1;transform:none}.pc-in{padding:7% 7% 9% 8%;gap:2.6cqw}.pc-in blockquote{font-size:3.3cqw}.pc-in p{font-size:2.9cqw}.pc-in small{font-size:2.3cqw}.pc-in h3{font-size:4.4cqw}.pc-in .gl{font-size:2.5cqw}.pc-in .pn{font-size:2.3cqw}.bk-again{font-size:2.6cqw}.pc-in .pbtn{font-size:2.8cqw!important}}
+.lite .leaf{transition-duration:.5s}
+@media(prefers-reduced-motion:reduce){.leaf{transition:none}}
+.screen.pg{left:0;right:0;width:100%}
+.hero>*{min-width:0}
+
+/* sách cổ nằm ngay dưới hero, hiện lên khi cuộn */
+.hero{grid-template-columns:1fr!important;min-height:calc(100vh - 190px)}
+.hero>div{max-width:680px}
+.booksec{padding-top:10px}
+.booksec .bkwrap{max-width:800px;margin:6px auto 0}
+.booksec .bk{transform:perspective(1800px) translateY(calc(var(--in,0)*70px)) rotateX(calc(var(--in,0)*26deg)) rotate(-1deg);opacity:calc(1 - var(--in,0)*.7);will-change:transform}
+.booksec .bk-ctl{color:var(--text)}
+.booksec .bk-ctl button{border-color:var(--line);background:var(--glass-strong);color:var(--text)}
+.booksec .bk-ctl button:hover{background:var(--accent-soft)}
+@media(max-width:760px){.booksec .bk{transform:none;opacity:1}}
+.lite .booksec .bk{transform:none;opacity:1}
