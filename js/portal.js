@@ -195,14 +195,13 @@ const PORTAL = (() => {
       <div class="blob" data-par=".12" style="width:480px;height:480px;left:30%;top:900px;background:rgba(52,168,83,.16)"></div>
       <div class="page">
         <section class="hero hero-wrap">
-          <div class="hero-text">
+          ${DECO.scene(`<div class="hero-text">
             <span class="chip eyebrow rv">Nền tảng luyện tập và nghiên cứu tri thức</span>
             <h1 class="rv" style="--d:.05s">Luyện tập thông minh.<br><em>Nghiên cứu sâu hơn.</em></h1>
             <p class="lead rv" style="--d:.12s">${u ? 'Chào ' + esc(u.full_name || u.username) + '. ' : ''}Olym63 giúp học sinh luyện các phần thi quen thuộc của Đường lên đỉnh Olympia, tự nhận ra môn còn yếu, rồi đào sâu kiến thức bằng Sổ nghiên cứu có AI.</p>
             <div class="cta rv" style="--d:.2s"><button class="pbtn p" onclick="PORTAL.go('home-screen')">Bắt đầu luyện tập ${IC('arrow')}</button><button class="pbtn" onclick="PORTAL.go('nb-screen')">Mở Sổ nghiên cứu</button></div>
             ${DECO.counter()}
-          </div>
-          ${DECO.scene()}
+          </div>`)}
         </section>
 
         ${DECO.bookSection()}
