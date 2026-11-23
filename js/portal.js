@@ -85,11 +85,11 @@ const PORTAL = (() => {
   function applyLook() {
     const b = document.body; b.removeAttribute('data-theme');
     b.setAttribute('data-mode', ls.get('olym63_mode') || 'light');
-    b.setAttribute('data-acc', ls.get('olym63_acc') || 'gold');
+    b.setAttribute('data-acc', ls.get('olym63_acc2') || 'gold');
     const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = (ls.get('olym63_mode') === 'dark') ? '#0e1014' : '#f4f6fb';
   }
   function setMode(v) { ls.set('olym63_mode', v); applyLook(); renderNavRight(); }
-  function setAcc(v) { ls.set('olym63_acc', v); applyLook(); closePop(); }
+  function setAcc(v) { ls.set('olym63_acc2', v); applyLook(); closePop(); }
 
   // ---------- thanh điều hướng ----------
   function buildNav() {
@@ -202,14 +202,14 @@ const PORTAL = (() => {
             <div class="cta rv" style="--d:.2s"><button class="pbtn p" onclick="PORTAL.go('home-screen')">Bắt đầu luyện tập ${IC('arrow')}</button><button class="pbtn" onclick="PORTAL.go('nb-screen')">Mở Sổ nghiên cứu</button></div>
             ${DECO.counter()}
           </div>
-          ${DECO.stage()}
         </section>
+
+        ${DECO.bookSection()}
 
         <section class="sec">
           <div class="sec-head rv"><h2>Các cuộc thi tri thức trên truyền hình</h2><p>Liên kết nhanh tới thông tin mới nhất của từng chương trình. Các nút "Tin mới nhất" luôn mở kết quả tin tức hiện tại, nên không bị lỗi thời.</p></div>
           <div class="grid4">${comp.map((c, i) => `
-            <div class="pc dcor glass static rv ${c.st[0] === 'gray' ? 'soon' : ''}" style="--d:${i * .07}s">
-              <img class="corner" loading="lazy" src="assets/deco/${['cotco','bitexco','ship','lac'][i%4]}-s.webp?v=3" alt="" aria-hidden="true">
+            <div class="pc glass static rv ${c.st[0] === 'gray' ? 'soon' : ''}" style="--d:${i * .07}s">
               <div class="ico">${IC(c.ic)}</div><span class="chip ${c.st[0]}" style="align-self:flex-start">${c.st[1]}</span>
               <h3>${c.n}</h3><p>${c.d}</p>
               <div class="row"><a class="lnk" href="${gnews(c.q)}" target="_blank" rel="noopener noreferrer">Tin mới nhất ${IC('external')}</a><a class="lnk" href="${wiki(c.q)}" target="_blank" rel="noopener noreferrer">Tìm hiểu ${IC('external')}</a>${c.site ? `<a class="lnk" href="${c.site}" target="_blank" rel="noopener noreferrer">Trang chính thức ${IC('external')}</a>` : ''}</div>
@@ -237,8 +237,6 @@ const PORTAL = (() => {
           <div class="sec-head rv"><h2>Vòng học khép kín</h2><p>Mỗi ván chơi là một dữ liệu học tập. Hệ thống dùng nó để gợi ý bước tiếp theo.</p></div>
           <div class="flow">${[['Luyện tập', 'Chơi các phần thi mô phỏng với bộ câu hỏi theo môn.'], ['Ghi nhận', 'Mỗi câu trả lời được lưu để biết bạn mạnh, yếu ở môn nào.'], ['Ưu tiên môn yếu', 'Bật chế độ ưu tiên để câu hỏi tập trung vào môn còn yếu.'], ['Nghiên cứu sâu', 'Nạp ván vừa chơi hoặc tài liệu vào Sổ nghiên cứu, hỏi AI và tạo bài ôn.']].map((s, i) => `<div class="st glass rv" style="--d:${i * .08}s"><h3>${s[0]}</h3><p>${s[1]}</p></div>`).join('')}</div>
         </section>
-
-        <div class="foot-deco" aria-hidden="true">${['thienmu','benthanh','pisa','eiffel','pyramid'].map(k=>DECO.img(k)).join('')}</div>
         <footer class="foot glass rv">
           <div><b>Olym63</b><br>Sản phẩm của nhóm học sinh trường THPT Chuyên Tiền Giang, phục vụ học tập và nghiên cứu khoa học kỹ thuật.</div>
           <div style="max-width:430px"><b>Về dữ liệu</b><br>Dữ liệu học tập chỉ được ghi vào nhật ký nghiên cứu khi bạn đã đồng ý tham gia. Tài liệu trong Sổ nghiên cứu lưu trong trình duyệt của bạn và được gửi cho AI để phân tích. AI có thể sai, hãy đối chiếu với nguồn gốc.</div>
@@ -253,8 +251,8 @@ const PORTAL = (() => {
   function practice() { showScreen('home-screen'); AUTH.renderHome(); }
   function renderPractice() {
     const el = $('home-screen'); const G = CONFIG.GAME; const on = (typeof introEnabled !== 'undefined') ? introEnabled : true;
-    const card = (o, i) => `<button class="pc dcor glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
-        ${o.deco?`<img class="corner" loading="lazy" src="assets/deco/${o.deco}-s.webp?v=3" alt="" aria-hidden="true">`:''}<div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
+    const card = (o, i) => `<button class="pc glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
+        <div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
         ${o.lock ? '<span class="chip gray" style="position:absolute;right:18px;top:18px">Sắp ra mắt</span>' : `<span class="go">${IC('arrow')}</span>`}</button>`;
     const sets = {
       olympia: [
@@ -371,7 +369,7 @@ const PORTAL = (() => {
     if (k === 'support') return support();
     if (k === 'store') return storePage();
     const p = PAGES[k];
-    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><img class="pdeco" loading="lazy" src="assets/deco/${k==='report'?'compass':'ship'}-s.webp?v=3" alt="" aria-hidden="true"><span class="chip gray">Sắp ra mắt</span></div>
+    $(id).innerHTML = `<div class="page"><div class="page-head rv"><div style="flex:1"><h1>${p.t}</h1><p>${p.lead}</p></div><span class="chip gray">Sắp ra mắt</span></div>
       ${k === 'store' ? `<div class="practice-top rv"><div class="search">${IC('search')}<input placeholder="Tìm tài liệu, bộ câu hỏi…" disabled></div><div class="seg">${['Tất cả', 'PDF', 'Word', 'Excel', 'Bộ câu hỏi'].map((x, i) => `<button class="${i ? '' : 'on'}" disabled>${x}</button>`).join('')}</div></div>` : ''}
       <div class="glass rv empty"><div class="ico">${IC(p.ic)}</div><h3>Đang được xây dựng</h3><p>Chức năng này đã có chỗ sẵn trong hệ thống và sẽ được mở khi hoàn thiện.</p>${p.btn ? `<button class="pbtn p" onclick="${p.btn[1]}">${p.btn[0]}</button>` : ''}</div>
       <div class="sec" style="margin-top:46px"><div class="sec-head rv"><h2 style="font-size:24px">Dự kiến sẽ có</h2></div><div class="grid2">${p.feats.map((f, i) => `<div class="pc glass static rv soon" style="--d:${i * .06}s;flex-direction:row;align-items:center;gap:14px"><div class="ico" style="margin:0">${IC('check')}</div><p style="font-size:15px;color:var(--text)">${f}</p></div>`).join('')}</div></div></div>`;
