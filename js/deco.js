@@ -1,7 +1,7 @@
 /* Trang trí bằng hình ảnh. Gọn nhẹ: hình ở các góc, công trình tiêu biểu ở giữa. */
 const DECO = (() => {
   const $ = id => document.getElementById(id);
-  const V = '6';
+  const V = '7';
   const SRC = (k, s) => 'assets/deco/' + k + (s ? '-s' : '') + '.webp?v=' + V;
   const FACT = {
     khuevan: ['Khuê Văn Các', 'Gác trong Văn Miếu – Quốc Tử Giám, Hà Nội, xây năm 1805 và là một biểu tượng của Thủ đô.'],
@@ -67,23 +67,23 @@ const DECO = (() => {
   const HSO = { khuevan: '80% 50%', chuvanan: '50% 70%', khongtu: '75% 25%', nom: '55% 65%' };
   function scene(text) {
     const ks = ['khongtu', 'khuevan', 'chuvanan', 'nom'];
-    return `<div class="hero-scene"><div class="hs" id="hs" role="group" aria-label="Tranh Văn Miếu. Bấm vào Chu Văn An, Khổng Tử, Khuê Văn Các hoặc chữ Nôm để tìm hiểu">
+    return `<div class="hero-scene"><div class="hs idle" id="hs" role="group" aria-label="Tranh Văn Miếu. Bấm vào Chu Văn An, Khổng Tử, Khuê Văn Các hoặc chữ Nôm để tìm hiểu">
       <img class="hs-bg" src="assets/deco/hero-bg.webp?v=${V}" alt="" fetchpriority="high" decoding="async">
       <div class="hs-dim"></div>
-      ${ks.map(k => `<div class="hs-lit" data-hs="${k}" style="--o:${HSO[k]}"><i style="-webkit-mask-image:url(assets/deco/m-${k}.webp?v=${V});mask-image:url(assets/deco/m-${k}.webp?v=${V});background-image:url(assets/deco/hero-bg.webp?v=${V})"></i></div>`).join('')}
+      ${ks.map((k, n) => `<div class="hs-lit" data-hs="${k}" style="--o:${HSO[k]};--i:${n}"><i style="-webkit-mask-image:url(assets/deco/m-${k}.webp?v=${V});mask-image:url(assets/deco/m-${k}.webp?v=${V});background-image:url(assets/deco/hero-bg.webp?v=${V})"></i></div>`).join('')}
       <svg class="hs-hit" viewBox="0 0 1344 756" preserveAspectRatio="none">${ks.map(k => HSP[k].map(p => `<polygon points="${p}" data-hs="${k}" tabindex="0" role="button" aria-label="${esc(HSI[k][1])}"></polygon>`).join('')).join('')}</svg>
     </div>${text || ''}${info()}</div>`;
   }
   const info = () => `<div class="hs-info glass" id="hs-info" role="dialog" aria-live="polite"><button class="x" aria-label="Đóng" onclick="DECO.unfocus()">×</button><small></small><h3></h3><p></p><em>Bấm vào chỗ khác để quay lại</em></div>`;
   function focusHS(k, ev) {
     const hs = $('hs'); if (!hs || !HSI[k]) return; if (hs.dataset.f === k) { unfocus(); return; }
-    hs.dataset.f = k; hs.classList.add('on'); const w = hs.closest('.hero-wrap'); w.classList.add('focus');
+    hs.dataset.f = k; hs.classList.remove('idle'); hs.classList.add('on'); const w = hs.closest('.hero-wrap'); w.classList.add('focus');
     hs.querySelectorAll('.hs-lit').forEach(l => { l.classList.remove('hv'); l.classList.toggle('on', l.dataset.hs === k); });
     const c = $('hs-info'), t = HSI[k]; c.querySelector('small').textContent = t[0]; c.querySelector('h3').textContent = t[1]; c.querySelector('p').textContent = t[2];
     const fk = 'hs-' + k; if (!found.has(fk)) { found.add(fk); try { localStorage.setItem('olym63_deco', JSON.stringify([...found])); } catch (e) {} const cc = $('dc-count'); if (cc) { cc.textContent = `Đã khám phá ${found.size} hình · bấm để tìm hiểu`; cc.classList.remove('bump'); void cc.offsetWidth; cc.classList.add('bump'); } }
     if (ev && !lite()) sparkle(ev.clientX, ev.clientY);
   }
-  function unfocus() { const hs = $('hs'); if (!hs) return; delete hs.dataset.f; hs.classList.remove('on'); hs.closest('.hero-wrap').classList.remove('focus'); hs.querySelectorAll('.hs-lit').forEach(l => l.classList.remove('on')); }
+  function unfocus() { const hs = $('hs'); if (!hs) return; delete hs.dataset.f; hs.classList.remove('on'); hs.classList.add('idle'); hs.closest('.hero-wrap').classList.remove('focus'); hs.querySelectorAll('.hs-lit').forEach(l => l.classList.remove('on')); }
 
   // ---------- Sách cổ lật trang ----------
   const esc = s => String(s).normalize('NFC').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -167,6 +167,7 @@ const DECO = (() => {
   // ---------- Bong bóng kiến thức + lấp lánh ----------
   let bubble, bt;
   const lite = () => document.body.classList.contains('lite');
+  function unspot() { if (bubble) bubble.classList.remove('on'); document.querySelectorAll('.spot').forEach(s => s.classList.remove('spot')); }
   function showFact(k, el, ev) {
     const f = FACT[k]; if (!f) return;
     if (!found.has(k)) { found.add(k); try { localStorage.setItem('olym63_deco', JSON.stringify([...found])); } catch (e) {} const c = $('dc-count'); if (c) { c.textContent = found.size >= 30 ? 'Bạn đã khám phá ' + found.size + ' hình. Thật tò mò!' : `Đã khám phá ${found.size} hình · bấm để tìm hiểu`; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); } }
@@ -175,7 +176,6 @@ const DECO = (() => {
     const ie = el.querySelector('img') || el; let r = ie.getBoundingClientRect(); const rr = { left: Math.max(0, r.left), right: Math.min(innerWidth, r.right), top: Math.max(0, r.top), bottom: Math.min(innerHeight, r.bottom) }; r = { left: rr.left, top: rr.top, bottom: rr.bottom, width: rr.right - rr.left, height: rr.bottom - rr.top }; const W = Math.min(290, innerWidth - 24); let x = r.left + r.width / 2 - W / 2; x = Math.max(12, Math.min(innerWidth - W - 12, x));
     bubble.style.width = W + 'px'; bubble.style.left = x + 'px'; bubble.classList.add('on');
     const h = bubble.offsetHeight; let y = r.top - 8 - h; if (y < 74) y = Math.min(innerHeight - h - 12, r.bottom + 10); bubble.style.top = y + 'px';
-    clearTimeout(bt); bt = setTimeout(() => bubble && bubble.classList.remove('on'), 5200);
     if (!lite()) sparkle(ev ? ev.clientX : r.left + r.width / 2, ev ? ev.clientY : r.top + r.height / 2);
   }
   function sparkle(x, y) {
@@ -221,14 +221,16 @@ const DECO = (() => {
     document.addEventListener('click', e => {
       const hp = e.target.closest('.hs-hit polygon'); if (hp) { focusHS(hp.dataset.hs, e); return; }
       if (document.querySelector('.hs.on') && !e.target.closest('.hs-info')) unfocus();
-      const t = e.target.closest('[data-k]'); if (!t || !FACT[t.dataset.k]) { if (bubble && !e.target.closest('.fact')) bubble.classList.remove('on'); return; }
+      const t = e.target.closest('[data-k]'); if (!t || !FACT[t.dataset.k]) { if (!e.target.closest('.fact')) unspot(); return; }
+      if (t.classList.contains('spot')) { unspot(); return; }
+      unspot(); t.classList.add('spot');
       const inn = t.querySelector('.in') || t; inn.classList.remove('pop'); void inn.offsetWidth; inn.classList.add('pop');
       showFact(t.dataset.k, t, e);
     });
     document.addEventListener('pointerdown', dragStart); document.addEventListener('pointermove', dragMove); document.addEventListener('pointerup', dragEnd); document.addEventListener('pointercancel', dragEnd);
     let hvEl = null;
     document.addEventListener('pointerover', e => { const p = e.target.closest && e.target.closest('.hs-hit polygon'); const k = p && !document.querySelector('.hs.on') ? p.dataset.hs : null; if (hvEl && hvEl.dataset.hs !== k) { hvEl.classList.remove('hv'); hvEl = null; } if (k && !hvEl) { hvEl = document.querySelector('.hs-lit[data-hs="' + k + '"]'); if (hvEl) hvEl.classList.add('hv'); } });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') unfocus(); if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.hs-hit polygon')) { e.preventDefault(); focusHS(e.target.dataset.hs); } if (e.key === 'Escape' && bubble) bubble.classList.remove('on'); if (e.target && e.target.id === 'bk') { if (e.key === 'ArrowRight') flip(1); if (e.key === 'ArrowLeft') flip(-1); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { unfocus(); unspot(); } if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.hs-hit polygon')) { e.preventDefault(); focusHS(e.target.dataset.hs); } if (e.key === 'Escape' && bubble) bubble.classList.remove('on'); if (e.target && e.target.id === 'bk') { if (e.key === 'ArrowRight') flip(1); if (e.key === 'ArrowLeft') flip(-1); } });
     if (matchMedia('(hover:hover)').matches) {
       document.addEventListener('pointermove', e => { pm = e; if (!pmq) { pmq = true; requestAnimationFrame(() => { pmq = false; pointer(); }); } }, { passive: true });
     }
@@ -245,7 +247,7 @@ const DECO = (() => {
       if (d && st.contains(d)) { const b = d.getBoundingClientRect(), i = d.querySelector('.in'); i.style.setProperty('--rx', (-((pm.clientY - b.top) / b.height - .5) * 9).toFixed(1) + 'deg'); i.style.setProperty('--ry', (((pm.clientX - b.left) / b.width - .5) * 11).toFixed(1) + 'deg'); d.classList.add('tilt'); }
     }
   }
-  function onScroll() { if (bubble && bubble.classList.contains('on')) bubble.classList.remove('on'); if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; frame(); }); } }
+  function onScroll() { if (bubble && bubble.classList.contains('on')) unspot(); if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; frame(); }); } }
   function frame() {
     const vh = innerHeight, st = $('stage');
     if (st && st.offsetParent !== null && !lite()) { const r = st.getBoundingClientRect(); if (r.bottom > -100 && r.top < vh + 100) { const p = vh / 2 - (r.top + r.height / 2); st.style.setProperty('--rot', (p * .1).toFixed(1) + 'deg'); st.style.setProperty('--shipx', (p * .1).toFixed(1) + 'px'); } }
