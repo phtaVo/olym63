@@ -1,7 +1,7 @@
 /* Trang trí bằng hình ảnh. Gọn nhẹ: hình ở các góc, công trình tiêu biểu ở giữa. */
 const DECO = (() => {
   const $ = id => document.getElementById(id);
-  const V = '3';
+  const V = '4';
   const SRC = (k, s) => 'assets/deco/' + k + (s ? '-s' : '') + '.webp?v=' + V;
   const FACT = {
     khuevan: ['Khuê Văn Các', 'Gác trong Văn Miếu – Quốc Tử Giám, Hà Nội, xây năm 1805 và là một biểu tượng của Thủ đô.'],
@@ -34,7 +34,7 @@ const DECO = (() => {
     book: ['Trang sách cổ', 'Chi tiết một họa phẩm cổ châu Âu: bàn tay lật giở những trang sách chép tay.'],
     bust: ['Tượng bán thân Hy Lạp', 'Điêu khắc Hy Lạp cổ đại đề cao vẻ đẹp cân đối và trí tuệ của con người.']
   };
-  const TOTAL = 10; let found = new Set();
+  const TOTAL = 14; let found = new Set();
   try { found = new Set(JSON.parse(localStorage.getItem('olym63_deco') || '[]')); } catch (e) {}
   const nm = k => FACT[k] ? FACT[k][0] : k;
   const img = k => `<img class="dd" data-k="${k}" src="${SRC(k, 1)}" alt="${nm(k)}" loading="lazy" decoding="async">`;
@@ -56,8 +56,37 @@ const DECO = (() => {
   }
   const curtains = () => '';
 
-  // ---------- Sách cổ lật trang (hero) ----------
-  const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  // ---------- Cảnh hero: bấm vào nhân vật / công trình để xem thông tin ----------
+  const HSP = {"khuevan": ["1220,164 1216,164 1215,169 1205,178 1184,182 1170,207 1153,218 1147,218 1146,223 1129,221 1116,235 1107,234 1093,215 1085,214 1079,209 1071,211 1059,227 1052,256 1012,279 983,278 972,266 964,265 960,260 952,260 937,280 948,311 958,320 963,330 959,344 971,354 973,379 962,388 929,389 929,395 933,402 951,405 956,411 961,411 975,425 986,425 987,437 969,443 968,446 947,446 946,440 942,440 940,458 932,459 931,469 949,474 969,491 969,498 988,533 995,535 1005,556 1015,552 1016,540 1051,548 1049,588 1044,604 1050,613 1048,671 1054,695 1068,695 1069,640 1107,625 1104,581 1106,549 1163,543 1165,547 1171,548 1171,577 1165,578 1165,609 1169,613 1184,613 1187,606 1197,603 1230,600 1230,592 1234,589 1234,540 1245,539 1247,529 1259,530 1261,539 1321,539 1319,561 1331,562 1331,558 1326,557 1328,526 1316,526 1314,516 1326,515 1326,507 1319,504 1319,498 1333,498 1334,485 1318,482 1318,476 1323,475 1320,452 1312,452 1311,455 1297,454 1296,447 1284,446 1283,431 1277,429 1273,391 1278,387 1279,380 1285,378 1286,370 1309,367 1310,363 1316,363 1317,360 1328,360 1331,353 1336,353 1337,346 1343,345 1343,291 1332,290 1331,274 1311,272 1309,269 1297,274 1292,289 1278,293 1273,288 1267,273 1271,262 1265,256 1265,251 1261,250 1257,237 1248,235 1240,215 1242,179 1232,179 1231,173 1221,168"], "chuvanan": ["728,345 723,355 723,364 732,379 792,384 792,390 797,392 797,404 801,405 806,417 815,423 815,430 812,431 815,445 805,454 792,453 766,464 765,469 752,471 752,479 729,494 719,512 710,513 712,524 703,527 685,570 669,598 669,604 665,605 663,614 659,615 655,638 694,646 705,630 725,629 731,622 740,621 745,614 759,610 767,603 829,589 896,568 909,570 910,567 916,567 964,608 1008,636 1038,642 1035,623 1022,602 1022,591 1017,584 1012,583 1012,575 1005,575 1000,569 1000,558 994,554 986,531 966,496 959,495 955,485 945,485 933,479 931,470 897,457 885,448 888,430 898,421 904,407 907,387 957,387 964,384 970,376 970,372 964,371 967,351 926,350 922,342 916,341 914,328 902,325 896,299 886,288 862,278 850,277 846,273 818,281 818,286 810,287 808,296 802,297 799,316 793,322 793,345 787,345 786,338 782,338 781,346 773,346 772,338 741,338"], "khongtu": ["919,406 917,436 908,439 906,427 899,429 899,442 909,457 926,465 927,439 935,426 950,423 961,431 969,430 969,426 927,406", "1008,53 986,54 970,64 968,73 956,88 952,103 952,141 947,168 916,194 903,200 891,242 875,265 876,274 898,276 910,300 911,312 920,314 938,336 953,334 947,319 931,308 930,273 935,262 946,251 968,250 985,267 1006,269 1047,249 1048,231 1056,212 1075,195 1086,195 1097,201 1111,221 1128,211 1128,207 1121,207 1119,197 1125,196 1124,188 1111,185 1110,172 1106,170 1103,160 1062,144 1057,139 1048,108 1041,106 1042,79"], "nom": ["616,656 617,717 625,755 734,755 736,663 658,663 651,656 651,647", "1270,612 1275,755 1343,755 1343,639 1313,627 1313,613 1307,613 1305,621 1298,622", "790,416 731,399 690,402 668,459 655,518 660,570 668,577 676,574 714,501 740,477 772,461 807,437 807,432"]};
+  const HSI = {
+    khuevan: ['Văn Miếu – Quốc Tử Giám, Hà Nội', 'Khuê Văn Các', 'Gác Khuê Văn dựng năm 1805 trong khuôn viên Văn Miếu – Quốc Tử Giám. Tên gọi gợi hình ảnh sao Khuê, ngôi sao tượng trưng cho văn chương. Ngày nay gác là một biểu tượng của Hà Nội.'],
+    chuvanan: ['Nhà giáo thời Trần', 'Chu Văn An (1292–1370)', 'Ông là thầy giáo nổi tiếng, từng làm Tư nghiệp Quốc Tử Giám và được người đời kính trọng như một người thầy mẫu mực. Ông cũng nổi tiếng với bản sớ xin chém bảy nịnh thần, rồi cáo quan về dạy học. Hình trong ảnh là tranh minh họa.'],
+    khongtu: ['Nhà tư tưởng, nhà giáo dục', 'Khổng Tử (551–479 TCN)', 'Người đặt nền móng cho Nho giáo, đề cao việc học và đạo làm người. Văn Miếu ở Hà Nội thờ Khổng Tử. Tấm trướng chữ Hán 萬世師表 bên cạnh có nghĩa là “tấm gương của bậc thầy muôn đời”.'],
+    nom: ['Chữ viết cổ của người Việt', 'Chữ Nôm', 'Chữ Nôm được tạo ra dựa trên chữ Hán để ghi tiếng Việt, và được dùng sáng tác văn thơ trong nhiều thế kỷ. Truyện Kiều của Nguyễn Du là một tác phẩm viết bằng chữ Nôm. Các mảnh giấy trong ảnh mang tính minh họa.']
+  };
+  const HSO = { khuevan: '80% 50%', chuvanan: '50% 70%', khongtu: '75% 25%', nom: '55% 65%' };
+  function scene() {
+    const ks = ['khongtu', 'khuevan', 'chuvanan', 'nom'];
+    return `<div class="hero-scene"><div class="hs" id="hs" role="group" aria-label="Tranh Văn Miếu. Bấm vào Chu Văn An, Khổng Tử, Khuê Văn Các hoặc chữ Nôm để tìm hiểu">
+      <img class="hs-bg" src="assets/deco/hero-bg.webp?v=${V}" alt="" fetchpriority="high" decoding="async">
+      <div class="hs-dim"></div>
+      ${ks.map(k => `<div class="hs-lit" data-hs="${k}" style="--o:${HSO[k]}"><i style="--m:url(assets/deco/m-${k}.webp?v=${V})"></i></div>`).join('')}
+      <svg class="hs-hit" viewBox="0 0 1344 756" preserveAspectRatio="none">${ks.map(k => HSP[k].map(p => `<polygon points="${p}" data-hs="${k}" tabindex="0" role="button" aria-label="${esc(HSI[k][1])}"></polygon>`).join('')).join('')}</svg>
+    </div>${info()}</div>`;
+  }
+  const info = () => `<div class="hs-info glass" id="hs-info" role="dialog" aria-live="polite"><button class="x" aria-label="Đóng" onclick="DECO.unfocus()">×</button><small></small><h3></h3><p></p><em>Bấm vào chỗ khác để quay lại</em></div>`;
+  function focusHS(k, ev) {
+    const hs = $('hs'); if (!hs || !HSI[k]) return; if (hs.dataset.f === k) { unfocus(); return; }
+    hs.dataset.f = k; hs.classList.add('on'); const w = hs.closest('.hero-wrap'); w.classList.add('focus');
+    hs.querySelectorAll('.hs-lit').forEach(l => { l.classList.remove('hv'); l.classList.toggle('on', l.dataset.hs === k); });
+    const c = $('hs-info'), t = HSI[k]; c.querySelector('small').textContent = t[0]; c.querySelector('h3').textContent = t[1]; c.querySelector('p').textContent = t[2];
+    const fk = 'hs-' + k; if (!found.has(fk)) { found.add(fk); try { localStorage.setItem('olym63_deco', JSON.stringify([...found])); } catch (e) {} const cc = $('dc-count'); if (cc) { cc.textContent = `Đã khám phá ${found.size}/${TOTAL} hình · bấm để tìm hiểu`; cc.classList.remove('bump'); void cc.offsetWidth; cc.classList.add('bump'); } }
+    if (ev && !lite()) sparkle(ev.clientX, ev.clientY);
+  }
+  function unfocus() { const hs = $('hs'); if (!hs) return; delete hs.dataset.f; hs.classList.remove('on'); hs.closest('.hero-wrap').classList.remove('focus'); hs.querySelectorAll('.hs-lit').forEach(l => l.classList.remove('on')); }
+
+  // ---------- Sách cổ lật trang ----------
+  const esc = s => String(s).normalize('NFC').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const lines = s => s.split(' / ').map(esc).join('<br>');
   const BK = {
     q1: ['Văn bia Tiến sĩ · Thân Nhân Trung', '“Hiền tài là nguyên khí của quốc gia, nguyên khí thịnh thì thế nước mạnh mà hưng thịnh, nguyên khí suy thì thế nước yếu mà thấp hèn.”', ''],
@@ -75,23 +104,53 @@ const DECO = (() => {
     return `<div class="bkwrap rv rv-s">
       <div class="bk" id="bk" tabindex="0" role="group" aria-roledescription="sách" aria-label="Sách cổ ghi lời xưa ở Văn Miếu – Quốc Tử Giám. Dùng phím mũi tên để lật trang." data-n="0">
         <div class="bk-back"></div>
-        <div class="pg L base"><div class="pc-in c"><span class="orn-s">❖</span><small>Văn Miếu – Quốc Tử Giám</small><h3>Lời xưa<br>nơi Văn Miếu</h3><span class="rule"></span><p>Bấm vào trang hoặc nút mũi tên để lật.</p></div></div>
+        <div class="pg L base"><div class="pc-in c"><span class="orn-s">❖</span><small>Văn Miếu – Quốc Tử Giám</small><h3>Lời xưa<br>nơi Văn Miếu</h3><span class="rule"></span></div></div>
         <div class="pg R base"><div class="pc-in c"><img src="${SRC('khuevan', 1)}" alt="Khuê Văn Các" loading="lazy" decoding="async"><small>Khuê Văn Các</small><button class="bk-again" onclick="DECO.flip(-9)">Đọc lại từ đầu</button></div></div>
-        ${leaves.map((l, i) => `<div class="leaf" data-i="${i}" style="z-index:${10 + leaves.length - i}"><div class="face f" data-d="1">${l[0]}</div><div class="face b" data-d="-1">${l[1]}</div></div>`).join('')}
+        ${leaves.map((l, i) => `<div class="leaf" data-i="${i}" data-p="0" style="z-index:${10 + leaves.length - i}"><div class="face f" data-d="1">${l[0]}</div><div class="face b" data-d="-1">${l[1]}</div></div>`).join('')}
+        <div class="cast L"></div><div class="cast R"></div>
       </div>
       <div class="bk-ctl"><button onclick="DECO.flip(-1)" aria-label="Trang trước">${'‹'}</button><span id="bk-n" aria-live="polite">Trang 1 / 4</span><button onclick="DECO.flip(1)" aria-label="Trang sau">${'›'}</button></div>
     </div>`;
   }
   const bookSection = () => `<section class="sec booksec" id="booksec">
-      <div class="sec-head rv"><h2>Lời xưa nơi Văn Miếu</h2><p>Mở quyển sách cổ để đọc những dòng khắc trên bia đá và cổng Văn Miếu – Quốc Tử Giám. Bấm vào trang hoặc dùng mũi tên để lật.</p></div>
+      <div class="sec-head rv"><h2>Lời xưa nơi Văn Miếu</h2><p>Mở quyển sách cổ để đọc những dòng khắc trên bia đá và cổng Văn Miếu – Quốc Tử Giám.</p></div>
       ${book()}
     </section>`;
-  let bkT, bkAuto = false;
+  let bkAuto = false;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  function setP(el, p) {
+    el._p = p; el.style.transform = `rotateY(${(-180 * p).toFixed(2)}deg) skewY(${(Math.sin(Math.PI * p) * -2.4).toFixed(2)}deg)`; el.style.setProperty('--p', p.toFixed(3));
+    const b = el.parentNode, s = Math.sin(Math.PI * p) * .6; b.style.setProperty('--cr', (p < .5 ? s : 0).toFixed(3)); b.style.setProperty('--cl', (p >= .5 ? s : 0).toFixed(3));
+  }
+  function settle(b) { const L = [...b.querySelectorAll('.leaf')]; let n = 0; L.forEach((el, i) => { if ((el._p || 0) > .5) n++; if (!el._raf && !el._drag) el.style.zIndex = (el._p || 0) > .5 ? 10 + i : 10 + L.length - i; }); b.dataset.n = n; const t = $('bk-n'); if (t) t.textContent = `Trang ${n + 1} / ${L.length + 1}`; }
+  function anim(el, to, dur) {
+    cancelAnimationFrame(el._raf); const from = el._p || 0; if (from === to) { settle(el.parentNode); return; }
+    const t0 = performance.now(); dur = dur || 900 * Math.max(.45, Math.abs(to - from)); el.style.zIndex = 100;
+    const step = t => { const k = Math.min(1, (t - t0) / dur); setP(el, from + (to - from) * ease(k)); if (k < 1) el._raf = requestAnimationFrame(step); else { el._raf = 0; setP(el, to); settle(el.parentNode); } };
+    el._raf = requestAnimationFrame(step); const b = el.parentNode; b.dataset.n = to ? Math.max(+b.dataset.n, +el.dataset.i + 1) : Math.min(+b.dataset.n, +el.dataset.i);
+    const tt = $('bk-n'); if (tt) tt.textContent = `Trang ${b.dataset.n * 1 + 1} / ${b.querySelectorAll('.leaf').length + 1}`;
+  }
   function flip(d) {
-    const b = $('bk'); if (!b) return; const L = b.querySelectorAll('.leaf'); let n = +b.dataset.n; const m = n + (d === -9 ? -n : d); if (m < 0 || m > L.length) return; b.dataset.n = m;
-    L.forEach((el, i) => { const was = el.classList.contains('flipped'), now = i < m; if (was !== now) { el.classList.toggle('flipped', now); el.style.zIndex = 100; } });
-    clearTimeout(bkT); bkT = setTimeout(() => L.forEach((el, i) => el.style.zIndex = i < m ? 10 + i : 10 + L.length - i), 950);
-    const t = $('bk-n'); if (t) t.textContent = `Trang ${m + 1} / ${L.length + 1}`;
+    const b = $('bk'); if (!b) return; const L = [...b.querySelectorAll('.leaf')]; const n = +b.dataset.n;
+    if (d === -9) { L.slice().reverse().forEach((el, i) => setTimeout(() => anim(el, 0, 700), i * 140)); return; }
+    if (d > 0 && n < L.length) anim(L[n], 1); else if (d < 0 && n > 0) anim(L[n - 1], 0);
+  }
+  let drag = null;
+  function dragStart(e) {
+    const f = e.target.closest('.leaf .face'); if (!f || e.target.closest('button')) return; if (e.button && e.button !== 0) return;
+    const el = f.parentNode, b = el.parentNode; if (el._raf) return;
+    drag = { el, b, x: e.clientX, w: b.getBoundingClientRect().width, p0: el._p || 0, dir: f.classList.contains('f') ? 1 : -1, moved: false, id: e.pointerId };
+    try { f.setPointerCapture(e.pointerId); } catch (x) {}
+  }
+  function dragMove(e) {
+    if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x; if (!drag.moved && Math.abs(dx) < 6) return;
+    if (!drag.moved) { drag.moved = true; drag.el._drag = 1; drag.el.style.zIndex = 100; }
+    const p = Math.min(1, Math.max(0, drag.p0 + (drag.dir === 1 ? -dx : dx) / (drag.w * .55))); setP(drag.el, p);
+  }
+  function dragEnd(e) {
+    if (!drag || e.pointerId !== drag.id) return; const { el, moved, dir, p0 } = drag; drag = null; el._drag = 0;
+    if (!moved) { anim(el, dir === 1 ? 1 : 0); return; }
+    anim(el, (el._p || 0) > .5 ? 1 : 0);
   }
 
   // ---------- Dải di sản (cuộn dọc, trượt ngang) ----------
@@ -160,12 +219,15 @@ const DECO = (() => {
     if (bound) return; bound = true;
     document.body.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || matchMedia('(prefers-reduced-motion:reduce)').matches);
     document.addEventListener('click', e => {
-      const fc = e.target.closest('.leaf .face'); if (fc && !e.target.closest('button')) { flip(+fc.dataset.d); return; }
+      const hp = e.target.closest('.hs-hit polygon'); if (hp) { focusHS(hp.dataset.hs, e); return; }
+      if (document.querySelector('.hs.on') && !e.target.closest('.hs-info')) unfocus();
       const t = e.target.closest('[data-k]'); if (!t || !FACT[t.dataset.k]) { if (bubble && !e.target.closest('.fact')) bubble.classList.remove('on'); return; }
       const inn = t.querySelector('.in') || t; inn.classList.remove('pop'); void inn.offsetWidth; inn.classList.add('pop');
       showFact(t.dataset.k, t, e);
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && bubble) bubble.classList.remove('on'); if (e.target && e.target.id === 'bk') { if (e.key === 'ArrowRight') flip(1); if (e.key === 'ArrowLeft') flip(-1); } });
+    document.addEventListener('pointerdown', dragStart); document.addEventListener('pointermove', dragMove); document.addEventListener('pointerup', dragEnd); document.addEventListener('pointercancel', dragEnd);
+    document.addEventListener('pointerover', e => { const p = e.target.closest && e.target.closest('.hs-hit polygon'); document.querySelectorAll('.hs-lit.hv').forEach(l => l.classList.remove('hv')); if (p && !document.querySelector('.hs.on')) { const l = document.querySelector('.hs-lit[data-hs="' + p.dataset.hs + '"]'); if (l) l.classList.add('hv'); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') unfocus(); if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.hs-hit polygon')) { e.preventDefault(); focusHS(e.target.dataset.hs); } if (e.key === 'Escape' && bubble) bubble.classList.remove('on'); if (e.target && e.target.id === 'bk') { if (e.key === 'ArrowRight') flip(1); if (e.key === 'ArrowLeft') flip(-1); } });
     if (matchMedia('(hover:hover)').matches) {
       document.addEventListener('pointermove', e => { pm = e; if (!pmq) { pmq = true; requestAnimationFrame(() => { pmq = false; pointer(); }); } }, { passive: true });
     }
@@ -193,5 +255,5 @@ const DECO = (() => {
     if (sk && tr && sk.offsetParent !== null) { const r = sk.getBoundingClientRect(); if (r.bottom > -50 && r.top < vh + 50) { const view = tr.parentElement.clientWidth, over = Math.max(0, tr.scrollWidth - view); const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height * .6))); tr.style.transform = `translate3d(${(-p * over).toFixed(1)}px,0,0)`; } }
   }
   function init() { bind(); watch(); bkAuto = false; const s = $('stage'), k = $('sky'); if (s) watchVis(s); if (k) watchVis(k); frame(); onScroll(); }
-  return { book, bookSection, flip, stage, curtains, skyline, counter, img, init, frame, FACT, SRC, found: () => found.size };
+  return { scene, info, focusHS, unfocus, book, bookSection, flip, stage, curtains, skyline, counter, img, init, frame, FACT, SRC, found: () => found.size };
 })();
