@@ -30,7 +30,10 @@ body[data-acc="gold"] .glass,body[data-acc="pink"] .glass{border-color:var(--gla
 
 /* ---------- ảnh trang trí: nền tảng ---------- */
 .dc{position:absolute;border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.dc .in{display:block;transform:perspective(600px) rotateX(var(--rx,0)) rotateY(var(--ry,0));transition:transform .2s}
+.dc .in{display:block;transform:perspective(600px) rotateX(var(--rx,0)) rotateY(var(--ry,0));transition:transform .2s,scale .35s cubic-bezier(.3,1.5,.5,1),filter .3s}
+.dc.spot{z-index:60}
+.dc.spot .in,.sk.spot img{scale:1.16;filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 20px rgba(255,200,90,.9))}
+.sk img{transition:scale .35s cubic-bezier(.3,1.5,.5,1),filter .3s}
 .dc img{display:block;width:100%;height:auto;pointer-events:none;user-select:none}
 .dc:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:12px}
 .dc .in.pop,.sk .pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
@@ -117,34 +120,36 @@ body[data-mode="dark"] .paper{display:none}
 
 @keyframes bob{0%,100%{translate:0 0}50%{translate:0 -8px}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.12) rotate(-3deg)}100%{transform:scale(1)}}
+@keyframes pop{0%,100%{rotate:0deg}35%{rotate:-3deg;scale:1.22}}
 @keyframes spk{from{opacity:1;transform:translate(0,0) rotate(var(--r)) scale(1)}to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(calc(var(--r) + 200deg)) scale(.2)}}
 .dc.back img{-webkit-mask-image:radial-gradient(ellipse 50% 70% at 50% 82%,#000 40%,transparent 100%);mask-image:radial-gradient(ellipse 50% 70% at 50% 82%,#000 40%,transparent 100%)}
 .page-head .pdeco{display:none}
 
 /* ===== Hero: tranh Văn Miếu có thể bấm + sách cổ lật trang ===== */
 .hero-wrap{isolation:isolate;padding-bottom:20px;gap:18px;min-height:0!important}
-.hero-scene{position:relative;width:100%;max-width:1400px;margin:0 auto;container-type:inline-size}
-.hero-text{position:absolute;z-index:4;left:5%;top:50%;transform:translateY(-50%);width:47%;text-align:left;transition:opacity .3s}
-.hero-text h1{font-size:3.5cqw!important;line-height:1.1!important}
+.hero-scene{position:relative;width:100vw;margin-left:calc(50% - 50vw);margin-top:calc(-1*var(--hero-up,96px));container-type:inline-size}
+body{overflow-x:clip}
+.hero-text{position:absolute;z-index:4;left:max(5%,calc(50cqw - 700px));top:52%;transform:translateY(-50%);width:min(47%,640px);text-align:left;transition:opacity .3s}
+.hero-text h1{font-size:min(3.1cqw,58px)!important;line-height:1.1!important}
 .hero-text p.lead{font-size:1.45cqw!important;max-width:36cqw!important;margin-left:0!important}
 .hero-text .cta{justify-content:flex-start}
 .hero-text .eyebrow,.hero-text .dc-count{display:inline-flex}
 .hero-wrap.focus .hero-text{opacity:0;pointer-events:none}
-.hs{position:relative;width:100%;aspect-ratio:1344/756;border-radius:18px;overflow:hidden;background:#f6cf8b;box-shadow:0 22px 50px -18px rgba(90,50,10,.45),0 0 0 1px rgba(160,110,40,.25);user-select:none;-webkit-user-select:none}
+.hs{position:relative;width:100%;aspect-ratio:1344/756;overflow:hidden;background:#f6cf8b;user-select:none;-webkit-user-select:none}
 .hs-bg,.hs-lit,.hs-dim,.hs-hit{position:absolute;inset:0;width:100%;height:100%}
 .hs-bg{object-fit:cover;display:block}
 .hs-dim{background:rgba(20,11,4,.78);opacity:0;pointer-events:none;transition:opacity .35s}
 .hs.on .hs-dim{opacity:1}
-.hs-lit{pointer-events:none;opacity:0;transition:opacity .3s,transform .4s;transform-origin:var(--o,50% 50%)}
+.hs-lit{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 9px #ffb300) drop-shadow(0 0 26px rgba(255,160,0,.85));pointer-events:none;opacity:0;transition:opacity .3s,transform .4s;transform-origin:var(--o,50% 50%)}
 .hs-lit i{position:absolute;inset:0;background-position:center;background-size:100% 100%;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-.hs-lit.hv{opacity:.55}
+.hs-lit.hv{opacity:1;transform:scale(1.015)}
+.hs:has(.hs-lit.hv) .hs-dim{opacity:.42}
 .hs-lit.on{opacity:1;transform:scale(1.06);filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 22px rgba(255,208,110,.9));transition:opacity .3s,transform .45s cubic-bezier(.3,1.5,.5,1)}
 .hs-hit{z-index:3}
-.hs-hit polygon{fill:transparent;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.hs-hit polygon{fill:transparent;stroke:transparent;stroke-width:44;stroke-linejoin:round;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
 .hs-hit polygon:focus-visible{stroke:#fff;stroke-width:3;fill:rgba(255,230,160,.18)}
 .hs.on .hs-hit polygon{cursor:pointer}
-.hs-info{position:absolute;z-index:5;left:5%;top:50%;width:min(400px,42%);padding:18px 20px 16px;border-radius:16px;opacity:0;transform:translateY(calc(-50% + 12px));pointer-events:none;transition:opacity .3s,transform .3s;background:rgba(255,248,232,.94)!important;color:#3a2412;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+.hs-info{position:absolute;z-index:5;left:max(5%,calc(50cqw - 700px));top:50%;width:min(400px,42%);padding:18px 20px 16px;border-radius:16px;opacity:0;transform:translateY(calc(-50% + 12px));pointer-events:none;transition:opacity .3s,transform .3s;background:rgba(255,248,232,.94)!important;color:#3a2412;box-shadow:0 14px 34px rgba(0,0,0,.35)}
 .hero-wrap.focus .hs-info{opacity:1;transform:translateY(-50%);pointer-events:auto}
 .hs-info small{display:block;font:700 11px/1.3 var(--font-body,Inter,sans-serif);letter-spacing:.12em;text-transform:uppercase;color:#8a5a14}
 .hs-info h3{margin:4px 0 6px;font:700 20px/1.25 'Lora','Noto Serif',serif;color:#4a2a10}
@@ -211,3 +216,8 @@ body[data-mode="dark"] .paper{display:none}
 
 .dc.cn.tr,.dc.cn.tl,.dc.cn.l,.dc.cn.r{will-change:translate}
 .hs-hit polygon{pointer-events:all}
+
+.hs.idle .hs-lit:not(.on):not(.hv){animation:hsIdle 14s ease-in-out infinite;animation-delay:calc(var(--i,0)*3.4s + 2s)}
+@keyframes hsIdle{0%,22%,100%{opacity:0}8%,14%{opacity:.85}}
+.lite .hs.idle .hs-lit{animation:none}
+@media(max-width:900px){.hero-scene{width:100%;margin:0}}
