@@ -167,7 +167,8 @@ const DECO = (() => {
   // ---------- Bong bóng kiến thức + lấp lánh ----------
   let bubble, bt;
   const lite = () => document.body.classList.contains('lite');
-  function unspot() { if (bubble) bubble.classList.remove('on'); document.querySelectorAll('.spot').forEach(s => s.classList.remove('spot')); }
+  let spotEl = null;
+  function unspot() { if (bubble) bubble.classList.remove('on'); if (spotEl) { spotEl.classList.remove('spot'); spotEl = null; } document.querySelectorAll('.spot').forEach(s => s.classList.remove('spot')); }
   function showFact(k, el, ev) {
     const f = FACT[k]; if (!f) return;
     if (!found.has(k)) { found.add(k); try { localStorage.setItem('olym63_deco', JSON.stringify([...found])); } catch (e) {} const c = $('dc-count'); if (c) { c.textContent = found.size >= 30 ? 'Bạn đã khám phá ' + found.size + ' hình. Thật tò mò!' : `Đã khám phá ${found.size} hình · bấm để tìm hiểu`; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); } }
@@ -218,18 +219,26 @@ const DECO = (() => {
   function bind() {
     if (bound) return; bound = true;
     document.body.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || matchMedia('(prefers-reduced-motion:reduce)').matches);
+    document.addEventListener('pointerdown', e => { if (!e.target.closest) return; if (!e.target.closest('[data-k],.fact')) unspot(); if (document.querySelector('.hs.on') && !e.target.closest('.hs-hit,.hs-info')) unfocus(); }, true);
     document.addEventListener('click', e => {
       const hp = e.target.closest('.hs-hit polygon'); if (hp) { focusHS(hp.dataset.hs, e); return; }
       if (document.querySelector('.hs.on') && !e.target.closest('.hs-info')) unfocus();
       const t = e.target.closest('[data-k]'); if (!t || !FACT[t.dataset.k]) { if (!e.target.closest('.fact')) unspot(); return; }
       if (t.classList.contains('spot')) { unspot(); return; }
-      unspot(); t.classList.add('spot');
+      unspot(); t.classList.add('spot'); spotEl = t;
       const inn = t.querySelector('.in') || t; inn.classList.remove('pop'); void inn.offsetWidth; inn.classList.add('pop');
       showFact(t.dataset.k, t, e);
     });
     document.addEventListener('pointerdown', dragStart); document.addEventListener('pointermove', dragMove); document.addEventListener('pointerup', dragEnd); document.addEventListener('pointercancel', dragEnd);
-    let hvEl = null;
-    document.addEventListener('pointerover', e => { const p = e.target.closest && e.target.closest('.hs-hit polygon'); const k = p && !document.querySelector('.hs.on') ? p.dataset.hs : null; if (hvEl && hvEl.dataset.hs !== k) { hvEl.classList.remove('hv'); hvEl = null; } if (k && !hvEl) { hvEl = document.querySelector('.hs-lit[data-hs="' + k + '"]'); if (hvEl) hvEl.classList.add('hv'); } });
+    let hvEl = null, hvK = null;
+    const PP = {}; const pts = k => PP[k] || (PP[k] = HSP[k].map(s => s.trim().split(/\s+/).map(q => q.split(',').map(Number))));
+    function near(k, x, y, R) { let best = 1e9; for (const poly of pts(k)) { let ins = false; for (let a = 0, b = poly.length - 1; a < poly.length; b = a++) { const [x1, y1] = poly[a], [x2, y2] = poly[b]; if ((y1 > y) !== (y2 > y) && x < (x2 - x1) * (y - y1) / (y2 - y1) + x1) ins = !ins; const dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy || 1; let t = ((x - x1) * dx + (y - y1) * dy) / L; t = Math.max(0, Math.min(1, t)); const ex = x1 + t * dx - x, ey = y1 + t * dy - y; best = Math.min(best, ex * ex + ey * ey); } if (ins) return 0; } return Math.sqrt(best) <= R ? Math.sqrt(best) : 1e9; }
+    function hint(e) {
+      const hs = $('hs'); let k = null;
+      if (hs && !hs.classList.contains('on') && e.target.closest && e.target.closest('.hs')) { const r = hs.getBoundingClientRect(), s = 1344 / r.width, x = (e.clientX - r.left) * s, y = (e.clientY - r.top) * s; let bd = 1e9; for (const q of Object.keys(HSP)) { const dd = near(q, x, y, 70); if (dd < bd) { bd = dd; k = q; } } hs.classList.toggle('pt', bd < 1e9); }
+      if (k === hvK) return; if (hvEl) hvEl.classList.remove('hv'); hvK = k; hvEl = k ? document.querySelector('.hs-lit[data-hs="' + k + '"]') : null; if (hvEl) hvEl.classList.add('hv');
+    }
+    let hq = null; document.addEventListener('pointermove', e => { if (!matchMedia('(hover:hover)').matches) return; hq = e; if (!hint.q) { hint.q = 1; requestAnimationFrame(() => { hint.q = 0; hint(hq); }); } }, { passive: true });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { unfocus(); unspot(); } if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.hs-hit polygon')) { e.preventDefault(); focusHS(e.target.dataset.hs); } if (e.key === 'Escape' && bubble) bubble.classList.remove('on'); if (e.target && e.target.id === 'bk') { if (e.key === 'ArrowRight') flip(1); if (e.key === 'ArrowLeft') flip(-1); } });
     if (matchMedia('(hover:hover)').matches) {
       document.addEventListener('pointermove', e => { pm = e; if (!pmq) { pmq = true; requestAnimationFrame(() => { pmq = false; pointer(); }); } }, { passive: true });
@@ -247,7 +256,7 @@ const DECO = (() => {
       if (d && st.contains(d)) { const b = d.getBoundingClientRect(), i = d.querySelector('.in'); i.style.setProperty('--rx', (-((pm.clientY - b.top) / b.height - .5) * 9).toFixed(1) + 'deg'); i.style.setProperty('--ry', (((pm.clientX - b.left) / b.width - .5) * 11).toFixed(1) + 'deg'); d.classList.add('tilt'); }
     }
   }
-  function onScroll() { if (bubble && bubble.classList.contains('on')) unspot(); if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; frame(); }); } }
+  function onScroll() { if (spotEl || (bubble && bubble.classList.contains('on'))) unspot(); if (!tick) { tick = true; requestAnimationFrame(() => { tick = false; frame(); }); } }
   function frame() {
     const vh = innerHeight, st = $('stage');
     if (st && st.offsetParent !== null && !lite()) { const r = st.getBoundingClientRect(); if (r.bottom > -100 && r.top < vh + 100) { const p = vh / 2 - (r.top + r.height / 2); st.style.setProperty('--rot', (p * .1).toFixed(1) + 'deg'); st.style.setProperty('--shipx', (p * .1).toFixed(1) + 'px'); } }
