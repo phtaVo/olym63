@@ -843,12 +843,13 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
       <div class="nb-note">Tạo báo cáo theo mẫu chuẩn: trang bìa, mục lục, Tóm tắt, 4 phần chính, tài liệu tham khảo, phụ lục. AI điền nội dung từ các nguồn trong sổ (ghi chú, Word, PDF, Kho dữ liệu…). Chỗ chưa có thông tin sẽ để dòng “[Cần bổ sung: …]” để bạn tự điền, AI không bịa số liệu. Tốn khoảng 12 lượt AI.</div>
       ${f('rp-title', 'Tên đề tài', cur.title)}${f('rp-field', 'Lĩnh vực', '', 'Ví dụ: Phần mềm hệ thống / Giáo dục')}
       <label class="nb-note" style="display:block;margin-top:8px">Tác giả (mỗi dòng một người, dạng: Họ và tên - Lớp)</label><textarea id="rp-au" rows="2" placeholder="Nguyễn Văn A - 11 Sinh">${esc(userName() || '')}</textarea>
-      ${f('rp-te', 'Giáo viên hướng dẫn', '', 'Họ tên giáo viên')}${f('rp-sc', 'Trường', D.school)}${f('rp-yr', 'Năm học', D.year)}
+      ${f('rp-te', 'Giáo viên hướng dẫn', '', 'Họ tên giáo viên')}${f('rp-ct', 'Tên cuộc thi', '', 'Nhập tên cuộc thi bạn tham gia')}${f('rp-sc', 'Trường', '', 'Nhập tên trường')}${f('rp-pv', 'Tỉnh / thành phố', '', 'Nhập tỉnh hoặc thành phố')}${f('rp-yr', 'Năm học', '', 'Ví dụ: 2026 – 2027')}
       <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Hủy</button><button class="pbtn" onclick="NB.rpBlank()">Chỉ tải mẫu trống</button><button class="pbtn p" onclick="NB.makeReport()">Viết báo cáo bằng AI</button></div>`);
   }
   function rpMetaForm() {
     const v = id => ($(id) || {}).value || '', au = v('rp-au').split('\n').map(s => s.trim()).filter(Boolean).map(s => { const k = s.split(/\s*[-–—,;\t]\s*/); return { n: k[0], c: k.slice(1).join(' ') }; });
-    return { title: v('rp-title').trim() || REPORT.DEF.title, field: 'Lĩnh vực: ' + (v('rp-field').trim() || '…………………………………'), authors: au.length ? au : REPORT.DEF.authors, teacher: 'Giáo viên hướng dẫn: ' + (v('rp-te').trim() || '…………………'), school: (v('rp-sc').trim() || REPORT.DEF.school).toUpperCase(), year: v('rp-yr').trim() || REPORT.DEF.year, date: new Date().getFullYear() + '' };
+    const pv = v('rp-pv').trim(), D = REPORT.DEF, up = s => s.trim().toUpperCase();
+    return { title: v('rp-title').trim() || D.title, field: 'Lĩnh vực: ' + (v('rp-field').trim() || '…………………………………'), authors: au.length ? au : D.authors, teacher: 'Giáo viên hướng dẫn: ' + (v('rp-te').trim() || '…………………'), contest: v('rp-ct').trim() ? up(v('rp-ct')) : D.contest, school: v('rp-sc').trim() ? up(v('rp-sc')) : D.school, org: pv ? 'SỞ GIÁO DỤC VÀ ĐÀO TẠO ' + up(pv) : D.org, place: pv || D.place, year: v('rp-yr').trim() ? (/năm/i.test(v('rp-yr')) ? v('rp-yr').trim() : 'Năm học ' + v('rp-yr').trim()) : D.year, date: new Date().getFullYear() + '' };
   }
   async function rpBlank() {
     const meta = rpMetaForm(); try { toast('Đang tạo mẫu Word…'); const b = await REPORT.build(await DOCGEN.loadDocx(), meta, { figures: [] }, { hints: true }); DOCGEN.download(b, 'Mau_bao_cao_NCKH.docx'); closeModal(); } catch (e) { toast('Không tạo được file Word: ' + e.message); }
@@ -879,7 +880,7 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
     modal(`<h2>${IC('file')} ${esc(a.title)}</h2>
       <div class="nb-note" style="margin-bottom:8px">${gaps ? `Còn <b>${gaps}</b> chỗ cần bổ sung (dòng “[Cần bổ sung: …]”). Mở từng mục bên dưới để sửa trực tiếp, rồi tải file Word.` : 'Đã có nội dung cho mọi mục. Kiểm tra lại số liệu trước khi nộp.'}</div>
       <div class="nb-scroll" style="max-height:52vh">
-        <details><summary><b>Trang bìa</b></summary>${mf('title', 'Tên đề tài')}${mf('field', 'Lĩnh vực')}${mf('teacher', 'Giáo viên hướng dẫn')}${mf('school', 'Trường')}${mf('year', 'Năm học')}</details>
+        <details><summary><b>Trang bìa</b></summary>${mf('title', 'Tên đề tài')}${mf('field', 'Lĩnh vực')}${mf('teacher', 'Giáo viên hướng dẫn')}${mf('contest', 'Tên cuộc thi')}${mf('school', 'Trường')}${mf('org', 'Sở giáo dục (dòng đầu bìa)')}${mf('place', 'Tỉnh / thành phố')}${mf('year', 'Năm học')}</details>
         ${REPORT.LEAVES.map(s => `<details ${/\[Cần bổ sung/.test(c[s.id] || '') ? 'open' : ''}><summary>${esc(s.t)}${/\[Cần bổ sung/.test(c[s.id] || '') ? ' <span class="nb-note">· cần bổ sung</span>' : ''}</summary><textarea rows="${Math.min(14, Math.max(4, Math.ceil((c[s.id] || '').length / 90)))}" data-id="${s.id}" oninput="NB.rpEdit('${a.id}',this)">${esc(c[s.id] || '')}</textarea></details>`).join('')}
       </div>
       <div class="nb-end"><button class="pbtn p" onclick="NB.rpDl('${a.id}')">Tải .docx</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`);
