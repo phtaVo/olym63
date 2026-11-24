@@ -202,11 +202,9 @@ const PORTAL = (() => {
       <div class="page">
         <section class="hero hero-wrap">
           ${DECO.scene(`<div class="hero-text">
-            <span class="chip eyebrow rv">Nền tảng luyện tập và nghiên cứu tri thức</span>
             <h1 class="rv" style="--d:.05s">Luyện tập thông minh.<br><em>Nghiên cứu sâu hơn.</em></h1>
             <p class="lead rv" style="--d:.12s">${u ? 'Chào ' + esc(u.full_name || u.username) + '. ' : ''}Olym63 giúp học sinh luyện các phần thi quen thuộc của Đường lên đỉnh Olympia, tự nhận ra môn còn yếu, rồi đào sâu kiến thức bằng Sổ nghiên cứu có AI.</p>
             <div class="cta rv" style="--d:.2s"><button class="pbtn p" onclick="PORTAL.go('home-screen')">Bắt đầu luyện tập ${IC('arrow')}</button><button class="pbtn" onclick="PORTAL.go('nb-screen')">Mở Sổ nghiên cứu</button></div>
-            ${DECO.counter()}
           </div>`)}
         </section>
 
@@ -225,7 +223,7 @@ const PORTAL = (() => {
         ${DECO.skyline()}
 
         <section class="sec" id="home-news">
-          <div class="sec-head rv"><h2>Video mới nhất</h2><p>Các video do quản trị viên chọn từ YouTube của chương trình. Bấm vào hình để xem ngay tại đây.</p></div>
+          <div class="sec-head rv"><h2>Video kiến thức mới nhất</h2><p>Các video do quản trị viên chọn từ YouTube của chương trình. Bấm vào hình để xem ngay tại đây.</p></div>
           <div id="news-body"><div class="nb-note">Đang tải…</div></div>
         </section>
 
