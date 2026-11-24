@@ -113,7 +113,7 @@ const DECO = (() => {
     </div>`;
   }
   const bookSection = () => `<section class="sec booksec" id="booksec">
-      <div class="sec-head rv"><h2>Lời xưa nơi Văn Miếu</h2><p>Mở quyển sách cổ để đọc những dòng khắc trên bia đá và cổng Văn Miếu – Quốc Tử Giám.</p></div>
+      <div class="sec-head rv"><h2>Lời xưa nơi Văn Miếu</h2></div>
       ${book()}
     </section>`;
   let bkAuto = false;
@@ -157,7 +157,7 @@ const DECO = (() => {
   function skyline() {
     const S = [['cotco', 280], ['thienmu', 220], ['benthanh', 230], ['bitexco', 360], ['motcot', 300], ['tag', 'Thế giới'], ['pisa', 320], ['colosseum', 240], ['pyramid', 210], ['bigben', 340], ['eiffel', 380]];
     return `<section class="sec sky" id="sky">
-      <div class="sec-head rv"><h2>Hành trình tri thức</h2><p>Từ những công trình quen thuộc của Việt Nam đến các di sản thế giới. Cuộn trang để đi dọc dải di sản, bấm vào từng hình để tìm hiểu.</p></div>
+      <div class="sec-head rv"><h2>Từ Việt Nam đến thế giới</h2><p>Hành trình tìm hiểu tri thức qua những di sản tiêu biểu.</p></div>
       <div class="sky-view"><div class="sky-track" id="sky-track"><span class="sky-tag">Việt Nam</span>
         ${S.map((s, i) => s[0] === 'tag' ? `<span class="sky-tag w">${s[1]}</span>` : `<button class="sk" data-k="${s[0]}" style="--h:${s[1]}px" aria-label="${nm(s[0])}"><img src="${SRC(s[0])}" alt="" loading="lazy" decoding="async"></button>`).join('')}
       </div><div class="sky-ground"></div></div></section>`;
