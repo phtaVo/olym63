@@ -51,6 +51,7 @@ details{margin:4px 0 4px 18px;border-left:2px solid var(--line);padding-left:12p
 <main id="app"><div class="note" style="text-align:center;padding:60px">Đang tải nội dung…</div></main>
 <script src="js/config.js"></script>
 <script src="js/docgen.js"></script>
+<script src="js/graphs.js"></script>
 <script>
 const $ = id => document.getElementById(id), E = s => DOCGEN.esc(s), L = 'ABCD';
 const LV = { NB: 'Nhận biết', TH: 'Thông hiểu', VD: 'Vận dụng', VDC: 'Vận dụng cao' };
@@ -93,11 +94,10 @@ function fnav(k) { fi = (fi + k + order.length) % order.length; paintFlash(windo
 function fshuf() { order.sort(() => Math.random() - .5); fi = 0; paintFlash(window._fd); }
 // cây / sơ đồ
 function tree(root) {
-  const K = { core: 'Trọng tâm', sup: 'Bổ trợ', ext: 'Mở rộng' };
-  const node = (n, d) => { const meta = `${n.k && K[n.k] ? `<span class="tag">${K[n.k]}</span>` : ''}${n.d ? `<p class="nd">${E(n.d)}</p>` : ''}${n.x ? `<div class="nx">${E(n.x)}</div>` : ''}`;
-    return (n.c && n.c.length) ? `<details ${d < 2 ? 'open' : ''}><summary>${E(n.t)}${meta ? '' : ''}</summary>${meta}${n.c.map(x => node(x, d + 1)).join('')}</details>` : `<div class="leaf">${E(n.t)}${meta}</div>`; };
-  return `<div class="bar" style="margin:0 0 12px"><button class="btn" onclick="document.querySelectorAll('details').forEach(x=>x.open=true)">Mở tất cả</button><button class="btn" onclick="document.querySelectorAll('details').forEach(x=>x.open=false)">Thu gọn</button><button class="btn" onclick="window.print()">In</button></div><div class="root">${E(root.t)}</div>${root.d ? `<p class="nd">${E(root.d)}</p>` : ''}${(root.c || []).map(x => node(x, 1)).join('')}`;
+  setTimeout(() => { const h = document.getElementById('gx'); if (!h) return; window._g = GRAPH.render(D.type, h, root, { onSelect: n => { const K = { core: 'Trọng tâm', sup: 'Bổ trợ', ext: 'Mở rộng' }; document.getElementById('gd').innerHTML = `<b>${E(n.t)}</b> ${n.k && K[n.k] ? `<span class="tag">${K[n.k]}</span>` : ''}${n.d ? `<p>${E(n.d)}</p>` : ''}${n.x ? `<p class="note">${E(n.x)}</p>` : ''}`; } }); }, 30);
+  return `<div class="bar" style="margin:0 0 10px"><button class="btn" onclick="_g.fit()">Vừa khung</button><button class="btn" onclick="_g.openAll()">Mở tất cả</button><button class="btn" onclick="_g.closeAll()">Thu gọn</button><button class="btn" onclick="_g.zoom(1.25)">+</button><button class="btn" onclick="_g.zoom(.8)">–</button><button class="btn" onclick="gpng()">Tải ảnh PNG</button></div><div id="gx" style="height:min(68vh,680px);border:1px solid var(--line);border-radius:20px;overflow:hidden;background:var(--card)"></div><div id="gd" class="note" style="margin-top:10px;font-size:14.5px">Kéo để di chuyển, cuộn để thu phóng, bấm vào nút để xem mô tả hoặc mở/thu gọn nhánh.</div>`;
 }
+async function gpng() { try { const b = await _g.png(2); DOCGEN.download(b, DOCGEN.fname(D.title) + '.png'); } catch (e) { alert(e.message); } }
 // trắc nghiệm
 let ans = {}, done = false;
 function mcq() { ans = {}; done = false; paintMcq(); }
