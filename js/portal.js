@@ -60,7 +60,12 @@ const _IC = {
   panel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>',
   warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
-  play: '<path d="M7 5l12 7-12 7z"/>'
+  play: '<path d="M7 5l12 7-12 7z"/>',
+  folder: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',
+  more: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  move: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 13h6m-2.5-2.5L15 13l-2.5 2.5"/>',
+  vault: '<path d="M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>'
 };
 const NOEMOJI = t => String(t == null ? '' : t).replace(/[\u{1F000}-\u{1FAFF}\u26A0\u23F3\u23F0\u23F1\u2705\u274C\u2714\u2728\u26A1\u2B50\u2699\uFE0F\u200D]+ ?/gu, '');
 function IC(name, cls) { return `<svg class="ic ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${_IC[name] || ''}</svg>`; }
@@ -72,6 +77,7 @@ const PORTAL = (() => {
     { id: 'portal-screen', label: 'Trang chủ', go: () => home() },
     { id: 'home-screen', label: 'Luyện tập', go: () => practice() },
     { id: 'nb-screen', label: 'Nghiên cứu', go: () => NB.open() },
+    { id: 'vault-screen', label: 'Kho dữ liệu của tôi', go: () => VAULT.open() },
     { id: 'store-screen', label: 'Cửa hàng', go: () => page('store') },
     { id: 'report-screen', label: 'Báo cáo', go: () => page('report') },
     { id: 'community-screen', label: 'Cộng đồng', go: () => page('community') },
@@ -162,7 +168,7 @@ const PORTAL = (() => {
 
   // ---------- tạo các màn hình trang ----------
   function ensureScreens() {
-    ['portal-screen', 'store-screen', 'report-screen', 'community-screen', 'support-screen'].forEach(id => {
+    ['portal-screen', 'store-screen', 'report-screen', 'community-screen', 'support-screen', 'vault-screen'].forEach(id => {
       if (!$(id)) { const d = document.createElement('div'); d.id = id; d.className = 'screen pg hidden'; document.body.appendChild(d); }
     });
     ['home-screen', 'nb-screen'].forEach(id => { const e = $(id); if (e) e.classList.add('pg'); });
