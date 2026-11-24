@@ -1,6 +1,6 @@
 // ============================================================
 // VAULT — "Kho dữ liệu của tôi": thư mục + tệp + ghi chú + liên kết kiểu Google Drive
-//  • Tệp nằm ở Cloudflare R2, trình duyệt tải THẲNG lên bằng link ký sẵn (Worker không phải gánh dữ liệu)
+//  • Tệp nằm ở Cloudflare R2 (tải thẳng bằng link ký sẵn) HOẶC Workers KV nếu chưa có R2 (miễn phí, không cần thẻ; chia mảnh 5 MB)
 //  • Không nhận video (dán link YouTube/Drive vào mục Liên kết)
 //  • VAULT.mount(elId, {pick}) dùng lại trình duyệt thư mục nhỏ trong Sổ nghiên cứu
 //  • VAULT.token() xin mã cho extension "Lưu về Olym63"
@@ -151,6 +151,14 @@ const VAULT = (() => {
 
   // ---------- mở / tải ----------
   async function fileUrl(id, dl) { return api('/vault/file?id=' + id + (dl ? '&dl=1' : '')); }
+  // chế độ lưu bằng Workers KV (không cần thẻ): tệp chia thành các mảnh ~5 MB, tải về từng mảnh rồi ghép lại
+  const base = () => (CONFIG.ACCOUNTS_API_URL || '').replace(/\/+$/, '');
+  const auth = () => ({ Authorization: 'Bearer ' + AUTH.getToken() });
+  async function kvBlob(id, r) {
+    const parts = []; for (let i = 0; i < r.chunks; i++) { const res = await fetch(base() + '/vault/kv-get?id=' + id + '&i=' + i, { headers: auth() }); if (!res.ok) throw new Error('Không tải được tệp từ Kho (' + res.status + ').'); parts.push(await res.arrayBuffer()); }
+    return new Blob(parts, { type: r.mime || 'application/octet-stream' });
+  }
+  const saveBlob = (b, name) => { const u = URL.createObjectURL(b), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); };
   async function openNode(id) {
     const n = find(id); if (!n) return; S.menu = null;
     if (n.kind === 'folder') return go(id);
@@ -161,9 +169,13 @@ const VAULT = (() => {
       } catch (e) { toast(e.message); } return;
     }
     const k = kindOf(n)[2];
-    try { const r = await fileUrl(id, !(k === 'pdf' || k === 'img')); window.open(r.url, '_blank', 'noopener'); } catch (e) { toast(e.message); }
+    try {
+      const r = await fileUrl(id, !(k === 'pdf' || k === 'img'));
+      if (r.kv) { toast('Đang tải tệp…'); const b = await kvBlob(id, r); if (k === 'pdf' || k === 'img') { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([b], { type: r.mime || b.type })); a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); } else saveBlob(b, r.name); return; }
+      window.open(r.url, '_blank', 'noopener');
+    } catch (e) { toast(e.message); }
   }
-  async function download(id) { S.menu = null; draw(); try { const r = await fileUrl(id, true); const a = document.createElement('a'); a.href = r.url; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { toast(e.message); } }
+  async function download(id) { S.menu = null; draw(); try { const r = await fileUrl(id, true); if (r.kv) { toast('Đang tải tệp…'); return saveBlob(await kvBlob(id, r), r.name); } const a = document.createElement('a'); a.href = r.url; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { toast(e.message); } }
 
   // ---------- tải lên (thẳng lên R2, có tiến trình) ----------
   function upload(files) {
@@ -180,7 +192,18 @@ const VAULT = (() => {
     u.run = 1;
     try {
       const init = await post('/vault/upload-init', { name: u.f.name, size: u.f.size, mime: u.f.type, parent: u.parent });
-      await new Promise((ok, no) => {
+      if (init.kv) {
+        const ch = init.chunk, n = Math.max(1, Math.ceil(u.f.size / ch));
+        for (let i = 0; i < n; i++) {
+          await new Promise((ok, no) => {
+            const x = new XMLHttpRequest(); x.open('PUT', base() + '/vault/kv-put?id=' + init.id + '&i=' + i); x.setRequestHeader('Authorization', auth().Authorization);
+            x.upload.onprogress = e => { if (e.lengthComputable) { u.pct = Math.min(99, Math.round((i * ch + e.loaded) / u.f.size * 100)); const r = $('vu-' + u.id); if (r) { r.querySelector('.s').textContent = u.pct + '%'; r.querySelector('i').style.width = u.pct + '%'; } } };
+            x.onload = () => x.status < 300 ? ok() : no(new Error('Máy chủ từ chối mảnh ' + (i + 1) + '/' + n + ' (' + x.status + ').'));
+            x.onerror = () => no(new Error('Mất kết nối khi tải lên, hãy thử lại.'));
+            x.send(u.f.slice(i * ch, (i + 1) * ch));
+          });
+        }
+      } else await new Promise((ok, no) => {
         const x = new XMLHttpRequest(); x.open('PUT', init.url);
         x.upload.onprogress = e => { if (e.lengthComputable) { u.pct = Math.round(e.loaded / e.total * 100); const r = $('vu-' + u.id); if (r) { r.querySelector('.s').textContent = u.pct + '%'; r.querySelector('i').style.width = u.pct + '%'; } } };
         x.onload = () => x.status < 300 ? ok() : no(new Error('R2 từ chối tải lên (' + x.status + '). Kiểm tra CORS của bucket.'));
@@ -224,7 +247,7 @@ const VAULT = (() => {
   async function content(n) {
     if (n.kind === 'note') { const r = (await api('/vault/node?id=' + n.id)).node; return { text: r.text || '', name: r.name }; }
     if (n.kind === 'link') return { url: n.url, name: n.name };
-    const r = await fileUrl(n.id, true); const res = await fetch(r.url);
+    const r = await fileUrl(n.id, true); if (r.kv) { const b = await kvBlob(n.id, r); return { file: new File([b], n.name, { type: n.mime || b.type }), name: n.name }; } const res = await fetch(r.url);
     if (!res.ok) throw new Error('Không tải được tệp từ Kho (' + res.status + '). Kiểm tra CORS của bucket R2.');
     const b = await res.blob(); return { file: new File([b], n.name, { type: n.mime || b.type }), name: n.name };
   }
