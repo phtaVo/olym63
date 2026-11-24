@@ -38,7 +38,7 @@ const REPORT = (() => {
     { id: 'app', h: 1, t: 'PHỤ LỤC', w: 100, g: 'Danh mục phụ lục (bảng hỏi, hình ảnh minh chứng, mã nguồn…).' }
   ];
   const LEAVES = SECTIONS.filter(s => s.g);
-  const DEF = { org: 'SỞ GIÁO DỤC VÀ ĐÀO TẠO', school: 'TRƯỜNG THPT CHUYÊN TIỀN GIANG', contest: 'CUỘC THI NGHIÊN CỨU KHOA HỌC, KỸ THUẬT CẤP TỈNH', audience: 'Dành cho học sinh trung học cơ sở và trung học phổ thông', year: 'Năm học 2026 – 2027', kind: 'BÁO CÁO KẾT QUẢ THỰC HIỆN DỰ ÁN', field: 'Lĩnh vực: …………………………………', title: 'TÊN ĐỀ TÀI', authors: [{ n: 'Họ và tên', c: 'Lớp' }], teacher: 'Giáo viên hướng dẫn: …………………', place: 'Mỹ Tho', date: '', link: '' };
+  const DEF = { org: 'SỞ GIÁO DỤC VÀ ĐÀO TẠO ………………', school: 'TRƯỜNG ……………………………………', contest: 'TÊN CUỘC THI ……………………………………', audience: '', year: 'Năm học ……… – ………', kind: 'BÁO CÁO KẾT QUẢ THỰC HIỆN DỰ ÁN', field: 'Lĩnh vực: …………………………………', title: 'TÊN ĐỀ TÀI', authors: [{ n: 'Họ và tên', c: 'Lớp' }], teacher: 'Giáo viên hướng dẫn: …………………', place: '………………', date: '', link: '' };
 
   function build(D, meta, content, opt) {
     const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, Footer, Header, PageNumber, NumberFormat, TableOfContents, PageBreak, ImageRun, Table, TableRow, TableCell, WidthType } = D;
