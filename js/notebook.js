@@ -17,8 +17,8 @@ const NB = (() => {
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rid = () => Math.random().toString(36).slice(2, 10);
   const toast = m => { try { showToast(m); } catch (e) { alert(m); } };
-  const KIND_IC = { round: 'target', file: 'file', yt: 'youtube', text: 'text', wiki: 'globe', image: 'image' };
-  const ART_IC = { summary: 'text', flash: 'cards', mind: 'mind', tree: 'tree', quiz: 'quiz', mcq: 'quiz', doc: 'file', links: 'link', note: 'note' };
+  const KIND_IC = { round: 'target', file: 'file', yt: 'youtube', text: 'text', wiki: 'globe', web: 'globe', image: 'image' };
+  const ART_IC = { summary: 'text', flash: 'cards', mind: 'mind', tree: 'tree', quiz: 'quiz', mcq: 'quiz', doc: 'file', links: 'link', note: 'note', chart: 'chart', report: 'file' };
 
   let db = null, cur = null, pane = 'chat', busy = false, pend = [], col = { l: false, r: false }, _idx = {};
   const loadDb = () => { if (db) return db; try { db = JSON.parse(localStorage.getItem(K())) || { nbs: [] }; } catch (e) { db = { nbs: [] }; } return db; };
@@ -209,12 +209,25 @@ const NB = (() => {
       }
       return { text: out };
     }
+    if (n.endsWith('.pptx')) {
+      if (!window.JSZip) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+      const z = await window.JSZip.loadAsync(await f.arrayBuffer());
+      const sl = Object.keys(z.files).filter(k => /^ppt\/slides\/slide\d+\.xml$/.test(k)).sort((a, b) => parseInt(a.match(/\d+/)[0], 10) - parseInt(b.match(/\d+/)[0], 10));
+      let out = ''; for (let i = 0; i < sl.length && out.length < MAX_SRC_CHARS; i++) { const x = await z.file(sl[i]).async('string'); out += `[Slide ${i + 1}] ` + (x.match(/<a:t>[^<]*<\/a:t>/g) || []).map(t => t.replace(/<[^>]+>/g, '')).join(' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>') + '\n\n'; }
+      return { text: out };
+    }
+    if (/\.xlsx?$/.test(n)) {
+      if (!window.XLSX) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      const wb = window.XLSX.read(await f.arrayBuffer(), { type: 'array' }); let out = '';
+      wb.SheetNames.forEach(s => { if (out.length < MAX_SRC_CHARS) out += `[Trang tính ${s}]\n` + window.XLSX.utils.sheet_to_csv(wb.Sheets[s]) + '\n\n'; });
+      return { text: out };
+    }
     if (/^image\//.test(f.type) || /\.(png|jpe?g|webp|gif|bmp)$/.test(n)) {
       const im = await prepImage(f); await useAi(2, 'image');
       const text = await gem([{ inlineData: { mimeType: 'image/jpeg', data: im.data } }, { text: 'Hãy mô tả chi tiết hình này bằng tiếng Việt và chép lại TOÀN BỘ chữ nhìn thấy (giữ cấu trúc bảng, công thức). Nếu là sơ đồ/biểu đồ, nêu rõ các thành phần và quan hệ giữa chúng. Không bịa điều không thấy.' }], { maxTokens: 3000, temp: 0.1 });
       return { text, thumb: im.thumb, kind: 'image' };
     }
-    throw new Error('Chỉ hỗ trợ .docx, .pdf, .txt, .md và ảnh (.png, .jpg, .webp). File .doc cũ: hãy lưu lại thành .docx.');
+    throw new Error('Chỉ hỗ trợ .docx, .pdf, .pptx, .xlsx, .txt, .md và ảnh (.png, .jpg, .webp). File .doc cũ: hãy lưu lại thành .docx.');
   }
   const ytId = u => { const m = String(u).match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); return m ? m[1] : null; };
 
@@ -308,7 +321,7 @@ const NB = (() => {
             <button class="pbtn p" onclick="NB.ask()" style="width:42px;height:42px;padding:0">${IC('send')}</button></div></div>
         <div class="nb-col glass ${col.r ? 'mini' : ''}" data-p="studio"><h3><button class="nb-x" title="Thu gọn / mở rộng" onclick="NB.colToggle('r')">${IC('panel')}</button><span class="t">Studio</span></h3>
           <div class="nb-tools">
-            ${[['summary', 'text', 'Tóm tắt'], ['flash', 'cards', 'Flashcard'], ['mind', 'mind', 'Sơ đồ tư duy'], ['tree', 'tree', 'Cây tri thức'], ['mcq', 'quiz', 'Đề trắc nghiệm'], ['doc', 'file', 'Tài liệu Word'], ['kd', 'bolt', 'Thi Khởi Động'], ['vd', 'trophy', 'Thi Về Đích'], ['xp', 'flag', 'Thi Xuất Phát'], ['links', 'link', 'Tìm tài liệu'], ['note', 'note', 'Ghi chú mới']].map(t => `<button class="nb-tool" onclick="NB.tool('${t[0]}')">${IC(t[1])} ${t[2]}</button>`).join('')}
+            ${[['summary', 'text', 'Tóm tắt'], ['flash', 'cards', 'Flashcard'], ['mind', 'mind', 'Sơ đồ tư duy'], ['tree', 'tree', 'Cây tri thức'], ['mcq', 'quiz', 'Đề trắc nghiệm'], ['doc', 'file', 'Tài liệu Word'], ['chart', 'chart', 'Biểu đồ'], ['report', 'file', 'Báo cáo NCKH'], ['kd', 'bolt', 'Thi Khởi Động'], ['vd', 'trophy', 'Thi Về Đích'], ['xp', 'flag', 'Thi Xuất Phát'], ['links', 'link', 'Tìm tài liệu'], ['note', 'note', 'Ghi chú mới']].map(t => `<button class="nb-tool" onclick="NB.tool('${t[0]}')">${IC(t[1])} ${t[2]}</button>`).join('')}
             <button class="nb-tool" disabled title="Chưa có luật chơi Vinh Quang trong web">${IC('crown')} Vinh Quang</button></div>
           <div class="nb-sub">Đã tạo</div>
           <div class="nb-scroll">${nb.arts.length ? nb.arts.map(a => `<div class="nb-art" onclick="NB.openArt('${a.id}')"><span class="kind">${IC(ART_IC[a.type] || 'file')}</span><span style="flex:1;min-width:0">${esc(a.title)}<br><small class="nb-note">${new Date(a.ts).toLocaleString('vi-VN')}</small></span><button class="nb-x" onclick="event.stopPropagation();NB.delArt('${a.id}')">${IC('trash')}</button></div>`).join('') : '<div class="nb-note" style="padding:10px">Kết quả AI tạo ra sẽ hiện ở đây.</div>'}</div></div>
@@ -352,17 +365,30 @@ const NB = (() => {
   let addTab = 'file';
   function addDialog(tab) {
     if (tab) addTab = tab; if (!cur) return; const rs = rounds();
-    const T = [['file', 'upload', 'Tệp & ảnh'], ['yt', 'youtube', 'YouTube'], ['text', 'text', 'Dán văn bản'], ['wiki', 'globe', 'Wikipedia'], ['round', 'target', 'Ván đã chơi']];
+    const T = [['file', 'upload', 'Tệp & ảnh'], ['vault', 'folder', 'Kho của tôi'], ['yt', 'youtube', 'YouTube'], ['text', 'text', 'Dán văn bản'], ['web', 'globe', 'Liên kết web'], ['round', 'target', 'Ván đã chơi']];
     let body = '';
     if (addTab === 'file') body = `<div class="drop" id="nb-drop" role="button" tabindex="0" onclick="document.getElementById('nb-f').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('nb-f').click()}"><span class="drop-ic">${IC('upload')}</span><b>Kéo thả hoặc bấm để chọn tệp</b><span class="nb-note">Word (.docx), PDF, TXT và hình ảnh (.png, .jpg, .webp).<br>PDF scan và hình ảnh được Gemini đọc chữ (tốn thêm lượt AI).</span></div><input type="file" id="nb-f" multiple accept=".docx,.pdf,.txt,.md,image/*" hidden onchange="NB.addFiles(this.files)">`;
+    if (addTab === 'vault') body = '<div id="nb-vault"></div>';
     if (addTab === 'yt') body = `<input type="text" id="nb-yt" placeholder="https://www.youtube.com/watch?v=…"><div class="nb-note">Gemini sẽ xem video công khai và ghi lại nội dung (tốn 3 lượt AI). Có thể không được với video dài hoặc riêng tư; khi đó hãy dán bản chép lời vào mục "Dán văn bản".</div><div style="margin-top:12px"><button class="pbtn p" onclick="NB.addYt()">Thêm video</button></div>`;
     if (addTab === 'text') body = `<input type="text" id="nb-tn" placeholder="Tên nguồn (tùy chọn)"><textarea id="nb-tt" placeholder="Dán nội dung bài học, ghi chú…"></textarea><button class="pbtn p" onclick="NB.addText()">Thêm</button>`;
+    if (addTab === 'web') body = `<input type="text" id="nb-wu" placeholder="Dán link bài báo, trang web, Google Docs, PDF…" onkeydown="if(event.key==='Enter')NB.addWeb()"><div class="nb-note">Đọc được: trang web và bài viết, Wikipedia, Google Docs / Sheets / Slides (chia sẻ “Bất kỳ ai có liên kết”), Google Drive PDF và tệp PDF, Word công khai. Trang cần đăng nhập hoặc dựng hoàn toàn bằng JavaScript thì sao chép nội dung vào mục “Dán văn bản”. Link YouTube sẽ chuyển sang mục YouTube.</div><div style="margin-top:12px"><button class="pbtn p" onclick="NB.addWeb()">Đọc và thêm</button></div>`;
     if (addTab === 'wiki') { const kp = cur.sources.length ? keyPhrases(cur, 5) : []; body = `<div style="display:flex;gap:8px"><input type="text" id="nb-wq" placeholder="Từ khóa (vd: Quang hợp)" value="${esc(cur.sources.length ? cur.title : '')}" onkeydown="if(event.key==='Enter')NB.wikiFind()"><button class="pbtn p" onclick="NB.wikiFind()" style="height:46px;margin-top:4px">Tìm</button></div>${kp.length ? `<div class="nb-note" style="margin:4px 0 8px">Gợi ý từ nội dung nguồn: ${kp.map(k => `<a href="#" onclick="document.getElementById('nb-wq').value='${esc(k)}';NB.wikiFind();return false" style="color:var(--accent)">${esc(k)}</a>`).join(' · ')}</div>` : ''}<div id="nb-wr"></div>`; }
     if (addTab === 'round') body = rs.length ? rs.map((r, i) => `<div class="nb-art" onclick="NB.addRound(${i})"><span class="kind">${IC('target')}</span><span style="flex:1">${MODE_NAME[r.mode] || r.mode} · ${new Date(r.ts).toLocaleString('vi-VN')}<br><small class="nb-note">${r.items.length} câu · đúng ${r.items.filter(x => x.ok).length}</small></span></div>`).join('') : '<div class="nb-note">Chưa có ván nào được lưu. Hãy chơi Khởi Động hoặc Về Đích trước.</div>';
     modal(`<h2>Thêm nguồn</h2><div class="nb-tabs">${T.map(t => `<button class="${t[0] === addTab ? 'on' : ''}" onclick="NB.addDialog('${t[0]}')">${IC(t[1])} ${t[2]}</button>`).join('')}</div>${body}<div id="nb-st" class="nb-note" style="margin-top:10px"></div>`);
+    if (addTab === 'vault' && typeof VAULT !== 'undefined') VAULT.mount('nb-vault', { pick: addFromVault });
     const dz = $('nb-drop'); if (dz) { ['dragover', 'dragenter'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.add('over'); })); ['dragleave', 'drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.remove('over'); })); dz.addEventListener('drop', ev => addFiles(ev.dataTransfer.files)); }
   }
   const st = (m, spin) => { const e = $('nb-st'); if (e) e.innerHTML = (spin ? '<span class="nb-sp"></span> ' : '') + esc(m); };
+  async function addFromVault(node) {
+    try {
+      st('Đang lấy “' + node.name + '” từ Kho…', 1); const c = await VAULT.content(node);
+      if (c.url) { const id = ytId(c.url); if (!id) { st('Liên kết này chưa đọc được tự động. Hãy mở link, sao chép nội dung và lưu thành Ghi chú trong Kho.'); return; } addTab = 'yt'; addDialog(); const i = $('nb-yt'); if (i) i.value = c.url; return; }
+      let r = { text: c.text };
+      if (c.file) { st('Đang đọc ' + c.name + '…', 1); r = await readFile(c.file); }
+      if (!addSource(cur, { kind: r.kind || (c.file ? 'file' : 'text'), name: c.name, text: r.text, thumb: r.thumb, vid: node.id })) return;
+      closeModal(); openNb(cur.id, true);
+    } catch (e) { st('Lỗi: ' + e.message); }
+  }
   async function addFiles(fl) {
     const fs = Array.from(fl || []); if (!fs.length) return;
     for (const f of fs) {
@@ -373,13 +399,34 @@ const NB = (() => {
   }
   async function addYt() {
     const u = ($('nb-yt') || {}).value || '', id = ytId(u); if (!id) return st('Link YouTube chưa đúng.');
+    const url = 'https://www.youtube.com/watch?v=' + id;
     try {
-      await useAi(3, 'youtube'); st('Gemini đang xem video… (có thể mất 30–60 giây)', 1);
-      const url = 'https://www.youtube.com/watch?v=' + id;
+      st('Đang lấy phụ đề video…', 1);
+      let tr = null; try { tr = await AUTH.apiFetch('/yt/transcript?id=' + id); } catch (e) {}
+      if (tr && tr.ok && tr.text) {
+        addSource(cur, { kind: 'yt', name: 'YouTube: ' + (tr.title || id), url, text: `Video: ${tr.title}\nKênh: ${tr.channel || ''}\n${tr.desc ? 'Mô tả: ' + tr.desc.slice(0, 600) + '\n' : ''}\nLời trong video${tr.auto ? ' (phụ đề tự động, có thể sai chính tả)' : ''}:\n${tr.text}` });
+        closeModal(); openNb(cur.id, true); return;
+      }
+      await useAi(3, 'youtube'); st('Video không có phụ đề; Gemini đang xem video… (30–60 giây)', 1);
       const t = await gem([{ fileData: { fileUri: url } }, { text: 'Hãy ghi lại ĐẦY ĐỦ nội dung của video này bằng tiếng Việt, theo từng phần có tiêu đề: các khái niệm, số liệu, ví dụ, kết luận. Không bịa; nếu không xem được video, chỉ trả lời đúng cụm: KHONG_XEM_DUOC' }], { maxTokens: 8192, temp: 0.1 });
-      if (/KHONG_XEM_DUOC/.test(t) || t.trim().length < 80) throw new Error('Gemini không xem được video này.');
-      addSource(cur, { kind: 'yt', name: 'YouTube ' + id, url, text: t }); closeModal(); openNb(cur.id, true);
-    } catch (e) { st('Không thêm được: ' + e.message + (/lượt AI/.test(e.message) ? '' : ' → hãy dán bản chép lời ở mục "Dán văn bản".')); }
+      if (/KHONG_XEM_DUOC/.test(t) || t.trim().length < 80) throw new Error('Không đọc được video này (không có phụ đề và Gemini không xem được).');
+      addSource(cur, { kind: 'yt', name: 'YouTube: ' + ((tr && tr.title) || id), url, text: t }); closeModal(); openNb(cur.id, true);
+    } catch (e) { st('Không thêm được: ' + e.message + ' → hãy dán bản chép lời ở mục "Dán văn bản".'); }
+  }
+  async function addWeb() {
+    let u = (($('nb-wu') || {}).value || '').trim(); if (!u) return st('Hãy dán một đường dẫn.');
+    if (ytId(u) && /youtu/i.test(u)) { addTab = 'yt'; addDialog(); const i = $('nb-yt'); if (i) i.value = u; return; }
+    try {
+      st('Đang đọc trang…', 1);
+      const r = await AUTH.apiFetch('/web/read', { method: 'POST', body: JSON.stringify({ url: u }) });
+      if (r.kind === 'binary') {
+        const bin = atob(r.b64), arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        const f = new File([arr], /\.(pdf|docx)$/i.test(r.name) ? r.name : (r.name || 'tai-lieu') + '.' + r.ext, { type: r.ext === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        st('Đang đọc ' + f.name + '…', 1); const x = await readFile(f);
+        if (!addSource(cur, { kind: 'web', name: f.name, url: u, text: x.text })) return;
+      } else if (!addSource(cur, { kind: 'web', name: (r.note ? r.note + ': ' : '') + (r.title || r.site), url: u, text: `Nguồn: ${u}\n${r.title ? 'Tiêu đề: ' + r.title + '\n' : ''}\n${r.text}` })) return;
+      closeModal(); openNb(cur.id, true);
+    } catch (e) { st(e.message); }
   }
   function addText() { const t = ($('nb-tt') || {}).value || '', n = ($('nb-tn') || {}).value || 'Văn bản dán vào'; if (addSource(cur, { kind: 'text', name: n, text: t })) { closeModal(); openNb(cur.id, true); } }
   async function wikiFind() {
@@ -525,7 +572,7 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
     try { return await fn(); } finally { busy = false; closeModal(); }
   }
   const LEVELS_OK = ['Cơ bản', 'Trung bình', 'Nâng cao', 'Hỗn hợp'];
-  const makeKey = (t, p, nb) => t + '|' + sigOf(nb || cur) + '|' + JSON.stringify({ n: p.n, d: p.d, w: p.w, m: p.m, f: p.focus || '', ti: p.title || '', k: p.kind || '' });
+  const makeKey = (t, p, nb) => t + '|' + sigOf(nb || cur) + '|' + JSON.stringify({ n: p.n, d: p.d, w: p.w, m: p.m, f: p.focus || '', ti: p.title || '', k: p.kind || '', rm: p.meta ? p.meta.title + '|' + Date.now() : '' });
   const shuf = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   // JSON bị cắt giữa chừng (hết token) → cố gắng đóng ngoặc để vẫn dùng được phần đã có
   function parseJsonLoose(txt) {
@@ -540,7 +587,7 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
   async function create(t, p) {
     const nb = cur; p = p || {}; const key = makeKey(t, p, nb);
     const extra = t === 'mcq' ? 2 * (Math.ceil(clamp(p.n || 10, 3, 40) / 15) - 1) : 0;
-    await useAi((t === 'links' ? 1 : 3) + extra, t);
+    await useAi((t === 'links' ? 1 : t === 'report' ? 12 : 3) + extra, t);
     if (t === 'summary') { const C = sampleFor(nb, TOOL_BUDGET, p.focus); const x = await gem(`Tóm tắt tài liệu sau cho học sinh THPT bằng tiếng Việt, trình bày như một tài liệu học tập: (1) 6–10 ý chính có giải thích đầy đủ, (2) thuật ngữ, công thức và số liệu quan trọng (bảng nếu cần), (3) 3–5 điểm dễ nhầm. Ghi [Nguồn n] khi trích. Chỉ dùng nội dung trong nguồn. Không dùng emoji.${p.focus ? ' Trọng tâm: ' + p.focus : ''}\n\n${C}`, { maxTokens: 4500 }); return art(nb, 'summary', 'Tóm tắt', { text: x }, key); }
     if (t === 'flash') { const C = p.focus ? contextFor(nb, p.focus, 8000) + '\n\nTRỌNG TÂM:\n' + p.focus.slice(0, 3000) : sampleFor(nb, TOOL_BUDGET); const j = parseJsonLoose(await gem(`Tạo 12–20 flashcard ôn tập từ tài liệu, bao quát các mục chính (khái niệm, đặc điểm, công thức, số liệu, mốc thời gian, điểm dễ nhầm). Chỉ dùng nội dung trong nguồn.${p.focus ? ' Tập trung vào TRỌNG TÂM.' : ''} Mặt sau (back) trả lời đầy đủ nhưng gọn, 1–3 câu. Không dùng emoji. Trả về DUY NHẤT một mảng JSON: [{"front":"câu hỏi hoặc khái niệm","back":"đáp án"}]\n\n${C}`, { maxTokens: 6000 })); return art(nb, 'flash', 'Flashcard', j.filter(x => x.front && x.back), key); }
     if (t === 'mind' || t === 'tree') {
@@ -549,6 +596,14 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
       const root = Array.isArray(j) ? { t: nb.title, c: j } : j; if (!root || !root.t) throw new Error('AI chưa dựng được sơ đồ, hãy thử lại.');
       return art(nb, t, t === 'mind' ? 'Sơ đồ tư duy' : 'Cây tri thức', root, key);
     }
+    if (t === 'chart') {
+      const C = p.focus ? contextFor(nb, p.focus, 9000) : sampleFor(nb, TOOL_BUDGET);
+      const j = parseJsonLoose(await gem(`Bạn tạo dữ liệu cho một biểu đồ từ tài liệu bên dưới.${p.focus ? ' Yêu cầu của người dùng: ' + p.focus : ' Hãy chọn bộ số liệu nổi bật, so sánh được nhất.'}\nQUY TẮC: chỉ dùng số liệu CÓ TRONG TÀI LIỆU, tuyệt đối không bịa hay ước lượng. Nếu tài liệu không có đủ số liệu (ít nhất 2 giá trị cùng đơn vị để so sánh) thì trả về {"error":"giải thích ngắn gọn còn thiếu số liệu gì"}.\nNếu đủ, trả về DUY NHẤT một JSON: {"title":"tiêu đề ngắn","type":"bar|hbar|line|pie","xlabel":"","unit":"đơn vị","labels":["nhãn 1","..."],"series":[{"name":"tên chuỗi","values":[số]}],"source":"tên nguồn","note":"1 câu nhận xét xu hướng"}. Tối đa 12 nhãn và 4 chuỗi; values là số thuần (không kèm đơn vị). Chỉ dùng pie khi các giá trị là các phần của một tổng.${p.kind ? ' Bắt buộc type = "' + p.kind + '".' : ''}\n\nTÀI LIỆU:\n${C}`, { maxTokens: 3000, temp: 0.1 }));
+      if (!j || j.error || !Array.isArray(j.labels) || j.labels.length < 2) throw new Error(((j && j.error) || 'Nguồn chưa có đủ số liệu để vẽ biểu đồ.') + ' Hãy thêm số liệu vào sổ (ghi chú, tệp, bảng) rồi thử lại.');
+      j.type = p.kind || (['bar', 'hbar', 'line', 'pie'].includes(j.type) ? j.type : 'bar');
+      return art(nb, 'chart', 'Biểu đồ: ' + (j.title || 'số liệu'), j, key);
+    }
+    if (t === 'report') { const content = await genReport(nb, p.meta); return art(nb, 'report', 'Báo cáo NCKH: ' + p.meta.title, { meta: p.meta, content }, key); }
     if (t === 'links') return findLinks(nb, key);
     if (QMODE[t]) return genQuizArt(t, p, key);
     if (t === 'mcq') return genMcq(nb, p, key);
@@ -590,9 +645,37 @@ CÂU HỎI HIỆN TẠI: ${q || 'Hãy phân tích hình ảnh đính kèm.'}`;
     }
     return art(nb, 'links', 'Tài liệu tham khảo', items, key);
   }
+  // ---- Dữ liệu còn ít: AI hỏi lại người dùng, hoặc cho phép "thu thập và tải lên sau" ----
+  const srcChars = nb => nb.sources.filter(s => s.on).reduce((a, s) => a + (s.text || '').length, 0);
+  const thinSrc = nb => srcChars(nb) < 1200;
+  const TOOLN = { summary: 'tóm tắt', mind: 'sơ đồ tư duy', tree: 'cây tri thức', flash: 'flashcard', doc: 'tài liệu', mcq: 'đề trắc nghiệm', quiz: 'bài thi', links: 'danh sách tài liệu', chart: 'biểu đồ', report: 'báo cáo nghiên cứu' };
+  async function gapDialog(t) {
+    const nb = cur, have = nb.sources.filter(s => s.on).map(s => s.name + ': ' + (s.text || '').slice(0, 300)).join('\n');
+    let qs = ['Chủ đề hoặc vấn đề cụ thể bạn muốn nghiên cứu là gì?', 'Bạn làm cho mục đích gì (bài kiểm tra, KHKT, thuyết trình…) và đối tượng đọc là ai?', 'Bạn đã có kiến thức nền, số liệu hay kết quả nào cần đưa vào?'];
+    modal(`<h2>Dữ liệu trong sổ còn ít</h2><div class="nb-note" id="gap-body"><span class="nb-sp"></span> AI đang chọn vài câu hỏi để bổ sung cho ${esc(TOOLN[t] || 'phần này')}…</div>`);
+    try {
+      if (await useAi(1, 'gap')) {
+        const raw = await gem(`Học sinh THPT Việt Nam muốn tạo "${TOOLN[t] || t}" trong sổ nghiên cứu "${nb.title}" nhưng nguồn còn quá ít.\nNguồn hiện có:\n${have || '(chưa có)'}\n\nHãy đặt 3 đến 5 câu hỏi NGẮN, cụ thể, dễ trả lời bằng vài câu, để lấy đúng thông tin còn thiếu. Chỉ trả về mảng JSON các chuỗi tiếng Việt, ví dụ ["…","…"].`, { maxTokens: 500, temp: 0.4 });
+        const j = parseJson(raw); if (Array.isArray(j) && j.length) qs = j.map(String).slice(0, 5);
+      }
+    } catch (e) {}
+    window._nbGap = { t, qs };
+    modal(`<h2>Dữ liệu trong sổ còn ít</h2><div class="nb-note" style="margin-bottom:10px">Để ${esc(TOOLN[t] || 'phần này')} chính xác hơn, bạn trả lời giúp vài câu, hoặc bổ sung tài liệu sau.</div>
+      ${qs.map((q, i) => `<label class="nb-note" style="display:block;margin-top:8px"><b>${i + 1}. ${esc(q)}</b></label><textarea id="gap-${i}" style="min-height:64px" placeholder="Nhập câu trả lời…"></textarea>`).join('')}
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px"><button class="pbtn" onclick="NB.gapLater()">Tôi sẽ thu thập và tải lên sau</button><button class="pbtn p" onclick="NB.gapGo()">Dùng câu trả lời để tiếp tục</button></div>`);
+  }
+  async function gapGo() {
+    const g = window._nbGap; if (!g) return; const text = g.qs.map((q, i) => `Hỏi: ${q}\nTrả lời: ${(($('gap-' + i) || {}).value || '').trim() || '(chưa trả lời)'}`).join('\n\n');
+    if (g.qs.every((q, i) => !(($('gap-' + i) || {}).value || '').trim())) return toast('Hãy trả lời ít nhất một câu, hoặc chọn “Tôi sẽ thu thập và tải lên sau”.');
+    if (!addSource(cur, { kind: 'text', name: 'Bổ sung từ người dùng', text })) return;
+    closeModal(); openNb(cur.id, true); tool(g.t);
+  }
+  function gapLater() { closeModal(); toast('Được rồi. Khi có tài liệu, hãy tải lên hoặc chọn từ Kho dữ liệu rồi quay lại.'); addDialog('vault'); }
   async function tool(t) {
     if (t === 'note') return noteEdit();
-    if (!cur.sources.some(s => s.on)) return toast('Hãy thêm nguồn trước.');
+    if (t === 'report') return reportDialog();
+    if (thinSrc(cur)) return gapDialog(t);
+    if (t === 'chart') return chartDialog();
     if (QMODE[t]) return quizDialog(t);
     if (t === 'mcq') return mcqDialog();
     if (t === 'doc') return docDialog();
@@ -658,15 +741,15 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
   // ---------- xem kết quả ----------
   function openArt(id) {
     const a = cur.arts.find(x => x.id === id); if (!a) return;
-    if (a.type === 'mcq') mcqStart(a); else if (a.type === 'doc') docView(a); else if (a.type === 'mind' || a.type === 'tree') treeView(a); else openArt0(id);
-    if (a.type !== 'note') addBar(a);
+    if (a.type === 'mcq') mcqStart(a); else if (a.type === 'doc') docView(a); else if (a.type === 'mind' || a.type === 'tree') treeView(a); else if (a.type === 'chart') chartView(a); else if (a.type === 'report') reportView(a); else openArt0(id);
+    if (a.type !== 'note' && a.type !== 'report' && a.type !== 'chart') addBar(a);
   }
   function openArt0(id) {
     const a = cur.arts.find(x => x.id === id); if (!a) return; const ic = IC(ART_IC[a.type] || 'file');
     if (a.type === 'summary') modal(`<h2>${ic} ${esc(a.title)}</h2><div class="nb-m a" style="max-width:none;margin:0"><div class="bd">${md(a.data.text)}</div></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="pbtn" onclick="NB.ask('Giải thích kỹ hơn phần quan trọng nhất của bản tóm tắt vừa tạo');NB.closeModal()">Hỏi thêm về bản tóm tắt</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`);
     else if (a.type === 'note') noteEdit(a.id);
     else if (a.type === 'flash') { window._fc = { a, i: 0 }; fcRender(); }
-    else if (a.type === 'mind' || a.type === 'tree') { modal(`<h2>${ic} ${esc(a.title)}</h2><div class="nb-tree" id="nb-tr"></div><div id="nb-trd" class="nb-note" style="margin-top:10px;font-size:14px">Bấm vào một nút để xem mô tả hoặc thu gọn, mở rộng.</div>${closeBtn()}`); treeDraw(a.data); }
+    else if (a.type === 'mind' || a.type === 'tree') treeView(a);
     else if (a.type === 'links') modal(`<h2>${ic} ${esc(a.title)}</h2><div class="nb-note" style="margin-bottom:6px">Kết quả Wikipedia đã được lọc theo độ liên quan với nội dung nguồn của bạn. Các nút Google, Scholar, YouTube mở trang tìm kiếm cho từ khóa đó.</div>${a.data.map(it => `<div style="margin:16px 0"><b>${esc(it.term)}</b>${it.wiki.map(w => `<div style="display:flex;gap:8px;align-items:flex-start;margin:6px 0"><span class="chip" style="padding:2px 8px">${Math.round(w.score * 100)}%</span><span style="flex:1">${aTag(w.url, w.title).replace('<a ', '<a style="color:var(--accent);font-weight:600" ')}<br><span class="nb-note">${esc(w.snippet.slice(0, 120))}…</span></span><button class="pbtn sm" onclick="NB.wikiAdd('${esc(w.title).replace(/'/g, '&#39;')}')">Thêm vào nguồn</button></div>`).join('') || '<div class="nb-note">Không có bài Wikipedia đủ liên quan.</div>'}<div style="margin-top:6px">${[['g', 'Google'], ['sc', 'Scholar'], ['yt', 'YouTube']].map(x => `<a class="lnk" style="display:inline-flex;gap:4px;color:var(--accent);margin-right:12px;font-weight:600;font-size:13px" href="${it[x[0]]}" target="_blank" rel="noopener noreferrer">${x[1]} ${IC('external')}</a>`).join('')}</div></div>`).join('')}${closeBtn()}`);
     else if (a.type === 'quiz') quizView(a);
   }
@@ -681,34 +764,20 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
   const KLAB = { core: 'Trọng tâm', sup: 'Bổ trợ', ext: 'Mở rộng' };
   function countNodes(n) { return 1 + (n.c || []).reduce((a, x) => a + countNodes(x), 0); }
   function treeView(a) {
-    modal(`<h2>${IC(ART_IC[a.type])} ${esc(a.title)} <small class="nb-note" style="font-weight:500">${countNodes(a.data)} nút</small></h2>
-      <div class="nb-tbar"><button class="pbtn sm" onclick="_tr.openAll()">Mở tất cả</button><button class="pbtn sm" onclick="_tr.closeAll()">Thu gọn</button><span class="nb-note">Bấm vào nút để xem mô tả, liên hệ chéo và nguồn. Nét đậm: trọng tâm · nét đứt: mở rộng.</span></div>
-      <div class="nb-tree" id="nb-tr"></div><div id="nb-trd" class="nb-tdesc">Bấm vào một nút để xem mô tả.</div>${closeBtn()}`, 'wide');
-    treeDraw(a.data);
+    const isMind = a.type === 'mind';
+    modal(`<h2>${IC(ART_IC[a.type])} ${esc(a.title)} <small class="nb-note" style="font-weight:500">${countNodes(a.data)} nút · ${isMind ? 'sơ đồ tư duy' : 'cây tri thức'}</small></h2>
+      <div class="nb-tbar"><button class="pbtn sm" onclick="_tr.fit()">Vừa khung</button><button class="pbtn sm" onclick="_tr.openAll()">Mở tất cả</button><button class="pbtn sm" onclick="_tr.closeAll()">Thu gọn</button><button class="pbtn sm" onclick="_tr.zoom(1.25)" aria-label="Phóng to">+</button><button class="pbtn sm" onclick="_tr.zoom(.8)" aria-label="Thu nhỏ">–</button><button class="pbtn sm" onclick="NB.grPng()">Tải ảnh PNG</button><span class="nb-note">${isMind ? 'Kéo để di chuyển, cuộn để thu phóng, bấm nút để mở hoặc thu gọn nhánh.' : 'Mỗi thẻ là một khái niệm; viền đậm là trọng tâm, nét đứt là mở rộng.'}</span></div>
+      <div class="nb-gx" id="nb-tr" style="height:min(64vh,640px);border:1px solid var(--line);border-radius:20px;background:var(--bg2);overflow:hidden"></div><div id="nb-trd" class="nb-tdesc">Bấm vào một nút để xem mô tả.</div>${closeBtn()}`, 'wide');
+    treeDraw(a);
   }
-  function treeDraw(root) {
-    const open = new Set(); const NW = 220, NH = 38, GX = 52, GY = 10; let sel = null;
-    (function init(n, d) { n._k = n._k || rid(); if (d < 2) open.add(n._k); (n.c || []).forEach(x => init(x, d + 1)); })(root, 0);
-    const walk = (n, f) => { f(n); (n.c || []).forEach(x => walk(x, f)); };
-    window._tr = { openAll() { walk(root, n => { if ((n.c || []).length) open.add(n._k); }); draw(); }, closeAll() { open.clear(); open.add(root._k); draw(); } };
-    function draw() {
-      let y = 0; const nodes = [], edges = [];
-      (function lay(n, d) { const kids = open.has(n._k) ? (n.c || []) : []; let y0;
-        if (!kids.length) { y0 = y; y += NH + GY; } else { const ys = kids.map(k => lay(k, d + 1)); y0 = (ys[0] + ys[ys.length - 1]) / 2; kids.forEach((k, i) => edges.push([d, y0, d + 1, ys[i]])); }
-        nodes.push({ n, d, y: y0 }); return y0; })(root, 0);
-      const W = (Math.max(...nodes.map(x => x.d)) + 1) * (NW + GX), H = Math.max(y, 60);
-      const cs = getComputedStyle(document.body), acc = cs.getPropertyValue('--accent').trim() || '#1a73e8', txt = cs.getPropertyValue('--text').trim() || '#222', bg = cs.getPropertyValue('--bg').trim() || '#fff';
-      $('nb-tr').innerHTML = `<svg width="${W + 24}" height="${H + 12}" style="display:block;margin:8px">` +
-        edges.map(e => { const x1 = e[0] * (NW + GX) + NW, y1 = e[1] + NH / 2, x2 = e[2] * (NW + GX), y2 = e[3] + NH / 2; return `<path d="M${x1} ${y1}C${x1 + GX / 2} ${y1},${x2 - GX / 2} ${y2},${x2} ${y2}" fill="none" stroke="${txt}" stroke-opacity=".25" stroke-width="1.5"/>`; }).join('') +
-        nodes.map((o, i) => { const x = o.d * (NW + GX), has = (o.n.c || []).length, t = String(o.n.t || ''), k = o.n.k; return `<g data-i="${i}" style="cursor:pointer"><rect x="${x}" y="${o.y}" width="${NW}" height="${NH}" rx="12" fill="${o.d === 0 ? acc : (sel === o.n._k ? acc : bg)}" fill-opacity="${o.d === 0 ? 1 : (sel === o.n._k ? .15 : 1)}" stroke="${acc}" stroke-width="${k === 'core' ? 2.6 : 1.4}" ${k === 'ext' ? 'stroke-dasharray="5 3"' : ''}/><text x="${x + 12}" y="${o.y + 24}" font-size="13" font-weight="600" fill="${o.d === 0 ? '#fff' : txt}" font-family="Inter,sans-serif">${esc(t.length > 26 ? t.slice(0, 25) + '…' : t)}${has ? (open.has(o.n._k) ? '  –' : '  +') : ''}</text><title>${esc(t)}</title></g>`; }).join('') + '</svg>';
-      $('nb-tr').querySelectorAll('g').forEach(g => g.onclick = () => {
-        const o = nodes[+g.dataset.i], n = o.n; sel = n._k; if ((n.c || []).length) { open.has(n._k) ? open.delete(n._k) : open.add(n._k); }
-        const cites = n.s ? String(n.s).match(/\d+/g) || [] : [];
-        $('nb-trd').innerHTML = `<b>${esc(n.t)}</b>${n.k && KLAB[n.k] ? ` <span class="chip gray">${KLAB[n.k]}</span>` : ''}${n.d ? `<p>${esc(n.d)}</p>` : ''}${n.x ? `<p class="nb-note">${esc(n.x)}</p>` : ''}${cites.length ? `<p class="nb-note">Nguồn: ${cites.map(c => `<button class="cite" onclick="NB.closeModal();NB.cite(${+c})">${+c}</button>`).join('')}</p>` : ''}`; draw();
-      });
-    }
-    draw();
+  function treeDraw(a) {
+    window._trA = a;
+    window._tr = GRAPH.render(a.type, $('nb-tr'), a.data, { onSelect: n => {
+      const cites = n.s ? String(n.s).match(/\d+/g) || [] : [];
+      $('nb-trd').innerHTML = `<b>${esc(n.t)}</b>${n.k && KLAB[n.k] ? ` <span class="chip gray">${KLAB[n.k]}</span>` : ''}${n.d ? `<p>${esc(n.d)}</p>` : ''}${n.x ? `<p class="nb-note">${esc(n.x)}</p>` : ''}${cites.length ? `<p class="nb-note">Nguồn: ${cites.map(c => `<button class="cite" onclick="NB.closeModal();NB.cite(${+c})">${+c}</button>`).join('')}</p>` : ''}`;
+    } });
   }
+  async function grPng() { try { const b = await window._tr.png(2); DOCGEN.download(b, DOCGEN.fname((window._trA && window._trA.title) || 'so-do') + '.png'); } catch (e) { toast(e.message); } }
   // ---------- đề trắc nghiệm: làm bài, nộp, xem giải thích ----------
   const LV_NAME = { NB: 'Nhận biết', TH: 'Thông hiểu', VD: 'Vận dụng', VDC: 'Vận dụng cao' };
   function mcqStart(a) { window._mq = { a, ans: {}, done: false }; mcqPaint(); }
@@ -737,6 +806,89 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
   }
   async function mqWord(withAns) { const a = window._mq.a; try { toast('Đang tạo file Word…'); DOCGEN.download(await DOCGEN.toDocx(a.title, mcqMd(a, !!withAns)), DOCGEN.fname(a.title) + (withAns ? '-dap-an' : '') + '.docx'); } catch (e) { toast('Không tạo được file Word: ' + e.message); } }
   // ---------- tài liệu ----------
+  // ---- Biểu đồ (số liệu lấy từ nguồn, vẽ SVG, xuất PNG/SVG/CSV) ----
+  function chartDialog() {
+    modal(`<h2>${IC('chart')} Tạo biểu đồ</h2>
+      <label class="nb-note">Bạn muốn biểu đồ thể hiện điều gì?</label><textarea id="nb-cf" rows="3" placeholder="Ví dụ: so sánh số liệu qua các năm; tỉ lệ các thành phần; kết quả thí nghiệm. Để trống để AI tự chọn bộ số liệu nổi bật nhất trong nguồn."></textarea>
+      <label class="nb-note" style="margin-top:10px">Kiểu biểu đồ</label><select id="nb-ct"><option value="">AI tự chọn</option>${CHART.TYPES.map(t => `<option value="${t[0]}">${t[1]}</option>`).join('')}</select>
+      <div class="nb-note">AI chỉ lấy số liệu có trong nguồn của sổ, không tự bịa. Tốn 3 lượt AI. Tạo xong bạn đổi được kiểu biểu đồ, tải ảnh PNG, SVG hoặc dữ liệu CSV, và biểu đồ tự được chèn vào mục Kết quả của báo cáo NCKH.</div>
+      <div style="text-align:right;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Hủy</button> <button class="pbtn p" onclick="NB.makeChart()">Tạo biểu đồ</button></div>`);
+  }
+  async function makeChart() {
+    const p = { focus: $('nb-cf').value.trim(), kind: $('nb-ct').value };
+    try { const a = await runBusy('Đang tìm số liệu và dựng biểu đồ…', () => create('chart', p)); openNb(cur.id, true); openArt(a.id); } catch (e) { toast(e.message); }
+  }
+  function chartView(a) {
+    const d = a.data;
+    modal(`<h2>${IC('chart')} ${esc(a.title)}</h2>
+      <div class="nb-tbar">${CHART.TYPES.map(t => `<button class="pbtn sm ${d.type === t[0] ? 'p' : ''}" data-ct="${t[0]}" onclick="NB.chType('${a.id}','${t[0]}')">${t[1]}</button>`).join('')}</div>
+      <div id="ch-box" style="background:#fff;border-radius:14px;overflow:auto;border:1px solid var(--border)"></div>
+      ${d.note ? `<div class="nb-note" style="margin-top:8px">${esc(d.note)}</div>` : ''}
+      <div class="nb-end"><button class="pbtn p" onclick="NB.chDl('${a.id}','png')">Tải ảnh PNG</button><button class="pbtn" onclick="NB.chDl('${a.id}','svg')">Tải SVG</button><button class="pbtn" onclick="NB.chDl('${a.id}','csv')">Dữ liệu CSV</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`);
+    chPaint(a);
+  }
+  function chPaint(a) { const b = $('ch-box'); if (!b) return; b.innerHTML = CHART.svg(a.data, a.data.type); const s = b.firstChild; if (s && s.style) s.style.cssText = 'width:100%;height:auto;display:block'; }
+  function chType(id, t) { const a = artOf(id); if (!a) return; a.data.type = t; saveDb(); chPaint(a); document.querySelectorAll('#nb-ov [data-ct]').forEach(b => b.classList.toggle('p', b.dataset.ct === t)); }
+  async function chDl(id, f) {
+    const a = artOf(id); if (!a) return; const nm = DOCGEN.fname(a.data.title || 'bieu-do'), s = CHART.svg(a.data, a.data.type);
+    try { if (f === 'svg') DOCGEN.download(new Blob([s], { type: 'image/svg+xml' }), nm + '.svg'); else if (f === 'csv') DOCGEN.download(new Blob(['\ufeff' + CHART.csv(a.data)], { type: 'text/csv;charset=utf-8' }), nm + '.csv'); else DOCGEN.download(await CHART.png(s, 3), nm + '.png'); } catch (e) { toast(e.message); }
+  }
+  async function chartFigs() {
+    const out = []; for (const a of cur.arts.filter(x => x.type === 'chart').slice(0, 4).reverse()) { try { const b = await CHART.png(CHART.svg(a.data, a.data.type), 2); out.push({ png: new Uint8Array(await b.arrayBuffer()), w: 520, h: Math.round(520 * 440 / 760), title: a.data.title || 'Biểu đồ', src: a.data.source || '' }); } catch (e) {} } return out;
+  }
+  // ---- Báo cáo nghiên cứu khoa học theo mẫu (bìa, mục lục, 4 phần, tài liệu tham khảo, phụ lục) ----
+  function reportDialog() {
+    const D = REPORT.DEF, f = (id, l, v, ph) => `<label class="nb-note" style="display:block;margin-top:8px">${l}</label><input type="text" id="${id}" value="${esc(v || '')}" placeholder="${esc(ph || '')}">`;
+    modal(`<h2>${IC('file')} Báo cáo nghiên cứu khoa học</h2>
+      <div class="nb-note">Tạo báo cáo theo mẫu chuẩn: trang bìa, mục lục, Tóm tắt, 4 phần chính, tài liệu tham khảo, phụ lục. AI điền nội dung từ các nguồn trong sổ (ghi chú, Word, PDF, Kho dữ liệu…). Chỗ chưa có thông tin sẽ để dòng “[Cần bổ sung: …]” để bạn tự điền, AI không bịa số liệu. Tốn khoảng 12 lượt AI.</div>
+      ${f('rp-title', 'Tên đề tài', cur.title)}${f('rp-field', 'Lĩnh vực', '', 'Ví dụ: Phần mềm hệ thống / Giáo dục')}
+      <label class="nb-note" style="display:block;margin-top:8px">Tác giả (mỗi dòng một người, dạng: Họ và tên - Lớp)</label><textarea id="rp-au" rows="2" placeholder="Nguyễn Văn A - 11 Sinh">${esc(userName() || '')}</textarea>
+      ${f('rp-te', 'Giáo viên hướng dẫn', '', 'Họ tên giáo viên')}${f('rp-sc', 'Trường', D.school)}${f('rp-yr', 'Năm học', D.year)}
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px"><button class="pbtn" onclick="NB.closeModal()">Hủy</button><button class="pbtn" onclick="NB.rpBlank()">Chỉ tải mẫu trống</button><button class="pbtn p" onclick="NB.makeReport()">Viết báo cáo bằng AI</button></div>`);
+  }
+  function rpMetaForm() {
+    const v = id => ($(id) || {}).value || '', au = v('rp-au').split('\n').map(s => s.trim()).filter(Boolean).map(s => { const k = s.split(/\s*[-–—,;\t]\s*/); return { n: k[0], c: k.slice(1).join(' ') }; });
+    return { title: v('rp-title').trim() || REPORT.DEF.title, field: 'Lĩnh vực: ' + (v('rp-field').trim() || '…………………………………'), authors: au.length ? au : REPORT.DEF.authors, teacher: 'Giáo viên hướng dẫn: ' + (v('rp-te').trim() || '…………………'), school: (v('rp-sc').trim() || REPORT.DEF.school).toUpperCase(), year: v('rp-yr').trim() || REPORT.DEF.year, date: new Date().getFullYear() + '' };
+  }
+  async function rpBlank() {
+    const meta = rpMetaForm(); try { toast('Đang tạo mẫu Word…'); const b = await REPORT.build(await DOCGEN.loadDocx(), meta, { figures: [] }, { hints: true }); DOCGEN.download(b, 'Mau_bao_cao_NCKH.docx'); closeModal(); } catch (e) { toast('Không tạo được file Word: ' + e.message); }
+  }
+  async function makeReport() {
+    if (thinSrc(cur)) { closeModal(); return gapDialog('report'); }
+    const meta = rpMetaForm();
+    try { const a = await runBusy('AI đang viết báo cáo từng phần (khoảng 1–2 phút)…', () => create('report', { meta })); openNb(cur.id, true); openArt(a.id); } catch (e) { toast(e.message); }
+  }
+  async function genReport(nb, meta) {
+    const leaves = REPORT.LEAVES.filter(s => !s.refs && s.id !== 'abs' && s.id !== 'app'), out = {}, chunks = [];
+    for (let i = 0; i < leaves.length; i += 5) chunks.push(leaves.slice(i, i + 5));
+    const lab = 'Đề tài: "' + meta.title + '" · ' + meta.field;
+    for (const ch of chunks) {
+      const C = contextFor(nb, ch.map(s => s.t + ' ' + (s.g || '')).join(' ') + ' ' + nb.title, 12000);
+      const list = ch.map(s => `- "${s.id}" — ${s.t.replace(/^[\d.]+\s*/, '')} (khoảng ${s.w || 150} từ): ${s.g || ''}`).join('\n');
+      let j = {}; try { j = parseJsonLoose(await gem(`Bạn viết một báo cáo nghiên cứu khoa học của học sinh THPT Việt Nam. ${lab}.\nViết các mục sau bằng tiếng Việt, văn phong khoa học, rõ ràng, dùng "nhóm tác giả" hoặc ngôi thứ ba:\n${list}\n\nQUY TẮC BẮT BUỘC:\n1. Chỉ dùng thông tin có trong TÀI LIỆU bên dưới. Không bịa số liệu, kết quả thí nghiệm, tên người, trích dẫn.\n2. Nếu tài liệu thiếu thông tin cho một ý, hãy viết phần có thể viết được rồi chèn MỘT dòng riêng dạng: [Cần bổ sung: nêu cụ thể cần thông tin gì].\n3. Khi dùng thông tin từ nguồn, ghi [n] theo số thứ tự nguồn (Nguồn n).\n4. Có thể dùng danh sách gạch đầu dòng "- " hoặc bảng markdown khi phù hợp. Không dùng tiêu đề (#) trong nội dung.\nTrả về DUY NHẤT một JSON object {"<id>":"nội dung", ...} với các id đã nêu.\n\nTÀI LIỆU:\n${C}`, { maxTokens: 7000, temp: 0.3 })); } catch (e) {}
+      ch.forEach(s => { out[s.id] = j && j[s.id] ? String(j[s.id]).trim() : '[Cần bổ sung: AI chưa viết được mục này, hãy nhập nội dung hoặc tạo lại.]'; });
+    }
+    try { const sm = Object.keys(out).map(k => k + ': ' + out[k].slice(0, 500)).join('\n'); out.abs = (await gem(`Dựa trên nội dung báo cáo dưới đây, viết phần TÓM TẮT 200–250 từ bằng tiếng Việt (vấn đề, phương pháp, kết quả chính, đóng góp). Không bịa thêm; chỗ thiếu thì ghi [Cần bổ sung: …]. Chỉ trả về đoạn văn.\nĐề tài: ${meta.title}\n\n${sm}`, { maxTokens: 1200, temp: 0.3 })).trim(); } catch (e) { out.abs = '[Cần bổ sung: Tóm tắt 200–300 từ.]'; }
+    out.ref = nb.sources.map((s, i) => s.on ? `[${i + 1}] ${s.name}${s.url ? '. Truy cập: ' + s.url : ''}` : '').filter(Boolean).join('\n\n');
+    return out;
+  }
+  const rpGaps = c => (Object.values(c || {}).join('\n').match(/\[Cần bổ sung/g) || []).length;
+  function reportView(a) {
+    const d = a.data, c = d.content || {}, m = d.meta || {}, gaps = rpGaps(c);
+    const mf = (k, l) => `<label class="nb-note" style="display:block;margin-top:6px">${l}</label><input type="text" data-m="${k}" value="${esc(m[k] || '')}" oninput="NB.rpMeta('${a.id}',this)">`;
+    modal(`<h2>${IC('file')} ${esc(a.title)}</h2>
+      <div class="nb-note" style="margin-bottom:8px">${gaps ? `Còn <b>${gaps}</b> chỗ cần bổ sung (dòng “[Cần bổ sung: …]”). Mở từng mục bên dưới để sửa trực tiếp, rồi tải file Word.` : 'Đã có nội dung cho mọi mục. Kiểm tra lại số liệu trước khi nộp.'}</div>
+      <div class="nb-scroll" style="max-height:52vh">
+        <details><summary><b>Trang bìa</b></summary>${mf('title', 'Tên đề tài')}${mf('field', 'Lĩnh vực')}${mf('teacher', 'Giáo viên hướng dẫn')}${mf('school', 'Trường')}${mf('year', 'Năm học')}</details>
+        ${REPORT.LEAVES.map(s => `<details ${/\[Cần bổ sung/.test(c[s.id] || '') ? 'open' : ''}><summary>${esc(s.t)}${/\[Cần bổ sung/.test(c[s.id] || '') ? ' <span class="nb-note">· cần bổ sung</span>' : ''}</summary><textarea rows="${Math.min(14, Math.max(4, Math.ceil((c[s.id] || '').length / 90)))}" data-id="${s.id}" oninput="NB.rpEdit('${a.id}',this)">${esc(c[s.id] || '')}</textarea></details>`).join('')}
+      </div>
+      <div class="nb-end"><button class="pbtn p" onclick="NB.rpDl('${a.id}')">Tải .docx</button><button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`);
+  }
+  let rpT; function rpEdit(id, el) { const a = artOf(id); if (!a) return; a.data.content[el.dataset.id] = el.value; clearTimeout(rpT); rpT = setTimeout(saveDb, 600); }
+  function rpMeta(id, el) { const a = artOf(id); if (!a) return; a.data.meta[el.dataset.m] = el.value; clearTimeout(rpT); rpT = setTimeout(saveDb, 600); }
+  async function rpDl(id) {
+    const a = artOf(id); if (!a) return; try { toast('Đang tạo file Word…'); const figs = await chartFigs(), b = await REPORT.build(await DOCGEN.loadDocx(), a.data.meta, Object.assign({}, a.data.content, { figures: figs }), { hints: true }); DOCGEN.download(b, DOCGEN.fname(a.data.meta.title || 'Bao cao NCKH') + '.docx'); } catch (e) { toast('Không tạo được file Word: ' + e.message); }
+  }
   function docView(a) {
     modal(`<h2>${IC('file')} ${esc(a.title)}</h2><div class="nb-doc">${DOCGEN.md(a.data.text)}</div>
       <div class="nb-end"><button class="pbtn p" onclick="NB.docDl('${a.id}')">Tải .docx</button><button class="pbtn" onclick="NB.docG('${a.id}')">Mở Google Docs</button><button class="pbtn" onclick="NB.docPdf('${a.id}')">In / PDF</button><button class="pbtn" onclick="NB.docCopy('${a.id}')">Sao chép</button>${DOCGEN.hasTable(a.data.text) ? `<button class="pbtn" onclick="NB.docCsv('${a.id}')">Bảng .csv</button>` : ''}<button class="pbtn" onclick="NB.closeModal()">Đóng</button></div>`, 'wide');
@@ -799,5 +951,5 @@ Trả về DUY NHẤT mảng JSON, mỗi phần tử: ${fmt}\n\n${C}`, { maxToke
   }
   function back(fromNb) { if (fromNb && nbOf(fromNb)) { cur = nbOf(fromNb); openNb(fromNb); } else open(); }
 
-  return { open, create: createNb, openNb, del, rename, pane: showPane, colToggle, addDialog, closeModal, toggleSrc, delSrc, delArt, addFiles, addYt, addText, wikiFind, addWiki, wikiAdd, addRound, fromRound, ask, tool, genQuiz, openArt, fc, qdel, play, saveRound, buildPlay, back, cite, preview, attach, paste, unatt, copyMsg, msgNote, msgFlash, act, noteSave, depth, make, mq, mqSubmit, mqReset, mqWord, docDl, docG, docPdf, docCopy, docCsv, newTab, shareDlg, copyLink, unshare, _intent: intent, _md: md, _feats: feats, _useAi: useAi };
+  return { gapGo, gapLater, open, create: createNb, openNb, del, rename, pane: showPane, colToggle, addDialog, closeModal, toggleSrc, delSrc, delArt, addFiles, addYt, addWeb, grPng, addText, wikiFind, addWiki, wikiAdd, addRound, fromRound, ask, tool, genQuiz, openArt, fc, qdel, play, saveRound, buildPlay, back, cite, preview, attach, paste, unatt, copyMsg, msgNote, msgFlash, act, noteSave, depth, make, mq, mqSubmit, mqReset, mqWord, docDl, makeChart, chType, chDl, makeReport, rpBlank, rpEdit, rpMeta, rpDl, docG, docPdf, docCopy, docCsv, newTab, shareDlg, copyLink, unshare, _intent: intent, _md: md, _feats: feats, _useAi: useAi };
 })();
