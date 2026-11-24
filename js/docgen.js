@@ -94,9 +94,10 @@ const DOCGEN = (() => {
   async function toDocx(title, text, meta) {
     const D = await loadDocx(); return build(D, title, text, meta);
   }
-  function build(D, title, text, meta) {
+  // Markdown → mảng đoạn văn/bảng của thư viện docx (dùng chung cho Word thường và báo cáo NCKH)
+  function mdKids(D, text, opt) {
     const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, ExternalHyperlink, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, Footer, PageNumber, LevelFormat, Packer } = D;
-    meta = meta || {};
+    opt = opt || {};
     const mk = (rs, base) => rs.map(r => {
       const o = Object.assign({ text: r.t, font: r.code ? 'Consolas' : FONT, bold: !!r.b || (base && base.bold), italics: !!r.i, size: base && base.size }, r.code ? { shading: { type: ShadingType.CLEAR, fill: 'F1F3F4' } } : {});
       if (r.link) return new ExternalHyperlink({ link: safeUrl(r.link), children: [new TextRun(Object.assign(o, { color: '1155CC', underline: {} }))] });
@@ -108,7 +109,7 @@ const DOCGEN = (() => {
     B.forEach(b => {
       if (b.k !== 'li') prevOrd = false;
       if (b.k === 'h') {
-        const top = b.l === 1 && first; first = false;
+        const top = opt.center1 !== false && b.l === 1 && first; first = false;
         kids.push(new Paragraph({ heading: H[Math.min(b.l, 4)], alignment: top ? AlignmentType.CENTER : AlignmentType.LEFT, children: mk(b.r) }));
       } else if (b.k === 'p') { first = false; kids.push(new Paragraph({ alignment: AlignmentType.JUSTIFIED, spacing: { after: 120, line: 312 }, children: mk(b.r) })); }
       else if (b.k === 'quote') kids.push(new Paragraph({ indent: { left: 567 }, border: { left: { style: BorderStyle.SINGLE, size: 12, color: '9AA0A6', space: 8 } }, spacing: { after: 120 }, children: mk(b.r.map(r => Object.assign({}, r, { i: 1 }))) }));
@@ -125,6 +126,12 @@ const DOCGEN = (() => {
         kids.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
       }
     });
+    return kids;
+  }
+  function build(D, title, text, meta) {
+    const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, ExternalHyperlink, Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, Footer, PageNumber, LevelFormat, Packer } = D;
+    meta = meta || {};
+    const kids = mdKids(D, text);
     const lv = (ref, fmt, chars) => ({ reference: ref, levels: [0, 1, 2].map(l => ({ level: l, format: fmt, text: fmt === LevelFormat.BULLET ? chars[l] : `%${l + 1}.`, alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 567 + l * 454, hanging: 283 } } } })) });
     const hs = (size, color) => ({ run: { font: FONT, size, bold: true, color }, paragraph: { spacing: { before: 240, after: 120 }, keepNext: true } });
     const doc = new Document({
@@ -182,6 +189,6 @@ const DOCGEN = (() => {
     return JSON.parse(new TextDecoder().decode(u));
   }
 
-  return { esc, runs, inline, blocks, md, csv, hasTable, toDocx, build, download, fname, copyRich, toGoogleDocs, printPdf, pack, unpack };
+  return { loadDocx, esc, runs, inline, blocks, md, csv, hasTable, toDocx, build, mdKids, FONT, download, fname, copyRich, toGoogleDocs, printPdf, pack, unpack };
 })();
 if (typeof module !== 'undefined') module.exports = DOCGEN;
