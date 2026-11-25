@@ -215,13 +215,14 @@ const DECO = (() => {
   function layerScroll(root) { const l = root.querySelector('.dec-layer'); if (l) l.style.setProperty('--sc', (root.scrollTop || 0).toFixed(0)); }
 
   // ---------- Sự kiện ----------
+  const portalOn = () => { const p = document.getElementById('portal-screen'); return !!p && !p.classList.contains('hidden') && getComputedStyle(p).display !== 'none'; };
   let bound = false, tick = false, pm = null, pmq = false;
   function bind() {
     if (bound) return; bound = true;
     document.body.classList.toggle('lite', (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4 || matchMedia('(prefers-reduced-motion:reduce)').matches);
     document.addEventListener('pointerdown', e => { if (!e.target.closest) return; if (!e.target.closest('[data-k],.fact')) unspot(); if (document.querySelector('.hs.on') && !e.target.closest('.hs-hit,.hs-info')) unfocus(); }, true);
     document.addEventListener('click', e => {
-      const hp = e.target.closest('.hs-hit polygon'); if (hp) { focusHS(hp.dataset.hs, e); return; }
+      const hp = e.target.closest('.hs-hit polygon'); if (hp && !portalOn()) return; if (hp) { focusHS(hp.dataset.hs, e); return; }
       if (document.querySelector('.hs.on') && !e.target.closest('.hs-info')) unfocus();
       let t = e.target.closest('[data-k]');
       if (!t && !e.target.closest('button,a,input,select,textarea,label,summary,[onclick],.pc,.glass,.fact,.hs-info')) t = [...document.querySelectorAll('.dec-layer .dc.cn')].find(d => { const r = d.getBoundingClientRect(); return r.width && d.offsetParent && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; }) || null;
@@ -235,7 +236,7 @@ const DECO = (() => {
     let hvEl = null, hvK = null;
     const PP = {}; const pts = k => PP[k] || (PP[k] = HSP[k].map(s => s.trim().split(/\s+/).map(q => q.split(',').map(Number))));
     function near(k, x, y, R) { let best = 1e9; for (const poly of pts(k)) { let ins = false; for (let a = 0, b = poly.length - 1; a < poly.length; b = a++) { const [x1, y1] = poly[a], [x2, y2] = poly[b]; if ((y1 > y) !== (y2 > y) && x < (x2 - x1) * (y - y1) / (y2 - y1) + x1) ins = !ins; const dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy || 1; let t = ((x - x1) * dx + (y - y1) * dy) / L; t = Math.max(0, Math.min(1, t)); const ex = x1 + t * dx - x, ey = y1 + t * dy - y; best = Math.min(best, ex * ex + ey * ey); } if (ins) return 0; } return Math.sqrt(best) <= R ? Math.sqrt(best) : 1e9; }
-    function hint(e) {
+    function hint(e) { if (!portalOn()) return;
       const hs = $('hs'); let k = null;
       if (hs && !hs.classList.contains('on') && e.target.closest && e.target.closest('.hs')) { const r = hs.getBoundingClientRect(), s = 1344 / r.width, x = (e.clientX - r.left) * s, y = (e.clientY - r.top) * s; let bd = 1e9; for (const q of Object.keys(HSP)) { const dd = near(q, x, y, 70); if (dd < bd) { bd = dd; k = q; } } hs.classList.toggle('pt', bd < 1e9); }
       if (k === hvK) return; if (hvEl) hvEl.classList.remove('hv'); hvK = k; hvEl = k ? document.querySelector('.hs-lit[data-hs="' + k + '"]') : null; if (hvEl) hvEl.classList.add('hv');
