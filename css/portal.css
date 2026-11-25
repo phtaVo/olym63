@@ -353,3 +353,12 @@ body[data-mode="dark"] .nb-doc { background: #fff; color: #202124; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; } .form-grid .full { grid-column: 1/-1; }
 @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } .nb-doc { padding: 16px; } .nb-end { position: static; } }
 a.pbtn, a.btn { text-decoration: none; }
+
+/* khóa web: ẩn mọi mục ngoài Trang chủ + Luyện tập */
+body.sitelock #topnav .nav-link:not([data-id="portal-screen"]):not([data-id="home-screen"]){display:none!important}
+.lock-sw{position:relative;display:inline-block;width:46px;height:26px;flex:none}
+.lock-sw input{opacity:0;width:0;height:0}
+.lock-sw span{position:absolute;inset:0;background:#c9ccd3;border-radius:26px;transition:.2s;cursor:pointer}
+.lock-sw span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.lock-sw input:checked+span{background:#d93025}
+.lock-sw input:checked+span:before{transform:translateX(20px)}
