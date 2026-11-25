@@ -223,7 +223,9 @@ const DECO = (() => {
     document.addEventListener('click', e => {
       const hp = e.target.closest('.hs-hit polygon'); if (hp) { focusHS(hp.dataset.hs, e); return; }
       if (document.querySelector('.hs.on') && !e.target.closest('.hs-info')) unfocus();
-      const t = e.target.closest('[data-k]'); if (!t || !FACT[t.dataset.k]) { if (!e.target.closest('.fact')) unspot(); return; }
+      let t = e.target.closest('[data-k]');
+      if (!t && !e.target.closest('button,a,input,select,textarea,label,summary,[onclick],.pc,.glass,.fact,.hs-info')) t = [...document.querySelectorAll('.dec-layer .dc.cn')].find(d => { const r = d.getBoundingClientRect(); return r.width && d.offsetParent && e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; }) || null;
+      if (!t || !FACT[t.dataset.k]) { if (!e.target.closest('.fact')) unspot(); return; }
       if (t.classList.contains('spot')) { unspot(); return; }
       unspot(); t.classList.add('spot'); spotEl = t;
       const inn = t.querySelector('.in') || t; inn.classList.remove('pop'); void inn.offsetWidth; inn.classList.add('pop');
