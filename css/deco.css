@@ -62,7 +62,7 @@ body[data-acc="gold"] .glass,body[data-acc="pink"] .glass{border-color:var(--gla
 /* ---------- ảnh ở các góc trang ---------- */
 .dec-layer{position:absolute;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);overflow:hidden;pointer-events:none;z-index:0}
 .page>*:not(.dec-layer){position:relative;z-index:1}
-.dc.cn{width:var(--w);pointer-events:auto;opacity:.9}
+.dc.cn{width:var(--w);pointer-events:none;opacity:.9}
 .dc.cn img{filter:drop-shadow(0 12px 14px rgba(40,25,5,.28))}
 .dc.cn.tr{top:calc(var(--nav-h,64px) + 4px);right:-1.5vw;translate:0 calc(var(--sc,0)*var(--k,.04)*1px)}
 .dc.cn.tl{top:calc(var(--nav-h,64px) + 4px);left:-1.5vw;translate:0 calc(var(--sc,0)*var(--k,.04)*1px)}
@@ -220,3 +220,22 @@ body{overflow-x:clip}
 @keyframes hsIdle{0%,22%,100%{opacity:0}8%,14%{opacity:.85}}
 .lite .hs.idle .hs-lit{animation:none}
 @media(max-width:900px){.hero-scene{width:100%;margin:0}}
+
+/* Trang chủ trên điện thoại: chỉ giữ phần video kiến thức */
+@media(max-width:760px){
+ #portal-screen .blob{display:none}
+ #portal-screen .page>*:not(#home-news){display:none!important}
+ #portal-screen .page{padding-top:calc(var(--nav-h,60px) + 14px);padding-bottom:28px}
+ #home-news{margin:0;padding:0 14px}
+ #home-news .sec-head{margin-bottom:12px;text-align:left}
+ #home-news .sec-head h2{font-size:22px;line-height:1.25;margin:0 0 4px}
+ #home-news .sec-head p{font-size:13.5px;line-height:1.5;margin:0;opacity:.8}
+ #home-news .chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin:0 -14px;padding-left:14px;padding-right:14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ #home-news .chips::-webkit-scrollbar{display:none}
+ #home-news .chips .pbtn{flex:0 0 auto;white-space:nowrap}
+ #home-news .vids{grid-template-columns:1fr;gap:14px}
+ #home-news .vid{border-radius:18px}
+ #home-news .vid .pv i{width:54px;height:54px;margin:-27px 0 0 -27px}
+ #home-news .vid .in{padding:12px 14px 14px}
+ #home-news .vid .in h4{font-size:15px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
