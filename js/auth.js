@@ -18,6 +18,31 @@ const AUTH = (function () {
   function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
   function setToken(t) { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
 
+  // ---- KHÓA WEB: admin bật thì người dùng thường chỉ còn luyện tập ----
+  let siteLocked = false;
+  const LOCK_BLOCK = ['nb-screen', 'vault-screen', 'store-screen', 'report-screen', 'community-screen', 'support-screen', 'research-screen'];
+  function isLocked() { return siteLocked && !(currentUser && currentUser.role === 'admin'); }
+  function applyLock() { try { document.body.classList.toggle('sitelock', isLocked()); } catch (e) {} }
+  function lockedScreen(id) { return isLocked() && LOCK_BLOCK.indexOf(id) >= 0; }
+  async function refreshLock() {
+    if (!backendReady()) return;
+    try { const r = await fetch(apiBase() + '/site-status', { cache: 'no-store' }); const d = await r.json(); siteLocked = !!d.locked; } catch (e) {}
+    applyLock();
+  }
+  async function toggleLock(cb) {
+    const want = !!cb.checked;
+    if (want && !confirm('Khóa web? Người dùng thường chỉ còn dùng được Luyện tập (admin vẫn dùng đủ).')) { cb.checked = false; return; }
+    cb.disabled = true;
+    try {
+      await apiFetch('/admin/research/config', { method: 'POST', body: JSON.stringify({ lockdown: want }) });
+      siteLocked = want; applyLock();
+      const t = document.getElementById('lock-state'); if (t) t.textContent = want ? 'ĐANG KHÓA: chỉ còn Luyện tập' : 'Đang mở: dùng đủ tính năng';
+    } catch (e) { cb.checked = !want; alert('Không đổi được: ' + e.message); }
+    cb.disabled = false;
+  }
+  setInterval(refreshLock, 60000);
+  document.addEventListener('DOMContentLoaded', refreshLock);
+
   async function apiFetch(path, opts) {
     opts = opts || {};
     const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
@@ -374,9 +399,14 @@ const AUTH = (function () {
           <button class="island-modal-close" onclick="AUTH.closeIslandModal()" title="Đóng">✕</button>
         </div>
       </div>
+      <div class="profile-card" style="margin:0 14px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div><div class="profile-card-title" style="margin:0">Khóa web (chỉ cho luyện tập)</div><div id="lock-state" style="font-size:13px;opacity:.75;margin-top:2px">Đang tải…</div></div>
+        <label class="lock-sw"><input type="checkbox" id="lock-cb" onchange="AUTH.toggleLock(this)"><span></span></label>
+      </div>
       <div class="profile-card" id="admin-research-card" style="display:none;margin:0 14px 10px"></div>
       <div class="admin-body" id="admin-body"><div class="lb-loading">Đang tải...</div></div>`;
     try { RESLOG.renderAdminCard(); } catch (e) {}
+    refreshLock().then(() => { const cb = document.getElementById('lock-cb'), t = document.getElementById('lock-state'); if (cb) cb.checked = siteLocked; if (t) t.textContent = siteLocked ? 'ĐANG KHÓA: chỉ còn Luyện tập' : 'Đang mở: dùng đủ tính năng'; });
   }
   async function loadAdminUsers() {
     const body = document.getElementById('admin-body');
@@ -508,6 +538,7 @@ const AUTH = (function () {
     openAdmin, openUserModal, closeUserModal, submitUserForm, deleteUser,
     closeIslandModal,
     getCurrentUser: () => currentUser,
+    isLocked, applyLock, lockedScreen, refreshLock, toggleLock,
     renderHome, avatarHtml, apiFetch, backendReady, getToken,
   };
 })();
