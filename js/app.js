@@ -145,6 +145,8 @@ function playUntilEnd(el, onDone, fallbackMs) {
 // SCREENS
 // ============================================================
 function showScreen(id) {
+  try { if (typeof AUTH !== 'undefined' && AUTH.lockedScreen && AUTH.lockedScreen(id)) { (window.showToast || alert)('Web đang ở chế độ chỉ luyện tập, tính năng này tạm khóa.'); id = 'home-screen'; } } catch (e) {}
+  try { if (typeof AUTH !== 'undefined' && AUTH.applyLock) AUTH.applyLock(); } catch (e) {}
   if (typeof AUTH !== 'undefined' && AUTH.closeIslandModal) AUTH.closeIslandModal();
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   const el = document.getElementById(id); if (!el) return;
