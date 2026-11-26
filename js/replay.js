@@ -27,6 +27,21 @@ const REPLAY = (() => {
     for (let i = 0; i < ids.length; i += 300) { try { await api('/replay', { method: 'POST', body: JSON.stringify({ mode, qids: ids.slice(i, i + 300) }) }); } catch (e) {} }
   }
 
+  // Nhập các câu đã làm từ hồ sơ luyện tập cũ trên máy (trước khi có tính năng này), chỉ làm 1 lần
+  function importLegacy() {
+    try {
+      const flag = 'olym63_rp_legacy_' + uid();
+      if (localStorage.getItem(flag)) return;
+      const ad = JSON.parse(localStorage.getItem('olym63_ad_' + uid()) || 'null');
+      const ids = ad && ad.seen ? Object.keys(ad.seen) : [];
+      localStorage.setItem(flag, '1');
+      if (!ids.length) return;
+      const s = rd();
+      ['khoi_dong', 've_dich'].forEach(m => { const t = s[m] = s[m] || {}; ids.forEach(id => { if (!t[id]) t[id] = ad.seen[id] || 1; }); });
+      wr(s);
+    } catch (e) {}
+  }
+
   // Kéo dữ liệu từ máy chủ về (gộp với bản trên máy, đẩy phần còn thiếu lên máy chủ)
   function sync(force) {
     if (!loggedIn()) return Promise.resolve(false);
@@ -34,6 +49,7 @@ const REPLAY = (() => {
     if (!force && Date.now() - syncedAt < 60000) return Promise.resolve(false);
     syncing = (async () => {
       let changed = false;
+      importLegacy();
       try {
         const d = await api('/replay');
         const s = rd(), srv = d.seen || {};
