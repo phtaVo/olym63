@@ -255,17 +255,22 @@ const PORTAL = (() => {
   function practice() { showScreen('home-screen'); AUTH.renderHome(); }
   function renderPractice() {
     const el = $('home-screen'); const G = CONFIG.GAME; const on = (typeof introEnabled !== 'undefined') ? introEnabled : true;
-    const card = (o, i) => `<button class="pc glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
+    const rpRow = o => {
+      if (o.lock || !o.mode || typeof REPLAY === 'undefined') return '';
+      const n = REPLAY.count(o.mode), on = REPLAY.isOn(o.mode);
+      return `<label class="rp-row ${n ? '' : 'off'}" title="${n ? 'Chỉ lấy lại các câu bạn đã gặp ở phần này' : 'Chơi một ván trước để có câu luyện lại'}"><input type="checkbox" ${on ? 'checked' : ''} ${n ? '' : 'disabled'} onchange="REPLAY.set('${o.mode}', this.checked)"><span class="rp-sw"></span><span class="rp-t">Chơi lại câu đã luyện<small>${n ? n + ' câu' : 'chưa có câu nào'}</small></span></label>`;
+    };
+    const card = (o, i) => `<div class="pcw">` + `<button class="pc glass mode-card rv ${o.lock ? 'locked' : ''}" style="--d:${i * .06}s" onclick="${o.lock ? `showComingSoon('${o.name}')` : o.fn}">
         <div class="ico">${IC(o.ic)}</div><div class="num">${o.num}</div><h3>${o.name}</h3><div class="meta">${o.meta}</div>
-        ${o.lock ? '<span class="chip gray" style="position:absolute;right:18px;top:18px">Sắp ra mắt</span>' : `<span class="go">${IC('arrow')}</span>`}</button>`;
+        ${o.lock ? '<span class="chip gray" style="position:absolute;right:18px;top:18px">Sắp ra mắt</span>' : `<span class="go">${IC('arrow')}</span>`}</button>${rpRow(o)}</div>`;
     const sets = {
       olympia: [
-        { ic: 'bolt', num: 'Phần 01', deco: 'compass', name: 'Khởi Động', meta: `${G.KHOI_DONG_TIME} giây · ${G.KHOI_DONG_COUNT} câu · +10 điểm mỗi câu`, fn: "openSourcePicker('khoi_dong')" },
-        { ic: 'puzzle', num: 'Phần 02', deco: 'bust', name: 'Vượt Chướng Ngại Vật', meta: `${G.VCNV_COUNT} câu · hình ảnh và từ khóa`, fn: "startGame('vcnv')" },
-        { ic: 'play', num: 'Phần 03', deco: 'ship', name: 'Tăng Tốc', meta: `${G.TANG_TOC_COUNT} câu · hình ảnh, video · tối đa 40 điểm`, fn: "startGame('tang_toc')" },
-        { ic: 'trophy', num: 'Phần 04', deco: 'lac', name: 'Về Đích', meta: '3 câu · chọn gói 20 hoặc 30 điểm · Ngôi sao hy vọng', fn: "openSourcePicker('ve_dich')" }],
+        { ic: 'bolt', num: 'Phần 01', deco: 'compass', name: 'Khởi Động', mode: 'khoi_dong', meta: `${G.KHOI_DONG_TIME} giây · ${G.KHOI_DONG_COUNT} câu · +10 điểm mỗi câu`, fn: "openSourcePicker('khoi_dong')" },
+        { ic: 'puzzle', num: 'Phần 02', deco: 'bust', name: 'Vượt Chướng Ngại Vật', mode: 'vcnv', meta: `${G.VCNV_COUNT} câu · hình ảnh và từ khóa`, fn: "startGame('vcnv')" },
+        { ic: 'play', num: 'Phần 03', deco: 'ship', name: 'Tăng Tốc', mode: 'tang_toc', meta: `${G.TANG_TOC_COUNT} câu · hình ảnh, video · tối đa 40 điểm`, fn: "startGame('tang_toc')" },
+        { ic: 'trophy', num: 'Phần 04', deco: 'lac', name: 'Về Đích', mode: 've_dich', meta: '3 câu · chọn gói 20 hoặc 30 điểm · Ngôi sao hy vọng', fn: "openSourcePicker('ve_dich')" }],
       ddvq: [
-        { ic: 'flag', num: 'ĐĐVQ · Phần 01', name: 'Xuất Phát', meta: `${G.XUAT_PHAT_TIME} giây · ${G.XUAT_PHAT_COUNT} câu · +10 điểm mỗi câu`, fn: "startGame('xuat_phat')" },
+        { ic: 'flag', num: 'ĐĐVQ · Phần 01', name: 'Xuất Phát', mode: 'xuat_phat', meta: `${G.XUAT_PHAT_TIME} giây · ${G.XUAT_PHAT_COUNT} câu · +10 điểm mỗi câu`, fn: "startGame('xuat_phat')" },
         { ic: 'crown', num: 'ĐĐVQ · Phần 02', name: 'Vinh Quang', meta: 'Đang được phát triển', lock: 1 }],
     };
     el.innerHTML = `<div class="page">
@@ -277,6 +282,7 @@ const PORTAL = (() => {
       <div class="glass rv" style="margin-top:22px;padding:18px 22px;display:flex;align-items:center;gap:14px"><div style="flex:1"><b>Màn giới thiệu trước phần thi</b><div class="nb-note">Bật để xem hiệu ứng mở đầu, tắt để vào thẳng câu hỏi.</div></div><button class="toggle ${on ? 'on' : ''}" id="intro-toggle-switch" onclick="toggleIntroSetting();this.classList.toggle('on')" aria-label="Bật tắt màn giới thiệu"></button></div>
     </div>`;
     observe(el); bindScroll(el);
+    try { REPLAY.sync(false).then(ch => { if (ch && !el.classList.contains('hidden')) renderPractice(); }); } catch (e) {}
   }
   function setTab(t) { tab = t; renderPractice(); }
 
