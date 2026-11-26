@@ -151,7 +151,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   const el = document.getElementById(id); if (!el) return;
   el.classList.remove('hidden');
-  if (id === 'home-screen' && !el.firstElementChild) { try { PORTAL.renderPractice(); } catch (e) {} }
+  if (id === 'home-screen') { try { PORTAL.renderPractice(); } catch (e) {} }
   try { PORTAL.onScreen(id); } catch (e) {}
   try { VOICE.onScreen(id); } catch (e) {}
 }
@@ -358,6 +358,9 @@ async function loadKhoiDong(src, all) {   // all = true: trả cả bộ câu h�
       .map(r => ({ question: cell(r, 2), answer: cell(r, 3), subject: cell(r, 1) }));
     if (!questions.length) return { success: false, error: `Chưa có câu hỏi Khởi Động cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
     if (all) return { success: true, questions: shuffleArray(questions) };
+    const rpq = await REPLAY.filter('khoi_dong', questions);
+    if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' };
+    questions.length = 0; questions.push(...rpq);
     // Nhóm "thích ứng" (đã đồng ý nghiên cứu): chọn câu theo mức nắm môn; còn lại: ngẫu nhiên như cũ
     let picked = null;
     try { picked = await ADAPT.pick(questions, CONFIG.GAME.KHOI_DONG_COUNT, { force: !!(src && src.weak) }); } catch (e) {}
@@ -375,6 +378,7 @@ async function loadXuatPhat(all) {
       .filter(r => cell(r, 0) && cell(r, 1))
       .map(r => ({ question: cell(r, 0), answer: cell(r, 1) }));
     if (!questions.length) return { success: false, error: 'Sheet XP (ĐĐVQ) chưa có câu hỏi' };
+    if (!all) { const rpq = await REPLAY.filter('xuat_phat', questions); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; questions.length = 0; questions.push(...rpq); }
     return { success: true, questions: shuffleArray(questions).slice(0, all ? undefined : CONFIG.GAME.XUAT_PHAT_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -396,6 +400,7 @@ async function loadVeDich(src) {
         return { question: text, answer: cell(r, 3), points: parseInt(cell(r, 4)) || 10,   // E = điểm
                  media: url, mediaType: type, subject: cell(r, 1) };
       });
+    { const rpq = await REPLAY.filter('ve_dich', all); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; all.length = 0; all.push(...rpq); }
     const pools = {
       20: shuffleArray(all.filter(q => q.points === 20)),
       30: shuffleArray(all.filter(q => q.points === 30))
@@ -422,6 +427,7 @@ async function loadVcnv(all) {
         question: `Chướng ngại vật gồm có ${q.chars} kí tự — Các từ khóa: ${q.keywords}`
       }));
     if (!qs.length) return { success: false, error: 'Sheet VCNV chưa có câu hỏi' };
+    if (!all) { const rpq = await REPLAY.filter('vcnv', qs); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; qs.length = 0; qs.push(...rpq); }
     return { success: true, questions: shuffleArray(qs).slice(0, all ? undefined : CONFIG.GAME.VCNV_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -453,6 +459,7 @@ async function loadTangToc(all) {
     });
     console.log('[TangToc] số câu hợp lệ:', qs.length);
     if (!qs.length) return { success: false, error: 'Sheet TangToc chưa có câu hỏi' };
+    if (!all) { const rpq = await REPLAY.filter('tang_toc', qs); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; qs.length = 0; qs.push(...rpq); }
     return { success: true, questions: shuffleArray(qs).slice(0, all ? undefined : CONFIG.GAME.TANG_TOC_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -826,7 +833,7 @@ function onQuestionsLoaded(result) {
   STATE.vdPool = result.pools || null;
   // Cảnh báo khi ngân hàng câu hỏi trong sheet ít hơn số câu cần random
   const want = { xuat_phat: CONFIG.GAME.XUAT_PHAT_COUNT, khoi_dong: CONFIG.GAME.KHOI_DONG_COUNT, vcnv: CONFIG.GAME.VCNV_COUNT, tang_toc: CONFIG.GAME.TANG_TOC_COUNT }[STATE.mode];
-  if (want && !STATE.custom && result.questions.length < want) {
+  if (want && !STATE.custom && result.questions.length < want && !(typeof REPLAY !== 'undefined' && REPLAY.isOn(STATE.mode))) {
     console.warn(`[${STATE.mode}] Sheet chỉ đọc được ${result.questions.length} câu hợp lệ, cần ${want}.`);
     showToast(`Sheet chỉ có ${result.questions.length} câu hợp lệ (cần ${want}). Kiểm tra lại sheet.`);
   }
@@ -1612,7 +1619,7 @@ function showResults() {
     }
     STATE.score = newScore;
     // Thống kê hồ sơ: mỗi lượt chỉ ghi nhận 1 lần
-    if (!STATE.custom && STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { NB.saveRound(STATE.mode, STATE.answers, STATE.questions); } catch (e) {} try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} if (STATE.mode === 'khoi_dong' || STATE.mode === 've_dich') { try { ADAPT.update(STATE.answers, STATE.questions); } catch (e) {} } }
+    if (!STATE.custom && STATE._statsRun !== STATE.runId) { STATE._statsRun = STATE.runId; try { NB.saveRound(STATE.mode, STATE.answers, STATE.questions); } catch (e) {} try { STATS.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { RESLOG.recordRound(STATE.mode, STATE.answers); } catch (e) {} try { REPLAY.record(STATE.mode, STATE.answers); } catch (e) {} if (STATE.mode === 'khoi_dong' || STATE.mode === 've_dich') { try { ADAPT.update(STATE.answers, STATE.questions); } catch (e) {} } }
     // Xuất Phát (ĐĐVQ) chưa có bảng xếp hạng trên Worker nên chưa gửi điểm
     if (!STATE.custom && STATE.mode !== 'xuat_phat' && typeof AUTH !== 'undefined' && typeof AUTH.submitScore === 'function') AUTH.submitScore(STATE.mode, STATE.score);
     displayResults();
