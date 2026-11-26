@@ -371,3 +371,5 @@ body.sitelock #topnav .nav-link:not([data-id="portal-screen"]):not([data-id="hom
 .voice-btn.live svg{animation:vpulse 1s ease-in-out infinite}
 @keyframes vpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 @media(max-width:560px){.voice-btn span{display:none}.voice-btn{padding:9px}}
+
+.kd-sw input:checked+span{background:#1a73e8}
