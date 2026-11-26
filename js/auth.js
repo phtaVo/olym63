@@ -19,14 +19,20 @@ const AUTH = (function () {
   function setToken(t) { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} }
 
   // ---- KHÓA WEB: admin bật thì người dùng thường chỉ còn luyện tập ----
-  let siteLocked = false;
+  let siteLocked = false, kdCount = 6;
+  try { CONFIG.GAME.KHOI_DONG_COUNT = 6; } catch (e) {}
+  function setKd(n) {
+    n = n === 18 ? 18 : 6; if (n === kdCount && CONFIG.GAME.KHOI_DONG_COUNT === n) return;
+    kdCount = n; try { CONFIG.GAME.KHOI_DONG_COUNT = n; } catch (e) {}
+    try { const h = document.getElementById('home-screen'); if (h) { if (h.classList.contains('hidden')) h.innerHTML = ''; else PORTAL.renderPractice(); } } catch (e) {}
+  }
   const LOCK_BLOCK = ['nb-screen', 'vault-screen', 'store-screen', 'report-screen', 'community-screen', 'support-screen', 'research-screen'];
   function isLocked() { return siteLocked && !(currentUser && currentUser.role === 'admin'); }
   function applyLock() { try { document.body.classList.toggle('sitelock', isLocked()); } catch (e) {} }
   function lockedScreen(id) { return isLocked() && LOCK_BLOCK.indexOf(id) >= 0; }
   async function refreshLock() {
     if (!backendReady()) return;
-    try { const r = await fetch(apiBase() + '/site-status', { cache: 'no-store' }); const d = await r.json(); siteLocked = !!d.locked; } catch (e) {}
+    try { const r = await fetch(apiBase() + '/site-status', { cache: 'no-store' }); const d = await r.json(); siteLocked = !!d.locked; setKd(d.kd_count); } catch (e) {}
     applyLock();
   }
   async function toggleLock(cb) {
@@ -38,6 +44,14 @@ const AUTH = (function () {
       siteLocked = want; applyLock();
       const t = document.getElementById('lock-state'); if (t) t.textContent = want ? 'ĐANG KHÓA: chỉ còn Luyện tập' : 'Đang mở: dùng đủ tính năng';
     } catch (e) { cb.checked = !want; alert('Không đổi được: ' + e.message); }
+    cb.disabled = false;
+  }
+  async function toggleKd(cb) {
+    const n = cb.checked ? 18 : 6; cb.disabled = true;
+    try {
+      await apiFetch('/admin/research/config', { method: 'POST', body: JSON.stringify({ kd_count: n }) });
+      setKd(n); const t = document.getElementById('kd-state'); if (t) t.textContent = 'Khởi Động hiện có ' + n + ' câu';
+    } catch (e) { cb.checked = !cb.checked; alert('Không đổi được: ' + e.message); }
     cb.disabled = false;
   }
   setInterval(refreshLock, 60000);
@@ -403,10 +417,14 @@ const AUTH = (function () {
         <div><div class="profile-card-title" style="margin:0">Khóa web (chỉ cho luyện tập)</div><div id="lock-state" style="font-size:13px;opacity:.75;margin-top:2px">Đang tải…</div></div>
         <label class="lock-sw"><input type="checkbox" id="lock-cb" onchange="AUTH.toggleLock(this)"><span></span></label>
       </div>
+      <div class="profile-card" style="margin:0 14px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div><div class="profile-card-title" style="margin:0">Số câu Khởi Động: 6 / 18</div><div id="kd-state" style="font-size:13px;opacity:.75;margin-top:2px">Đang tải…</div></div>
+        <label class="lock-sw kd-sw"><input type="checkbox" id="kd-cb" onchange="AUTH.toggleKd(this)"><span></span></label>
+      </div>
       <div class="profile-card" id="admin-research-card" style="display:none;margin:0 14px 10px"></div>
       <div class="admin-body" id="admin-body"><div class="lb-loading">Đang tải...</div></div>`;
     try { RESLOG.renderAdminCard(); } catch (e) {}
-    refreshLock().then(() => { const cb = document.getElementById('lock-cb'), t = document.getElementById('lock-state'); if (cb) cb.checked = siteLocked; if (t) t.textContent = siteLocked ? 'ĐANG KHÓA: chỉ còn Luyện tập' : 'Đang mở: dùng đủ tính năng'; });
+    refreshLock().then(() => { const cb = document.getElementById('lock-cb'), t = document.getElementById('lock-state'); if (cb) cb.checked = siteLocked; const kc = document.getElementById('kd-cb'), ks = document.getElementById('kd-state'); if (kc) kc.checked = kdCount === 18; if (ks) ks.textContent = 'Khởi Động hiện có ' + kdCount + ' câu'; if (t) t.textContent = siteLocked ? 'ĐANG KHÓA: chỉ còn Luyện tập' : 'Đang mở: dùng đủ tính năng'; });
   }
   async function loadAdminUsers() {
     const body = document.getElementById('admin-body');
@@ -538,7 +556,7 @@ const AUTH = (function () {
     openAdmin, openUserModal, closeUserModal, submitUserForm, deleteUser,
     closeIslandModal,
     getCurrentUser: () => currentUser,
-    isLocked, applyLock, lockedScreen, refreshLock, toggleLock,
+    isLocked, toggleKd, applyLock, lockedScreen, refreshLock, toggleLock,
     renderHome, avatarHtml, apiFetch, backendReady, getToken,
   };
 })();
