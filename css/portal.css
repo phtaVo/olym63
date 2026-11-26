@@ -362,3 +362,12 @@ body.sitelock #topnav .nav-link:not([data-id="portal-screen"]):not([data-id="hom
 .lock-sw span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
 .lock-sw input:checked+span{background:#d93025}
 .lock-sw input:checked+span:before{transform:translateX(20px)}
+
+/* trả lời bằng giọng nói */
+.input-wrapper{position:relative;margin-top:44px}
+.voice-btn{position:absolute;right:0;top:-44px;z-index:2;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(128,128,128,.35);background:rgba(255,255,255,.08);color:inherit;border-radius:999px;padding:8px 14px;font:600 13px/1 inherit;cursor:pointer;transition:.2s}
+.voice-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.voice-btn.on{background:#d93025;border-color:#d93025;color:#fff}
+.voice-btn.live svg{animation:vpulse 1s ease-in-out infinite}
+@keyframes vpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@media(max-width:560px){.voice-btn span{display:none}.voice-btn{padding:9px}}
