@@ -153,6 +153,7 @@ function showScreen(id) {
   el.classList.remove('hidden');
   if (id === 'home-screen' && !el.firstElementChild) { try { PORTAL.renderPractice(); } catch (e) {} }
   try { PORTAL.onScreen(id); } catch (e) {}
+  try { VOICE.onScreen(id); } catch (e) {}
 }
 function goHome() {
   STATE.runId++; clearAllTimers(); AUDIO.stopAll(); clearMedia();
