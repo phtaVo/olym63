@@ -3,6 +3,8 @@
 //  • Câu đã luyện và trạng thái nút gạt được LƯU THEO TÀI KHOẢN trên máy chủ (đăng nhập máy nào cũng có).
 //  • Bản lưu trên thiết bị chỉ là bộ nhớ đệm cho nhanh; dữ liệu cũ trên máy sẽ tự được đẩy lên máy chủ.
 //  • Bật nút gạt ở phần thi nào thì phần đó chỉ lấy NGẪU NHIÊN trong số các câu đã luyện.
+//  • Lúc đang bật: câu nào được lấy ra chơi lại sẽ bị TRỪ KHỎI kho (không lưu/làm mới nữa) — chơi lại bao nhiêu, kho vơi bấy nhiêu.
+//  • Tắt nút gạt thì mới tiếp tục ghi nhớ câu mới như bình thường.
 // ============================================================
 const REPLAY = (() => {
   const MODES = ['khoi_dong', 'xuat_phat', 've_dich', 'vcnv', 'tang_toc'];
@@ -23,8 +25,12 @@ const REPLAY = (() => {
     return Array.from(new Uint8Array(h)).slice(0, 8).map(x => x.toString(16).padStart(2, '0')).join('');
   }
   async function push(mode, ids) {
-    if (!loggedIn()) return;
+    if (!loggedIn() || !ids.length) return;
     for (let i = 0; i < ids.length; i += 300) { try { await api('/replay', { method: 'POST', body: JSON.stringify({ mode, qids: ids.slice(i, i + 300) }) }); } catch (e) {} }
+  }
+  async function pushDelete(mode, ids) {
+    if (!loggedIn() || !ids.length) return;
+    for (let i = 0; i < ids.length; i += 300) { try { await api('/replay', { method: 'DELETE', body: JSON.stringify({ mode, qids: ids.slice(i, i + 300) }) }); } catch (e) {} }
   }
 
   // Nhập các câu đã làm từ hồ sơ luyện tập cũ trên máy (trước khi có tính năng này), chỉ làm 1 lần
@@ -68,19 +74,33 @@ const REPLAY = (() => {
     return syncing;
   }
 
+  const count = mode => Object.keys(rd()[mode] || {}).length;
+  const flagOn = mode => { try { return localStorage.getItem(kOn(mode)) === '1'; } catch (e) { return false; } };
+  const isOn = mode => flagOn(mode) && count(mode) > 0;
+
   async function record(mode, answers) {
     try {
       if (!mode || !answers || !answers.length) return;
-      const s = rd(), m = s[mode] || {}, now = Date.now(), fresh = [];
-      for (const a of answers) { if (a && a.question) { const id = await qid(a.question, a.correctAnswer); if (!m[id]) fresh.push(id); m[id] = now; } }
+      const ids = [];
+      for (const a of answers) { if (a && a.question) ids.push(await qid(a.question, a.correctAnswer)); }
+      if (!ids.length) return;
+      const s = rd(), m = s[mode] || {};
+      if (flagOn(mode)) {
+        // Đang bật "chơi lại": câu vừa chơi bị trừ khỏi kho, không lưu/làm mới lại
+        let changed = false;
+        ids.forEach(id => { if (id in m) { delete m[id]; changed = true; } });
+        if (changed) { s[mode] = m; wr(s); }
+        pushDelete(mode, ids);
+        return;
+      }
+      const now = Date.now(), fresh = [];
+      ids.forEach(id => { if (!m[id]) fresh.push(id); m[id] = now; });
       const ks = Object.keys(m);
       if (ks.length > CAP) ks.sort((x, y) => m[x] - m[y]).slice(0, ks.length - CAP).forEach(k => delete m[k]);
       s[mode] = m; wr(s);
-      push(mode, fresh.length ? fresh : []);
+      push(mode, fresh);
     } catch (e) {}
   }
-  const count = mode => Object.keys(rd()[mode] || {}).length;
-  const isOn = mode => { try { return localStorage.getItem(kOn(mode)) === '1' && count(mode) > 0; } catch (e) { return false; } };
   function set(mode, v) {
     try { localStorage.setItem(kOn(mode), v ? '1' : '0'); } catch (e) {}
     if (loggedIn()) api('/replay', { method: 'POST', body: JSON.stringify({ mode, on: !!v }) }).catch(() => {});
@@ -94,5 +114,5 @@ const REPLAY = (() => {
     for (const q of questions) { if (seen[await qid(q.question, q.answer)]) out.push(q); }
     return out;
   }
-  return { record, count, isOn, set, filter, sync };
+  return { record, count, isOn, flagOn, set, filter, sync };
 })();
