@@ -350,6 +350,9 @@ async function fetchScopedRows(mode, src) {
   return { rows, names };
 }
 
+// Lọc "chơi lại câu đã luyện" — lỗi hay thiếu replay.js thì bỏ qua, không làm hỏng việc tải câu hỏi
+async function rpf(mode, qs) { try { return (typeof REPLAY !== 'undefined') ? await REPLAY.filter(mode, qs) : qs; } catch (e) { return qs; } }
+
 async function loadKhoiDong(src, all) {   // all = true: trả cả bộ câu hỏi (dùng cho thống kê)
   try {
     const { rows: raw, names } = await fetchScopedRows('khoi_dong', src);
@@ -358,7 +361,7 @@ async function loadKhoiDong(src, all) {   // all = true: trả cả bộ câu h�
       .map(r => ({ question: cell(r, 2), answer: cell(r, 3), subject: cell(r, 1) }));
     if (!questions.length) return { success: false, error: `Chưa có câu hỏi Khởi Động cho "${sourceLabel(src)}" (sheet ${names.join(', ')})` };
     if (all) return { success: true, questions: shuffleArray(questions) };
-    const rpq = await REPLAY.filter('khoi_dong', questions);
+    const rpq = await rpf('khoi_dong', questions);
     if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' };
     questions.length = 0; questions.push(...rpq);
     // Nhóm "thích ứng" (đã đồng ý nghiên cứu): chọn câu theo mức nắm môn; còn lại: ngẫu nhiên như cũ
@@ -378,7 +381,7 @@ async function loadXuatPhat(all) {
       .filter(r => cell(r, 0) && cell(r, 1))
       .map(r => ({ question: cell(r, 0), answer: cell(r, 1) }));
     if (!questions.length) return { success: false, error: 'Sheet XP (ĐĐVQ) chưa có câu hỏi' };
-    if (!all) { const rpq = await REPLAY.filter('xuat_phat', questions); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; questions.length = 0; questions.push(...rpq); }
+    if (!all) { const rpq = await rpf('xuat_phat', questions); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; questions.length = 0; questions.push(...rpq); }
     return { success: true, questions: shuffleArray(questions).slice(0, all ? undefined : CONFIG.GAME.XUAT_PHAT_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -400,7 +403,7 @@ async function loadVeDich(src) {
         return { question: text, answer: cell(r, 3), points: parseInt(cell(r, 4)) || 10,   // E = điểm
                  media: url, mediaType: type, subject: cell(r, 1) };
       });
-    { const rpq = await REPLAY.filter('ve_dich', all); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; all.length = 0; all.push(...rpq); }
+    { const rpq = await rpf('ve_dich', all); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; all.length = 0; all.push(...rpq); }
     const pools = {
       20: shuffleArray(all.filter(q => q.points === 20)),
       30: shuffleArray(all.filter(q => q.points === 30))
@@ -427,7 +430,7 @@ async function loadVcnv(all) {
         question: `Chướng ngại vật gồm có ${q.chars} kí tự — Các từ khóa: ${q.keywords}`
       }));
     if (!qs.length) return { success: false, error: 'Sheet VCNV chưa có câu hỏi' };
-    if (!all) { const rpq = await REPLAY.filter('vcnv', qs); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; qs.length = 0; qs.push(...rpq); }
+    if (!all) { const rpq = await rpf('vcnv', qs); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; qs.length = 0; qs.push(...rpq); }
     return { success: true, questions: shuffleArray(qs).slice(0, all ? undefined : CONFIG.GAME.VCNV_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
@@ -459,7 +462,7 @@ async function loadTangToc(all) {
     });
     console.log('[TangToc] số câu hợp lệ:', qs.length);
     if (!qs.length) return { success: false, error: 'Sheet TangToc chưa có câu hỏi' };
-    if (!all) { const rpq = await REPLAY.filter('tang_toc', qs); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; qs.length = 0; qs.push(...rpq); }
+    if (!all) { const rpq = await rpf('tang_toc', qs); if (!rpq.length) return { success: false, error: 'Bạn chưa luyện câu nào ở phần này (hoặc các câu đã luyện không còn trong phạm vi đã chọn). Hãy tắt nút "Chơi lại câu đã luyện".' }; qs.length = 0; qs.push(...rpq); }
     return { success: true, questions: shuffleArray(qs).slice(0, all ? undefined : CONFIG.GAME.TANG_TOC_COUNT) };
   } catch (e) {
     return { success: false, error: e.toString() };
