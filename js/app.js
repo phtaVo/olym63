@@ -674,6 +674,16 @@ async function verifyAnswer({ question, userAnswer, correctAnswer }) {
   catch (e) { return { correct: false, verdict: 'Sai', explanation: 'Lỗi hệ thống chấm điểm.', method: 'fallback' }; }
 }
 
+// Chấm lại chỉ bằng so khớp cục bộ (không gọi AI) — dùng khi người chơi bấm "Bỏ qua chấm lại"
+function regradeLocal(answers, questions) {
+  return answers.map((a, i) => {
+    if (!a.userAnswer || a.userAnswer.trim() === '') return Object.assign({}, a, { verdict: 'Sai', explanation: 'Không có câu trả lời', correct: false });
+    if (exactMatch(a.userAnswer, a.correctAnswer)) return Object.assign({}, a, { verdict: 'Đúng', explanation: 'Câu trả lời chính xác tuyệt đối.', correct: true });
+    if (simpleCompare(a.userAnswer, a.correctAnswer)) return Object.assign({}, a, { verdict: 'Đúng', explanation: 'Câu trả lời đúng về mặt nội dung.', correct: true });
+    const r = fallbackGrading((questions[i] || {}).question, a.userAnswer, a.correctAnswer);
+    return Object.assign({}, a, { verdict: r.verdict, explanation: r.explanation, correct: r.correct });
+  });
+}
 async function regradeAnswers(answers, questions) {
   const out = [];
   for (let i = 0; i < answers.length; i++) {
@@ -1605,8 +1615,17 @@ function showResults() {
   showFeedback('info', 'Đang chấm lại...');
 
   // VCNV đã chấm cục bộ (không dùng AI) nên không chấm lại bằng Gemini
-  const regrade = STATE.mode === 'vcnv' ? Promise.resolve(STATE.answers) : regradeAnswers(STATE.answers, STATE.questions);
+  const baseRegrade = STATE.mode === 'vcnv' ? Promise.resolve(STATE.answers) : regradeAnswers(STATE.answers, STATE.questions);
+  // Nút "Bỏ qua chấm lại": hiện kết quả ngay, chấm bằng so khớp cục bộ, không đợi AI
+  let skipped = false;
+  const skipP = new Promise(res => { window._skipRegrade = () => { skipped = true; res(regradeLocal(STATE.answers, STATE.questions)); }; });
+  if (STATE.mode !== 'vcnv') {
+    const fb = document.getElementById('feedback-bar');
+    if (fb) { fb.className = 'feedback-bar info'; fb.innerHTML = 'Đang chấm lại... <button type="button" class="skip-regrade-btn" onclick="window._skipRegrade && window._skipRegrade()">Bỏ qua chấm lại</button>'; }
+  }
+  const regrade = Promise.race([baseRegrade, skipP]);
   regrade.then(regradedAnswers => {
+    window._skipRegrade = null;
     STATE.answers = regradedAnswers;
     let newScore = 0;
     for (const a of STATE.answers) {
